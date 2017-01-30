@@ -50,9 +50,9 @@ class Candidate(object):
         '''
         filepath = <root> + <ngts_version> + <fieldname_camera_year_ngts_version.fits>
         '''
-        from ngtsio import ngtsio
+        import ngtsio_autovet
         fnames = {'nights':self.filepath, 'sysrem':None, 'bls':None, 'canvas':None}
-        dic = ngtsio.get( None, ['HJD','FLUX','FLUX_ERR'], obj_id=self.id, fnames=fnames )
+        dic = ngtsio_autovet.get( None, ['HJD','FLUX','FLUX_ERR'], obj_id=self.id, fnames=fnames )
         
         nan_zero_cut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.equal(dic['FLUX'], 0)    
         norm = np.median(dic['FLUX'][~nan_zero_cut])
