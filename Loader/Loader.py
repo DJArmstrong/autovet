@@ -91,7 +91,7 @@ class Candidate(object):
 
 
 def test():
-    can = Candidate('020047', '/wasp/scratch/TEST18/NG0409-1941_812_2016_TEST18.fits')
+    can = Candidate('020057', '/wasp/scratch/TEST18/NG0409-1941_812_2016_TEST18.fits')
     print can.lightcurve
     
     
