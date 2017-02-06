@@ -3,35 +3,59 @@ import numpy as np
 
 class FeatureSet(object):
 
-    def __init__(self,Candidate,observatory,featurelist=None):
+    def __init__(self,Candidate,observatory):
+        """
+        Calculate features for a given candidate or candidate list.
+        
+        Arguments:
+        Candidate   -- instance of Candidate class.
+        observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
+        """
         self.features = {}
         self.obs = observatory
         self.target = Candidate
         
-        if featurelist:
-            self.featurelist = featurelist
-        else:
+                        
+    def CalcFeatures(self,featurelist=None):
+        """
+        User facing function to calculate features and populate features dict.
+        
+        Inputs:
+        featurelist -- list of features to calculate. None to use observatory defaults.
+        """
+        if not featurelist:
             if self.obs == 'NGTS':
                 self.featurelist = []
             elif self.obs=='Kepler' or self.obs=='K2':
                 self.featurelist = []
             else:
                 print 'Observatory not supported, please input desired feature list'
-                        
-    def CalcFeatures(self.target,self.featurelist):
-        for featurename in self.featurelist:
-            if featurename not in self.features.keys:
+
+        for featurename in featurelist:
+            if featurename not in self.features.keys:  #avoid recalculating features
                 feature = FeatureSet.featurename(self.target)  #NEED TO TURN STRING INTO FUNCTION NAME HERE
                 if feature:   #if function failed, should be None
                     self.features[featurename] = feature
-        return self.features
 
-    def GetPeriod(lc):
+    def GetPeriod(self,lc):
+        """
+        Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
+        
+        Inputs:
+        lc   -- numpy array, column 0 time, column 1 flux
+        
+        Returns:
+        period -- first 10 peaks from Lomb-Scargle periodogram
+        ampratios -- ratio of each of first 10 peaks amplitude to maximum peak amplitude
+        """
         #import pylab as p
         #p.ion()
         #p.plot(lc[:,0],lc[:,1],'b.')
         #raw_input()
-        a = PeriodLS.PeriodLS(lc)
+        if self.observatory == 'K2':
+            a = PeriodLS.PeriodLS(lc)        
+        else:
+            a = PeriodLS.PeriodLS(lc,removethruster=False,removecadence=False)
         a.fit()
         periods = a.periods
         ampratios = a.ampratios
@@ -41,7 +65,16 @@ class FeatureSet(object):
         return periods,ampratios
 
     def EBtest(lc,period): #checks for half-period detections in EBs
-
+        """
+        Tests for phase variation at double the period to correct EB periods. CURRENTLY K2 SPECIFIC
+        
+        Inputs:
+        lc   -- numpy array, column 0 time, column 1 flux
+        period -- period to test
+        
+        Returns:
+        corrected period, either initial period or double      
+        """
         phaselc2P = lc.copy()
         phaselc2P[:,0] = FeatureSet.phasefold(lc[:,0],period*2)
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
@@ -50,13 +83,12 @@ class FeatureSet(object):
         minima = np.argmin(binnedlc2P[:,1])
 
         posssecondary = np.mod(np.abs(binnedlc2P[:,0]-np.mod(binnedlc2P[minima,0]+0.5,1.)),1.)
-
         posssecondary = np.where((posssecondary<0.05) | (posssecondary > 0.95))[0]   #within 0.05 either side of phase 0.5 from minima
 
         pointsort = np.sort(lc[:,1])
         top10points = np.median(pointsort[-30:])
         bottom10points = np.median(pointsort[:30])
-        if lc[-1,0]-lc[0,0] >= 60:
+        if lc[-1,0]-lc[0,0] >= 60:  #K2 specific, needs updating
             periodlim= 20.
         else: #for C0
             periodlim = 10.
