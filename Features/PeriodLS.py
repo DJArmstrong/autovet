@@ -10,7 +10,7 @@ from scipy.optimize import curve_fit
 
 class PeriodLS():
 
-    def __init__(self, lc, ofac=20., removethruster=True, removecadence=True):
+    def __init__(self, lc, ofac=20., observatory=None, removethruster=True, removecadence=True):
 
         self.data = lc
         self.ofac = ofac
@@ -89,12 +89,14 @@ class PeriodLS():
 
 
         fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)
-        if time[-1]-time[0] >= 50.:
-            lowcut = 1./fx<=20.
-        else:
-            lowcut = 1./fx<=10.
-        fx = fx[lowcut]
-        fy = fy[lowcut]
+
+        if observatory = 'K2':
+            if time[-1]-time[0] >= 50.:
+                lowcut = 1./fx<=20.
+            else:
+                lowcut = 1./fx<=10.
+            fx = fx[lowcut]
+            fy = fy[lowcut]
         
         if self.removethruster:
             fx,fy = cutthrusterfreqs(fx,fy)
@@ -117,12 +119,14 @@ class PeriodLS():
             fundamental_Freq = freqs[-1]
             flux = removeharmonics(time,flux,fundamental_Freq)
             fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)
-            if time[-1]-time[0] >= 50.:
-                lowcut = 1./fx<=20.
-            else:
-                lowcut = 1./fx<=10.
-            fx = fx[lowcut]
-            fy = fy[lowcut]
+                    
+            if observatory = 'K2':
+                if time[-1]-time[0] >= 50.:
+                    lowcut = 1./fx<=20.
+                else:
+                    lowcut = 1./fx<=10.
+                fx = fx[lowcut]
+                fy = fy[lowcut]
             if self.removethruster:
                 fx,fy = cutthrusterfreqs(fx,fy)
             if self.removecadence:
