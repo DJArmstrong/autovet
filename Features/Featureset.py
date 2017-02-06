@@ -32,7 +32,7 @@ class FeatureSet(object):
 
         for featurename in featurelist:
             if featurename not in self.features.keys:  #avoid recalculating features
-                feature = FeatureSet.featurename()  #NEED TO TURN STRING INTO FUNCTION NAME HERE
+                feature = getattr(self,featurename)()
                 if feature:   #if function failed, should be None
                     self.features[featurename] = feature
 
@@ -70,9 +70,9 @@ class FeatureSet(object):
         lc = self.target.lightcurve
         period = self.features['GetPeriod']
         phaselc2P = lc.copy()
-        phaselc2P[:,0] = FeatureSet.phasefold(lc[:,0],period*2)
+        phaselc2P[:,0] = self.phasefold(lc[:,0],period*2)
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
-        binnedlc2P,binstd = FeatureSet.BinPhaseLC(phaselc2P,64)
+        binnedlc2P,binstd = self.BinPhaseLC(phaselc2P,64)
 
         minima = np.argmin(binnedlc2P[:,1])
         posssecondary = np.mod(np.abs(binnedlc2P[:,0]-np.mod(binnedlc2P[minima,0]+0.5,1.)),1.)
