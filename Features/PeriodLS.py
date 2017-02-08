@@ -16,12 +16,13 @@ class PeriodLS():
         self.ofac = ofac
         self.removethruster = removethruster
         self.removecadence = removecadence
+        self.obs = observatory
 
     def fit(self):
         
-        flux = self.data[:,1]
+        flux = self.data['flux']
         
-        time = self.data[:,0]
+        time = self.data['time']
 
 
         #fx, fy, nout, jmax, prob = lomb.fasper(time, magnitude, self.ofac, 1.)
@@ -90,7 +91,7 @@ class PeriodLS():
 
         fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)
 
-        if observatory = 'K2':
+        if self.obs == 'K2':
             if time[-1]-time[0] >= 50.:
                 lowcut = 1./fx<=20.
             else:
@@ -115,12 +116,12 @@ class PeriodLS():
         ampmax = np.sqrt(popt[0]**2+popt[1]**2)
         ampratios = [1.]
         
-        for ni in range(10):
+        for ni in range(3):
             fundamental_Freq = freqs[-1]
             flux = removeharmonics(time,flux,fundamental_Freq)
             fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)
                     
-            if observatory = 'K2':
+            if self.obs == 'K2':
                 if time[-1]-time[0] >= 50.:
                     lowcut = 1./fx<=20.
                 else:

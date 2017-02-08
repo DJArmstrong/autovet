@@ -65,7 +65,7 @@ class Candidate(object):
         
     
     
-    def KepK2Load(self,inputcol='PDCSAP_FLUX',inputerr='PDCSAP_FLUX_ERR'):
+    def KepK2load(self,inputcol='PDCSAP_FLUX',inputerr='PDCSAP_FLUX_ERR'):
         """
         Loads a Kepler or K2 lightcurve, normalised and with NaNs removed.
         
@@ -76,9 +76,9 @@ class Candidate(object):
         lc -- lightcurve as dict, with keys time, flux, error
         """
         dat = fitsio.FITS(self.filepath)
-        time = dat[1].read('TIME')
-        flux = dat[1].read(inputcol)
-        err = dat[1].read(inputerr)
+        time = dat[1]['TIME'][:]
+        flux = dat[1][inputcol][:]
+        err = dat[1][inputerr][:]
         nancut = np.isnan(time) | np.isnan(flux)
         norm = np.median(flux[~nancut])
         lc = {}
