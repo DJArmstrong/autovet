@@ -3,13 +3,12 @@ import numpy as np
 
 class FeatureSet(object):
 
-    def __init__(self,Candidate,observatory):
+    def __init__(self,Candidate):
         """
         Calculate features for a given candidate or candidate list.
         
         Arguments:
         Candidate   -- instance of Candidate class.
-        observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
         """
         self.features = {}
         self.target = Candidate
@@ -36,7 +35,7 @@ class FeatureSet(object):
                 if feature:   #if function failed, should be None
                     self.features[featurename] = feature
 
-    def GetPeriod(self):
+    def LSPeriod(self):
         """
         Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
         
@@ -54,9 +53,9 @@ class FeatureSet(object):
         a.fit()
         periods = a.periods
         ampratios = a.ampratios
-        return periods,ampratios
+        return np.array([periods,ampratios])
 
-    def EBtest(self):
+    def EBPeriod(self):
         """
         Tests for phase variation at double the period to correct EB periods.
         
@@ -68,7 +67,7 @@ class FeatureSet(object):
         corrected period, either initial period or double      
         """
         lc = self.target.lightcurve
-        period = self.features['GetPeriod']
+        period = self.features['LSPeriod'][0,0]  #assumes most significant LS period hit, and that LSPeriod was set to return more than one (default returns 10)
         phaselc2P = lc.copy()
         phaselc2P[:,0] = self.phasefold(lc[:,0],period*2)
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
@@ -84,7 +83,7 @@ class FeatureSet(object):
         
         if self.target.obs=='K2':
             if lc[-1,0]-lc[0,0] >= 60:
-                periodlim= 20.
+                periodlim= 20.  #20 day general K2 limit. May be low. Seems to be highest reliable period though
             else: #for C0
                 periodlim = 10.
         else:
