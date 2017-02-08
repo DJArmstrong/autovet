@@ -106,16 +106,16 @@ class Featureset(object):
     def Kurtosis(self):
         return stats.kurtosis(self.target.lightcurve['flux'])
     
-    def NZeroCross(self):
+    def NZeroCross(self,window=16):
         lc = self.target.lightcurve
         
-        time_cut, flux_cut = CutOutliers(lc['time'],lc['flux'])
+        time_cut, flux_cut = self.CutOutliers(lc['time'],lc['flux'])
         
         #interpolate gaps
-        interp_time,interp_flux = FillGaps_Linear(time_cut,flux_cut)
-    
+        interp_time,interp_flux = self.FillGaps_Linear(time_cut,flux_cut)
+        
         #Do smoothing
-        flux_smooth = MovingAverage(interp_flux,window)
+        flux_smooth = self.MovingAverage(interp_flux,window)
         flux_smooth = flux_smooth[window/2:-window/2]
 
         norm = np.median(flux_smooth)
@@ -138,13 +138,13 @@ class Featureset(object):
         """
         'Flicker' on 8-hour timescale. Calculated through std around an 8-hour moving average.
         """
-        return Scatter(16,cut_outliers=True) #16points is 8 hours
+        return self.Scatter(16,cut_outliers=True) #16points is 8 hours
 
     def CDPP_6(self):
         """
         CDPP on 6-hour timescale. Calculated through std around a 6-hour moving average.
         """
-        return Scatter(12,cut_outliers=True)  #12 for 6 hours
+        return self.Scatter(12,cut_outliers=True)  #12 for 6 hours
 
     def Peak_to_peak(self):
         flux = self.target.lightcurve['flux']
@@ -206,16 +206,16 @@ class Featureset(object):
         lc = self.target.lightcurve
     
         if cut_outliers:
-            time_cut, flux_cut = CutOutliers(lc['time'],lc['flux'])
+            time_cut, flux_cut = self.CutOutliers(lc['time'],lc['flux'])
         else:
             flux_cut = lc['flux']
             time_cut = lc['time']
         
         #interpolate gaps
-        interp_time,interp_flux = FillGaps_Linear(time_cut,flux_cut)
+        interp_time,interp_flux = self.FillGaps_Linear(time_cut,flux_cut)
     
         #Do smoothing
-        flux_smooth = MovingAverage(interp_flux,window)
+        flux_smooth = self.MovingAverage(interp_flux,window)
         flux_smooth = flux_smooth[window/2:-window/2]
         interp_smooth = interpolate.interp1d(interp_time[window/2:-window/2],flux_smooth,kind='linear',fill_value='extrapolate')
 
@@ -239,8 +239,10 @@ class Featureset(object):
 
     def FillGaps_Linear(self,time,flux):       
         cadence = np.median(np.diff(time))
-        npoints = np.floor(time[-1]-time[0]/cadence)
-        interp_times = np.arange(npoints)*cadence
+        npoints = np.floor((time[-1]-time[0])/cadence)
+        interp_times = np.arange(npoints)*cadence + time[0]
+        if interp_times[-1] > time[-1]:
+            interp_times = interp_times[:-1]
         interp_obj = interpolate.interp1d(time,flux,kind='linear')
         interp_flux = interp_obj(interp_times)
         return interp_times,interp_flux
