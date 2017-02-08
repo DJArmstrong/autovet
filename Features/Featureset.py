@@ -1,7 +1,7 @@
 import PeriodLS
 import numpy as np
 
-class FeatureSet(object):
+class Featureset(object):
 
     def __init__(self,Candidate):
         """
@@ -11,17 +11,19 @@ class FeatureSet(object):
         Candidate   -- instance of Candidate class.
         """
         self.features = {}
+        #self.features['Initialised'] = True
         self.target = Candidate
         
                         
-    def CalcFeatures(self,featurelist=None):
+    def CalcFeatures(self,featurelist=[]):
         """
         User facing function to calculate features and populate features dict.
         
         Inputs:
         featurelist -- list of features to calculate. None to use observatory defaults.
         """
-        if not featurelist:
+
+        if len(featurelist)==0:
             if self.target.obs == 'NGTS':
                 self.featurelist = []
             elif self.target.obs=='Kepler' or self.target.obs=='K2':
@@ -30,9 +32,11 @@ class FeatureSet(object):
                 print 'Observatory not supported, please input desired feature list'
 
         for featurename in featurelist:
-            if featurename not in self.features.keys:  #avoid recalculating features
+            if featurename not in self.features.keys():  #avoid recalculating features
                 feature = getattr(self,featurename)()
-                if feature:   #if function failed, should be None
+                if type(feature) == np.ndarray: #assumes if the feature is now an array, it's good
+                    self.features[featurename] = feature
+                elif feature:   #if function failed, should be 0
                     self.features[featurename] = feature
 
     def LSPeriod(self):
@@ -67,9 +71,10 @@ class FeatureSet(object):
         corrected period, either initial period or double      
         """
         lc = self.target.lightcurve
-        period = self.features['LSPeriod'][0,0]  #assumes most significant LS period hit, and that LSPeriod was set to return more than one (default returns 10)
-        phaselc2P = lc.copy()
-        phaselc2P[:,0] = self.phasefold(lc[:,0],period*2)
+        period = self.features['LSPeriod'][0,0]  #assumes most significant LS period hit, and that LSPeriod was set to return more than one (default returns 4)
+     
+        phaselc2P = np.zeros([len(lc['time']),2])
+        phaselc2P[:,0] = self.phasefold(lc['time'],period*2)
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
         binnedlc2P,binstd = self.BinPhaseLC(phaselc2P,64)
 
@@ -77,7 +82,7 @@ class FeatureSet(object):
         posssecondary = np.mod(np.abs(binnedlc2P[:,0]-np.mod(binnedlc2P[minima,0]+0.5,1.)),1.)
         posssecondary = np.where((posssecondary<0.05) | (posssecondary > 0.95))[0]   #within 0.05 either side of phase 0.5 from minima
 
-        pointsort = np.sort(lc[:,1])
+        pointsort = np.sort(lc['flux'])
         top10points = np.median(pointsort[-30:])
         bottom10points = np.median(pointsort[:30])
         
@@ -94,20 +99,20 @@ class FeatureSet(object):
         else:
             return period
 
-    def phasefold(time,per):
+    def phasefold(self,time,per):
         return np.mod(time,per)/per
     
-    def BinPhaseLC(lc,nbins):
+    def BinPhaseLC(self,phaselc,nbins):
         bin_edges = np.arange(nbins)/float(nbins)
-        bin_indices = np.digitize(lc[:,0],bin_edges) - 1
+        bin_indices = np.digitize(phaselc[:,0],bin_edges) - 1
         binnedlc = np.zeros([nbins,2])
         binnedlc[:,0] = 1./nbins * 0.5 +bin_edges  #fixes phase of all bins - means ignoring locations of points in bin, but necessary for SOM mapping
         binnedstds = np.zeros(nbins)
         for bin in range(nbins):
             if np.sum(bin_indices==bin) > 0:
-                binnedlc[bin,1] = np.mean(lc[bin_indices==bin,1])  #doesn't make use of sorted phase array, could probably be faster?
-                binnedstds[bin] = np.std(lc[bin_indices==bin,1])
+                binnedlc[bin,1] = np.mean(phaselc[bin_indices==bin,1])  #doesn't make use of sorted phase array, could probably be faster?
+                binnedstds[bin] = np.std(phaselc[bin_indices==bin,1])
             else:
-                binnedlc[bin,1] = np.mean(lc[:,1])  #bit awkward this, but only alternative is to interpolate?
-                binnedstds[bin] = np.std(lc[:,1])
+                binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
+                binnedstds[bin] = np.std(phaselc[:,1])
         return binnedlc,binnedstds
