@@ -9,6 +9,7 @@ def CalcContrast(SPhotseg,SPhotglob):  #SPhotglob is std of whole lightcurve
     SPhothigh = np.mean(SPhotseg[nhigh])
     SPhotlow = np.mean(SPhotseg[~nhigh])
     return SPhothigh/SPhotlow
+import numpy as np
 
 def CutOutliers(time,flux):
     threshold = np.percentile(flux,[2,98])
