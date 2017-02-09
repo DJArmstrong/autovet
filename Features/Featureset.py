@@ -4,15 +4,17 @@ from scipy import interpolate,stats
 
 class Featureset(object):
 
-    def __init__(self,Candidate):
+    def __init__(self,Candidate,useflatten=False):
         """
         Calculate features for a given candidate or candidate list.
         
         Arguments:
         Candidate   -- instance of Candidate class.
+        useflatten  -- bool, true to use flattened lightcurve for scatter based features
         """
         self.features = {}
         self.target = Candidate
+        self.useflatten = useflatten
         
                         
     def CalcFeatures(self,featurelist=[]):
@@ -33,8 +35,10 @@ class Featureset(object):
 
         for featurename in featurelist:
             if featurename not in self.features.keys():  #avoid recalculating features
+                print featurename
                 feature = getattr(self,featurename)()
-                if type(feature) == np.ndarray: #assumes if the feature is now an array, it's good
+                print feature
+                if type(feature)==np.ndarray or type(feature)==dict: #assumes if the feature is now an array, it's good
                     self.features[featurename] = feature
                 elif feature:   #if function failed, should be 0
                     self.features[featurename] = feature
@@ -164,6 +168,61 @@ class Featureset(object):
         mednorm = np.median(flux)
         return 1.4826 * np.median(np.abs(flux - mednorm))
 
+    def SPhot(self,k=5):
+        """
+        S_phot,k diagnostic (see Mathur et al 2014)
+        """
+        
+        lc = self.target.lightcurve
+        if 'LSPeriod' not in self.features.keys():
+            print 'Calculating LS Period first'
+            self.features['LSPeriod'] = LSPeriod()
+        P_rot = self.features['LSPeriod'][0,0]
+        
+        while k*P_rot > lc['time'][-1] - lc['time'][0]:
+            k -= 1
+        
+        if k == 0:
+            return {'SPhot_mean':-10,'SPhot_median':-10,'SPhot_max':-10,'SPhot_min':-10,'Contrast':-10,'k':0}
+            
+        #make time segments
+        segwidth = k * P_rot
+    
+        nsegments = np.floor((lc['time'][-1]-lc['time'][0])/segwidth)   #will skip data at the end if segwidth doesn't exactly fit lc length
+        tboundaries = np.arange(nsegments) * segwidth + lc['time'][0]
+    
+        #set up output array and index count
+    
+        pointindex = 0
+        sphot = []
+        npoints = []
+        segtimes = []
+        expectednpoints = segwidth/np.median(np.diff(lc['time']))
+        while lc['time'][-1]-lc['time'][pointindex] > segwidth:
+            stopindex = np.searchsorted(lc['time'],lc['time'][pointindex]+segwidth)
+            if stopindex - pointindex > 0.75*expectednpoints:
+                sphot.append(np.std(lc['flux'][pointindex:stopindex]))
+                npoints.append(stopindex-pointindex)
+                segtimes.append(np.mean(lc['time'][pointindex:stopindex]))
+            pointindex += 1
+        
+        sphot = np.array(sphot)
+        contrast = self.CalcContrast(sphot,np.std(lc['flux']))
+        
+        return {'SPhot_mean':np.mean(sphot),'SPhot_median':np.median(sphot),'SPhot_max':np.max(sphot),'SPhot_min':np.min(sphot),'Contrast':contrast,'k':k}
+  
+    def CalcContrast(self,SPhotseg,SPhotglob):  #SPhotglob is std of whole lightcurve
+        """
+        Contrast (see Mathur et al 2014)
+        
+        Will be returned as part of SPhot.
+        """
+        nhigh = SPhotseg>=SPhotglob
+        SPhothigh = np.mean(SPhotseg[nhigh])
+        SPhotlow = np.mean(SPhotseg[~nhigh])
+        return SPhothigh/SPhotlow
+
+
    # def PontRedNoise(self,cut_outliers=False):
    #     lc = self.target.lightcurve
    
@@ -203,7 +262,10 @@ class Featureset(object):
         window  --  number of datapoints to smooth over
         cut_outliers  --  remove outliers before processing. Uses the more conservative of a 98th percentile or 5*MAD clipping threshold.
         """
-        lc = self.target.lightcurve
+        if self.useflatten:
+            lc = self.target.lightcurve_f  #uses flattened lightcurve
+        else:
+            lc = self.target.lightcurve
     
         if cut_outliers:
             time_cut, flux_cut = self.CutOutliers(lc['time'],lc['flux'])
