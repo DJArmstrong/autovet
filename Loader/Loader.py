@@ -92,6 +92,9 @@ class Candidate(object):
         lc['time'] = time[~nancut]
         lc['flux'] = flux[~nancut]/norm
         lc['error'] = err[~nancut]/norm
+        if self.obs=='K2':
+            linfit = np.polyfit(lc['time'],lc['flux'],1)
+            lc['flux'] = lc['flux'] - np.polyval(linfit,lc['time']) + 1
         return lc
 
     def Flatten(self,winsize=6.,stepsize=0.3,polydegree=3,niter=10,sigmaclip=8.,gapthreshold=1.):

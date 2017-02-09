@@ -36,9 +36,7 @@ class Featureset(object):
 
         for featurename in featurelist:
             if featurename not in self.features.keys():  #avoid recalculating features
-                print featurename
                 feature = getattr(self,featurename)()
-                print feature
                 if type(feature)==np.ndarray or type(feature)==dict: #assumes if the feature is now an array, it's good
                     self.features[featurename] = feature
                 elif feature:   #if function failed, should be 0
@@ -183,7 +181,7 @@ class Featureset(object):
             self.features['LSPeriod'] = LSPeriod()
         P_rot = self.features['LSPeriod'][0,0]
         
-        while k*P_rot > lc['time'][-1] - lc['time'][0]:
+        while k*P_rot > (lc['time'][-1] - lc['time'][0])/3.:
             k -= 1
         
         if k == 0:
