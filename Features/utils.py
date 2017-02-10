@@ -1,6 +1,33 @@
 import numpy as np
 from scipy import interpolate,stats
 
+
+def Scatter(lc,window,cut_outliers=False):
+    """
+    STD around a smoothed lightcurve.
+    
+    Inputs:
+    lc      --  dict containing keys 'time', 'flux'
+    window  --  number of datapoints to smooth over
+    cut_outliers  --  remove outliers before processing. Uses the more conservative of a 98th percentile or 5*MAD clipping threshold.
+    """
+    if cut_outliers:
+        time_cut, flux_cut = CutOutliers(lc['time'],lc['flux'])
+    else:
+        flux_cut = lc['flux']
+        time_cut = lc['time']
+        
+    #interpolate gaps
+    interp_time,interp_flux = FillGaps_Linear(time_cut,flux_cut)
+    
+    #Do smoothing
+    flux_smooth = MovingAverage(interp_flux,window)
+    flux_smooth = flux_smooth[window/2:-window/2]
+    interp_smooth = interpolate.interp1d(interp_time[window/2:-window/2],flux_smooth,kind='linear',fill_value='extrapolate')
+
+    return np.std(flux_cut - interp_smooth(time_cut))
+
+
 def SPhot(lc,P_rot,k=5):
     """
     S_phot,k diagnostic (see Mathur et al 2014)

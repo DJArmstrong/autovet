@@ -171,13 +171,21 @@ class Featureset(object):
         """
         'Flicker' on 8-hour timescale. Calculated through std around an 8-hour moving average.
         """
-        return self.Scatter(16,cut_outliers=True) #16points is 8 hours
+        if self.useflatten:
+            lc = self.target.lightcurve_f  #uses flattened lightcurve
+        else:
+            lc = self.target.lightcurve
+        return utils.Scatter(lc,16,cut_outliers=True) #16points is 8 hours
 
     def CDPP_6(self,args):
         """
         CDPP on 6-hour timescale. Calculated through std around a 6-hour moving average.
         """
-        return self.Scatter(12,cut_outliers=True)  #12 for 6 hours
+        if self.useflatten:
+            lc = self.target.lightcurve_f  #uses flattened lightcurve
+        else:
+            lc = self.target.lightcurve
+        return utils.Scatter(lc,12,cut_outliers=True)  #12 for 6 hours
 
     def Peak_to_peak(self,args):
         flux = self.target.lightcurve['flux']
@@ -282,33 +290,4 @@ class Featureset(object):
     #    whtnoise = sigmas[0] * 1./np.sqrt(np.arange(29)+1)
     #    p.plot(range(29)+1,whtnoise,'g')
     #    p.show()
-
-    def Scatter(self,window,cut_outliers=False):
-        """
-        STD around a smoothed lightcurve.
-     
-        Inputs:
-        window  --  number of datapoints to smooth over
-        cut_outliers  --  remove outliers before processing. Uses the more conservative of a 98th percentile or 5*MAD clipping threshold.
-        """
-        if self.useflatten:
-            lc = self.target.lightcurve_f  #uses flattened lightcurve
-        else:
-            lc = self.target.lightcurve
-    
-        if cut_outliers:
-            time_cut, flux_cut = utils.CutOutliers(lc['time'],lc['flux'])
-        else:
-            flux_cut = lc['flux']
-            time_cut = lc['time']
-        
-        #interpolate gaps
-        interp_time,interp_flux = utils.FillGaps_Linear(time_cut,flux_cut)
-    
-        #Do smoothing
-        flux_smooth = utils.MovingAverage(interp_flux,window)
-        flux_smooth = flux_smooth[window/2:-window/2]
-        interp_smooth = interpolate.interp1d(interp_time[window/2:-window/2],flux_smooth,kind='linear',fill_value='extrapolate')
-
-        return np.std(flux_cut - interp_smooth(time_cut))
 
