@@ -16,65 +16,96 @@ class Featureset(object):
         self.features = {}
         self.target = Candidate
         self.useflatten = useflatten
-        
+        self.periodls = 0
+        self.sphotarray = np.array([0])
                         
-    def CalcFeatures(self,featurelist=[]):
+    def CalcFeatures(self,featuredict={}):
         """
         User facing function to calculate features and populate features dict.
         
         Inputs:
-        featurelist -- list of features to calculate. None to use observatory defaults.
-        """
+        featuredict -- dict of features to calculate. {} to use observatory defaults. Feature name should be key, value should be necessary arguments (will often be empty list)
 
-        if len(featurelist)==0:
+        Returns
+        self.features -- a dict containing all calculated features
+        """
+        if len(featuredict.keys())==0:
             if self.target.obs == 'NGTS':
-                self.featurelist = []
-            elif self.target.obs=='Kepler' or self.target.obs=='K2':
-                self.featurelist = []
+                self.featuredict = {} #should be default for NGTS
+            elif self.target.obs=='Kepler':
+                self.featuredict = {} #should be default for Kepler
+            elif self.target.obs=='K2':
+                self.featuredict = {} #should be default for K2
             else:
                 print 'Observatory not supported, please input desired feature list'
 
-        for featurename in featurelist:
-            if featurename not in self.features.keys():  #avoid recalculating features
-                feature = getattr(self,featurename)()
-                if type(feature)==np.ndarray or type(feature)==dict: #assumes if the feature is now an array, it's good
-                    self.features[featurename] = feature
-                elif feature:   #if function failed, should be 0
-                    self.features[featurename] = feature
+        for featurename in featuredict.keys():
+            if len(featuredict[featurename])>0:
+                testkey = featurename+str(featuredict[featurename][0])
+            else:
+                testkey = featurename
+            if testkey not in self.features.keys():  #avoid recalculating features
+                feature = getattr(self,featurename)(featuredict[featurename])
+                self.features[testkey] = feature
 
-    def LSPeriod(self):  #really inefficient at present. Finds a peak, removes it, reruns periodogram 4 times.
+
+    def LSPeriod(self,args):
         """
         Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
         
         Inputs:
-        lc   -- numpy array, column 0 time, column 1 flux
+        args -- [peak_number]
+        peak_number  --  which LS peak to extract (starts at 0 for largest peak). If multiple, should call this function with the largest peak_number desired first.
         
         Returns:
-        period -- first 4 peaks from Lomb-Scargle periodogram
-        ampratios -- ratio of each of first 10 peaks amplitude to maximum peak amplitude
+        period -- peak peak_number from Lomb-Scargle periodogram
         """
-        if self.target.obs == 'K2':
-            a = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
-        else:
-            a = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs,removethruster=False,removecadence=False)
-        a.fit()
-        periods = a.periods
-        ampratios = a.ampratios
-        return np.array([periods,ampratios])
+        peak_number = args[0]
+        if not self.periodls: #checks it hasn't been defined before
+            if self.target.obs == 'K2':
+                self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
+            else:
+                self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs,removethruster=False,removecadence=False)
+        self.periodls.fit(peak_number) #will only run fit if peak_number greater than any previously run. However, will run fit from start (fit once, remove peak, refit, etc) otherwise.
+        period = self.periodls.periods[peak_number]
+        return period
 
-    def EBPeriod(self):
+    def LSAmp(self,args): 
+        """
+        Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
+        
+        Inputs:
+        args -- [amp_number]
+        peak_number  --  which LS peak to extract
+        
+        Returns:
+        ampratio -- ratio of peak peak_number amplitude to maximum peak amplitude
+        """
+        peak_number = args[0]
+        if not self.periodls: #checks it hasn't been defined before
+            if self.target.obs == 'K2':
+                self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
+            else:
+                self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs,removethruster=False,removecadence=False)
+        self.periodls.fit(peak_number)
+        ampratio = self.periodls.ampratios[peak_number]
+        return ampratio
+
+    def EBPeriod(self,args):
         """
         Tests for phase variation at double the period to correct EB periods.
         
         Inputs:
-        lc   -- numpy array, column 0 time, column 1 flux
-        period -- period to test
+        period -- period to test. Currently uses LSPeriod0
         
         Returns:
         corrected period, either initial period or double      
         """
         lc = self.target.lightcurve
-        period = self.features['LSPeriod'][0,0]  #assumes most significant LS period hit, and that LSPeriod was set to return more than one (default returns 4)
+        if 'LSPeriod0' not in self.features.keys():
+            print 'Calculating LS Period first'
+            self.features['LSPeriod0'] = LSPeriod([0])
+        period = self.features['LSPeriod0']
      
         phaselc2P = np.zeros([len(lc['time']),2])
         phaselc2P[:,0] = utils.phasefold(lc['time'],period*2)
@@ -102,14 +133,13 @@ class Featureset(object):
         else:
             return period
 
-    #BELOW HERE NEEDS TESTING
-    def Skew(self):
+    def Skew(self,args):
         return stats.skew(self.target.lightcurve['flux'])
     
-    def Kurtosis(self):
+    def Kurtosis(self,args):
         return stats.kurtosis(self.target.lightcurve['flux'])
     
-    def NZeroCross(self,window=16):
+    def NZeroCross(self,args,window=16):
         lc = self.target.lightcurve
         
         time_cut, flux_cut = utils.CutOutliers(lc['time'],lc['flux'])
@@ -125,31 +155,31 @@ class Featureset(object):
         flux_zeroed = flux_smooth - norm
         return ((flux_zeroed[:-1] * flux_zeroed[1:]) < 0).sum()
 
-    def P2P_mean(self):
+    def P2P_mean(self,args):
         """
         Mean point-to-point difference across flux. Does not take account of gaps.
         """
         return np.mean(np.abs(np.diff(self.target.lightcurve['flux'])))
 
-    def P2P_98perc(self):
+    def P2P_98perc(self,args):
         """
         98th percentile of point-to-point difference across flux. Does not take account of gaps.
         """
         return np.percentile(np.abs(np.diff(self.target.lightcurve['flux'])),98)
 
-    def F8(self):
+    def F8(self,args):
         """
         'Flicker' on 8-hour timescale. Calculated through std around an 8-hour moving average.
         """
         return self.Scatter(16,cut_outliers=True) #16points is 8 hours
 
-    def CDPP_6(self):
+    def CDPP_6(self,args):
         """
         CDPP on 6-hour timescale. Calculated through std around a 6-hour moving average.
         """
         return self.Scatter(12,cut_outliers=True)  #12 for 6 hours
 
-    def Peak_to_peak(self):
+    def Peak_to_peak(self,args):
         flux = self.target.lightcurve['flux']
         return np.percentile(flux,98)-np.percentile(flux,2)
 
@@ -159,7 +189,7 @@ class Featureset(object):
         """
         return np.std(self.target.lightcurve['flux'])/np.mean(self.target.lightcurve['error'])
 
-    def MAD(self):
+    def MAD(self,args):
         """
         Median Average Deviation
         """
@@ -167,52 +197,60 @@ class Featureset(object):
         mednorm = np.median(flux)
         return 1.4826 * np.median(np.abs(flux - mednorm))
 
-    def RMS(self):
+    def RMS(self,args):
         return np.sqrt(np.mean(np.power(self.target.lightcurve['flux']-np.median(self.target.lightcurve['flux']),2)))
-    
-    def SPhot(self,k=5):
-        """
-        S_phot,k diagnostic (see Mathur et al 2014)
-        """
+
+    def SPhot_mean(self,args):
+        if len(self.sphotarray)==1:
+            lc = self.target.lightcurve
+            if 'LSPeriod0' not in self.features.keys():
+                print 'Calculating LS Period first'
+                self.features['LSPeriod0'] = self.LSPeriod([0])
+                P_rot = self.features['LSPeriod0']
+            self.sphotarray = utils.SPhot(lc,P_rot)
+        return np.mean(self.sphotarray)
         
+    def SPhot_median(self,args):
+        if len(self.sphotarray)==1:
+            lc = self.target.lightcurve
+            if 'LSPeriod0' not in self.features.keys():
+                print 'Calculating LS Period first'
+                self.features['LSPeriod0'] = self.LSPeriod([0])
+                P_rot = self.features['LSPeriod0']
+            self.sphotarray = utils.SPhot(lc,P_rot)
+        return np.median(self.sphotarray)
+        
+    def SPhot_max(self,args):
+        if len(self.sphotarray)==1:
+            lc = self.target.lightcurve
+            if 'LSPeriod0' not in self.features.keys():
+                print 'Calculating LS Period first'
+                self.features['LSPeriod0'] = self.LSPeriod([0])
+                P_rot = self.features['LSPeriod0']
+            self.sphotarray = utils.SPhot(lc,P_rot)
+        return np.max(self.sphotarray)    
+
+    def SPhot_min(self,args):
+        if len(self.sphotarray)==1:
+            lc = self.target.lightcurve
+            if 'LSPeriod0' not in self.features.keys():
+                print 'Calculating LS Period first'
+                self.features['LSPeriod0'] = self.LSPeriod([0])
+                P_rot = self.features['LSPeriod0']
+            self.sphotarray = utils.SPhot(lc,P_rot)
+        return np.max(self.sphotarray)  
+    
+    def Contrast(self,args):
         lc = self.target.lightcurve
-        if 'LSPeriod' not in self.features.keys():
-            print 'Calculating LS Period first'
-            self.features['LSPeriod'] = LSPeriod()
-        P_rot = self.features['LSPeriod'][0,0]
-        
-        while k*P_rot > (lc['time'][-1] - lc['time'][0])/3.:
-            k -= 1
-        
-        if k == 0:
-            return {'SPhot_mean':-10,'SPhot_median':-10,'SPhot_max':-10,'SPhot_min':-10,'Contrast':-10,'k':0}
-            
-        #make time segments
-        segwidth = k * P_rot
-    
-        nsegments = np.floor((lc['time'][-1]-lc['time'][0])/segwidth)   #will skip data at the end if segwidth doesn't exactly fit lc length
-        tboundaries = np.arange(nsegments) * segwidth + lc['time'][0]
-    
-        #set up output array and index count
-    
-        pointindex = 0
-        sphot = []
-        npoints = []
-        segtimes = []
-        expectednpoints = segwidth/np.median(np.diff(lc['time']))
-        while lc['time'][-1]-lc['time'][pointindex] > segwidth:
-            stopindex = np.searchsorted(lc['time'],lc['time'][pointindex]+segwidth)
-            if stopindex - pointindex > 0.75*expectednpoints:
-                sphot.append(np.std(lc['flux'][pointindex:stopindex]))
-                npoints.append(stopindex-pointindex)
-                segtimes.append(np.mean(lc['time'][pointindex:stopindex]))
-            pointindex += 1
-        
-        sphot = np.array(sphot)
-        contrast = utils.CalcContrast(sphot,np.std(lc['flux']))
-        
-        return {'SPhot_mean':np.mean(sphot),'SPhot_median':np.median(sphot),'SPhot_max':np.max(sphot),'SPhot_min':np.min(sphot),'Contrast':contrast,'k':k}
-  
+        if len(self.sphotarray)==1:
+            if 'LSPeriod0' not in self.features.keys():
+                print 'Calculating LS Period first'
+                self.features['LSPeriod0'] = self.LSPeriod([0])
+                P_rot = self.features['LSPeriod0']
+            self.sphotarray = utils.SPhot(lc,P_rot)
+        contrast = utils.CalcContrast(self.sphotarray,np.std(lc['flux']))
+        return contrast
+              
 
    # def PontRedNoise(self,cut_outliers=False):
    #     lc = self.target.lightcurve
