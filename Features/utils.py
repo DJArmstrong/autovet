@@ -1,7 +1,47 @@
 import numpy as np
 from scipy import interpolate,stats
+import os
 
+def SaveFeatureSets(FeatureSets,activefeatures,outfile):
+    """
+    Takes a list of Featuresets and saves their features in a txt format.
 
+    Inputs:
+    FeatureSets: list of FeatureSet objects
+    activefeatures: list of the names of features to save. If any of these haven't been calculated, that object will be ignored.
+    outfile: filepath 
+    """
+    nfeatures = len(activefeatures)
+    nobjects = len(FeaturesSets)
+    outarray = np.zeros([nobjects,nfeatures])
+    outindex = []
+    outlabels = []
+    for f in range(nobjects):
+        try:
+            linetosave = np.array([FeatureSets[f].features[a] for a in activefeatures])
+            outarray[f,:] = np.array([FeatureSets[f].features[a] for a in activefeatures])
+            outindex.append(FeatureSets[f].target.id)
+            outlabels.append(FeatureSets[f].target.label)
+        except KeyError:  #one of the activefeatures has not been calculated
+            outarray[f,:] = np.ones(len(activefeatures))-101 #makes a row with all values=-100
+    
+    outarray = outarray[(outarray!=-100).all(axis=1)]  #removes rows where all entries are -100
+    np.savetxt(outfile,outarray,delimiter=',',header='#'+(' ').join(activefeatures))
+    
+    #save an index file containing ids and known classifications
+    filepaths = os.path.split(outfile)
+    with open(os.path.join(filepaths[0],'index_'+filepaths[1]),'w') as f:
+        for i in range(len(outindex)):
+            f.write(str(outindex[i])+','+str(outlabels[i])+'\n')
+
+def LoadFeatureFile(self):
+    if self.featurefile[:-4]=='.txt':
+        features = np.genfromtxt(self.featurefile,delimiter=',')
+        filepaths = os.path.split(self.featurefile)
+        indexfile = os.path.join(filepaths[0],'index_'+filepaths[1])
+        ids = np.genfromtxt(indexfile,delimiter=',')[:,0]
+    return ids,features
+        
 def Scatter(lc,window,cut_outliers=False):
     """
     STD around a smoothed lightcurve.

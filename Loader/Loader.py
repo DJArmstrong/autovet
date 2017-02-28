@@ -10,7 +10,7 @@ class Candidate(object):
 
     """ Obtain meta and lightcurve information for a specific candidate. """
     
-    def __init__(self,id,filepath,observatory='NGTS',label=None,hasplanet={'per':0.}):
+    def __init__(self,id,filepath,observatory='NGTS',label=-10,hasplanet={'per':0.}):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
@@ -18,7 +18,7 @@ class Candidate(object):
         id          -- object identifier. Observatory dependent.
         filepath    -- location of object file. Observatory dependent.
         observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
-        label       -- known classification, if candidate in training set. None if not known.
+        label       -- known classification, if known. 0 = false positive, 1 = planet. -10 if not known.
         hasplanet   -- if candidate has a known planet. If so, hasplanet should be a dict containing the keys 'per', 't0' and 'tdur' (planet period, epoch and transit duration, all in days)
         """
         self.id = id
@@ -95,6 +95,7 @@ class Candidate(object):
         if self.obs=='K2':
             linfit = np.polyfit(lc['time'],lc['flux'],1)
             lc['flux'] = lc['flux'] - np.polyval(linfit,lc['time']) + 1
+        del dat
         return lc
 
     def Flatten(self,winsize=6.,stepsize=0.3,polydegree=3,niter=10,sigmaclip=8.,gapthreshold=1.):
