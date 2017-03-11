@@ -1,5 +1,10 @@
 import numpy as np
-import pyfits
+
+try:
+    import pyfits
+except ImportError:
+    import astropy.io.fits as pyfits
+    
 import sys
 #import pylab as p
 #p.ion()
