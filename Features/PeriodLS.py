@@ -1,9 +1,7 @@
 
 import matplotlib.pyplot as p
 p.ion()
-import imp
-lomb = imp.load_source('lomb','/Users/davidarmstrong/Software/Python/Periodfinding/lomb.py')
-
+import lomb
 import numpy as np
 from scipy.optimize import curve_fit
 

@@ -48,7 +48,10 @@ class Featureset(object):
                 feature = getattr(self,featurename)(featuredict[featurename])
                 self.features[testkey] = feature
 
-
+    def Writeout(self,activefeatures):
+        featurelist = [self.features[a] for a in activefeatures]
+        return self.target.id,self.target.label, featurelist
+    
     def LSPeriod(self,args):
         """
         Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
