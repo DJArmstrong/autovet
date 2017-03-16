@@ -1,1 +1,4 @@
-from .Featureset import Featureset
+try:
+    from .Featureset import Featureset
+except:
+    pass

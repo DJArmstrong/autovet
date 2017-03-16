@@ -1,8 +1,15 @@
-
 import numpy as np
 import fitsio
 #import os
 import kepselfflatten
+#import itertools
+        
+try:
+    from ngtsio import ngtsio
+except ImportError:
+    from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+            
+
 
 
 #'Candidate' Class
@@ -10,13 +17,16 @@ class Candidate(object):
 
     """ Obtain meta and lightcurve information for a specific candidate. """
     
-    def __init__(self,id,filepath,observatory='NGTS',label=-10,hasplanet={'per':0.}):
+
+    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,hasplanet={'per':0.}):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
         Arguments:
         id          -- object identifier. Observatory dependent.
+                       if NGTS, id should be either a single obj_id (int / string) or array_like containing multiple obj_ids (int / string)
         filepath    -- location of object file. Observatory dependent.
+                       if NGTS, filepath should be array_like containing ['fieldname', 'ngts_version'] 
         observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
         label       -- known classification, if known. 0 = false positive, 1 = planet. -10 if not known.
         hasplanet   -- if candidate has a known planet. If so, hasplanet should be a dict containing the keys 'per', 't0' and 'tdur' (planet period, epoch and transit duration, all in days)
@@ -24,10 +34,11 @@ class Candidate(object):
         self.id = id
         self.filepath = filepath
         self.obs = observatory 
+        self.field_dic = field_dic
         self.planet = hasplanet
-        self.lightcurve = self.LoadLightcurve()
+        self.lightcurve, self.info = self.LoadLightcurve()
         self.label = label
-        self.lightcurve_f = self.Flatten()
+#        self.lightcurve_f = self.Flatten()
 
 
 
@@ -40,34 +51,55 @@ class Candidate(object):
         """
         if self.obs=='NGTS':
             #self.field = os.path.split(filepath)[1][:11]
-            lc = self.NGTSload()
+            lc, info = self.NGTSload()
         elif self.obs=='Kepler' or self.obs=='K2':
             lc = self.KepK2load()
+            info = None
         else:
             print 'Observatory not supported'
             
-        return lc
+        return lc, info
         
     
     
     def NGTSload(self):
         '''
-        filepath = <root> + <ngts_version> + <fieldname_camera_year_ngts_version.fits>
+        filepath = ['fieldname', 'ngts_version']
+        obj_id = 1 or '000001' or [1,2,3] or ['000001','000002','000003']
         '''
-        import ngtsio_autovet
-        fnames = {'nights':self.filepath, 'sysrem':None, 'bls':None, 'canvas':None}
-        dic = ngtsio_autovet.get( None, ['HJD','FLUX','FLUX_ERR'], obj_id=self.id, fnames=fnames )
+
+        lc_keys = ['HJD', 'FLUX', 'FLUX_ERR']
+        info_keys = ['OBJ_ID','FIELDNAME','NGTS_VERSION','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS','CCDX','CCDY','CENTDX','CENTDY']
         
-        nan_zero_cut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.equal(dic['FLUX'], 0)    
-        norm = np.median(dic['FLUX'][~nan_zero_cut])
+        #if there is no field_dic passed, use ngtsio to read out the info for a single object from the fits files
+        if self.field_dic is None:
+            fieldname, ngts_version = self.filepath
+            dic = ngtsio.get( fieldname, lc_keys + info_keys, obj_id=str(self.id).zfill(6), ngts_version=ngts_version, silent=True, set_nan=True )
+            
+        #if a field_dic is passed (in memory), then select the specific object
+        else:
+            ind_obj = np.where( self.field_dic['OBJ_ID'] == self.id )[0]
+            dic = {}
+            for key in self.field_dic:
+                try:
+                    dic[key] = self.field_dic[key][ind_obj].flatten()
+                except:
+                    dic[key] = self.field_dic[key]
+        
+        norm = np.nanmedian(dic['FLUX'])
         lc = {}
-        lc['time'] = dic['HJD'][~nan_zero_cut]
-        lc['flux'] = dic['FLUX'][~nan_zero_cut]/norm
-        lc['error'] = dic['FLUX_ERR'][~nan_zero_cut]/norm
-        del dic
-        return lc
+        lc['time'] = dic['HJD']
+        lc['flux'] = 1.*dic['FLUX']/norm
+        lc['error'] = 1.*dic['FLUX_ERR']/norm
         
-    
+        info = {}
+        for info_key in info_keys: 
+            info[info_key] = dic[info_key]
+            
+        del dic
+        return lc, info
+        
+        
     
     def KepK2load(self,inputcol='PDCSAP_FLUX',inputerr='PDCSAP_FLUX_ERR'):
         """
@@ -98,6 +130,8 @@ class Candidate(object):
         del dat
         return lc
 
+
+
     def Flatten(self,winsize=6.,stepsize=0.3,polydegree=3,niter=10,sigmaclip=8.,gapthreshold=1.):
         """
         Flattens loaded lightcurve using a running polynomial
@@ -116,12 +150,4 @@ class Candidate(object):
         lc_flatten['error'] = lcf[:,2]
         return lc_flatten
 
-
-def test():
-    can = Candidate('020057', '/wasp/scratch/TEST18/NG0409-1941_812_2016_TEST18.fits')
-    print can.lightcurve
     
-    
-    
-if __name__ == '__main__':
-    test()
