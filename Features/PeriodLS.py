@@ -8,18 +8,22 @@ from scipy.optimize import curve_fit
 
 class PeriodLS():
 
-    def __init__(self, lc, ofac=20., observatory=None, removethruster=True, removecadence=True):
+    def __init__(self, lc, ofac=20., observatory=None, removethruster=False, removecadence=False):
 
         self.data = lc
         self.ofac = ofac
-        self.removethruster = removethruster
-        self.removecadence = removecadence
+        if observatory=='K2':
+            self.removethruster = True
+            self.removecadence = True
+        else:
+            self.removethruster = removethruster
+            self.removecadence = removecadence
         self.obs = observatory
         self.periods = np.empty(0)
         self.ampratios = np.empty(0)
         
     def fit(self,peak_number):
-        if len(self.periods) < peak_number: #then calculate
+        if len(self.periods) <= peak_number: #then calculate
         
             flux = self.data['flux']
         
@@ -116,7 +120,7 @@ class PeriodLS():
             ampmax = np.sqrt(popt[0]**2+popt[1]**2)
             ampratios = [1.]
         
-            for ni in range(3):
+            for ni in range(peak_number+1):
                 fundamental_Freq = freqs[-1]
                 flux = removeharmonics(time,flux,fundamental_Freq)
                 fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)

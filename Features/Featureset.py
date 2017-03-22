@@ -18,6 +18,7 @@ class Featureset(object):
         self.useflatten = useflatten
         self.periodls = 0
         self.sphotarray = np.array([0])
+        self.tsfresh = None
                         
     def CalcFeatures(self,featuredict={}):
         """
@@ -51,6 +52,25 @@ class Featureset(object):
     def Writeout(self,activefeatures):
         featurelist = [self.features[a] for a in activefeatures]
         return self.target.id,self.target.label, featurelist
+
+    def TSFresh(self,args):
+        """
+        Calculates the complete set of tsfresh features (all generic timeseries features).
+        
+        The number of features TSFresh returns seems to be somewhat variable. Care may have to be taken with the rarer ones.
+        
+        Set up to run on one candidate, but could be changed to run on an entire field/set at once.
+        """
+        import tsfresh
+        from tsfresh import extract_features
+        import pandas as pd
+        
+        if self.tsfresh is None:  #will only calculate set the first time
+            tsinput = pd.DataFrame(self.target.lightcurve)
+            tsinput['index'] = np.ones(len(self.target.lightcurve['time']))
+            self.tsfresh = extract_features(tsinput,column_id='index',column_sort='time',column_value='flux')
+
+        return self.tsfresh[args[0]][1.0]
     
     def LSPeriod(self,args):
         """
@@ -262,6 +282,7 @@ class Featureset(object):
         contrast = utils.CalcContrast(self.sphotarray,np.std(lc['flux']))
         return contrast
               
+
 
    # def PontRedNoise(self,cut_outliers=False):
    #     lc = self.target.lightcurve
