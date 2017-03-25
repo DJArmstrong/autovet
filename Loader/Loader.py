@@ -18,7 +18,7 @@ class Candidate(object):
     """ Obtain meta and lightcurve information for a specific candidate. """
     
 
-    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,hasplanet={'per':0.}):
+    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.}):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
@@ -29,16 +29,19 @@ class Candidate(object):
                        if NGTS, filepath should be array_like containing ['fieldname', 'ngts_version'] 
         observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
         label       -- known classification, if known. 0 = false positive, 1 = planet. -10 if not known.
-        hasplanet   -- if candidate has a known planet. If so, hasplanet should be a dict containing the keys 'per', 't0' and 'tdur' (planet period, epoch and transit duration, all in days)
+        candidate_data   -- details of candidate transit. Should be a dict containing the keys 'per', 't0' and 'tdur' (planet period, epoch and transit duration, all in days). If not filled, certain features may not work. Candidate will be ignored in flattening procedure
         """
         self.id = id
         self.filepath = filepath
         self.obs = observatory 
         self.field_dic = field_dic
-        self.planet = hasplanet
         self.lightcurve, self.info = self.LoadLightcurve()
         self.label = label
-#        self.lightcurve_f = self.Flatten()
+        self.candidate_data = candidate_data
+        if observatory == 'Kepler' or observatory == 'K2':
+            self.lightcurve_f = self.Flatten()
+        else:
+            self.lightcurve_f = self.lightcurve
 
 
 
@@ -140,7 +143,7 @@ class Candidate(object):
         lc_flatten -- flattened lightcurve as dict, with keys time, flux, error
         """
         lc = self.lightcurve
-        if self.planet['per']>0:
+        if self.candidate_data['per']>0:
             lcf = kepselfflatten.Kepflatten(lc['time']-lc['time'][0],lc['flux'],lc['error'],np.zeros(len(lc['time'])),winsize,stepsize,polydegree,niter,sigmaclip,gapthreshold,lc['time'][0],False,True,self.planet['per'],self.planet['t0'],self.planet['tdur'])        
         else:
             lcf = kepselfflatten.Kepflatten(lc['time']-lc['time'][0],lc['flux'],lc['error'],np.zeros(len(lc['time'])),winsize,stepsize,polydegree,niter,sigmaclip,gapthreshold,lc['time'][0],False,False,0.,0.,0.)

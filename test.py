@@ -34,7 +34,7 @@ def test():
     width = dic['WIDTH'] / 3600. / 24. #in days
     
     filepath = [fieldname, ngts_version]
-    can = Candidate( obj_id, filepath, observatory='NGTS', field_dic=None, label=None, hasplanet={'per':period, 't0':epoch, 'tdur':width} )
+    can = Candidate( obj_id, filepath, observatory='NGTS', field_dic=None, label=None, candidate_data={'per':period, 't0':epoch, 'tdur':width} )
     print can.lightcurve
     print can.info
     
