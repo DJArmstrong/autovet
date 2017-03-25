@@ -144,7 +144,7 @@ class Candidate(object):
         """
         lc = self.lightcurve
         if self.candidate_data['per']>0:
-            lcf = kepselfflatten.Kepflatten(lc['time']-lc['time'][0],lc['flux'],lc['error'],np.zeros(len(lc['time'])),winsize,stepsize,polydegree,niter,sigmaclip,gapthreshold,lc['time'][0],False,True,self.planet['per'],self.planet['t0'],self.planet['tdur'])        
+            lcf = kepselfflatten.Kepflatten(lc['time']-lc['time'][0],lc['flux'],lc['error'],np.zeros(len(lc['time'])),winsize,stepsize,polydegree,niter,sigmaclip,gapthreshold,lc['time'][0],False,True,self.candidate_data['per'],self.candidate_data['t0'],self.candidate_data['tdur'])        
         else:
             lcf = kepselfflatten.Kepflatten(lc['time']-lc['time'][0],lc['flux'],lc['error'],np.zeros(len(lc['time'])),winsize,stepsize,polydegree,niter,sigmaclip,gapthreshold,lc['time'][0],False,False,0.,0.,0.)
         lc_flatten = {}
