@@ -8,14 +8,13 @@ import os
 
 class Featureset(object):
 
-    def __init__(self,Candidate,useflatten=False,sompath=None):
+    def __init__(self,Candidate,useflatten=False):
         """
         Calculate features for a given candidate or candidate list.
         
         Arguments:
         Candidate   -- instance of Candidate class.
         useflatten  -- bool, true to use flattened lightcurve for scatter based features
-        sompath     -- string, filepath to saved SOM Kohonen Layer. Can be ignored if no SOM features will be used.
         """
         self.features = {}
         self.target = Candidate
@@ -23,7 +22,6 @@ class Featureset(object):
         self.periodls = 0
         self.sphotarray = np.array([0])
         self.tsfresh = None
-        self.sompath = sompath
         self.som = None
         self.SOMarray = None
         self.__somlocation__ = os.path.join(os.getcwd(),'Features/TransitSOM/')
@@ -89,28 +87,24 @@ class Featureset(object):
         else:
             lc = self.target.lightcurve
         if self.target.obs == 'Kepler':
-            self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'snrcut_30_lr01_300_20_20_bin50.txt'),20,20,50,0.1)
-            if self.SOMarray is None:
+            if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'snrcut_30_lr01_300_20_20_bin50.txt'),20,20,50,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=50)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=0,case=2,flocation=self.__somlocation__)
             
         elif self.target.obs == 'K2':
-            self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'k2all_lr01_500_8_8_bin20.txt'),8,8,20,0.1)
-            if self.SOMarray is None:
+            if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'k2all_lr01_500_8_8_bin20.txt'),8,8,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=1,case=2,flocation=self.__somlocation__)
             
         elif self.target.obs == 'NGTS':
             if self.som is None:
-                if self.sompath is None:
-                    print 'Need sompath to be set'
-                    return -10
-                else:      
-                    lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
-                    self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
-                    self.som = TSOM.TSOM.LoadSOM(self.sompath,20,20,20) #limited to 20x20 SOMs, with 20 points binned acros the transit, for NGTS
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
+                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
+                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__)
             
         return planet_prob
@@ -133,11 +127,7 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             elif self.target.obs=='NGTS':
-                if self.sompath is None:
-                    print 'Need sompath to be set'
-                    return -10
-                else:
-                    self.som = TSOM.TSOM.LoadSOM(self.sompath,20,20,20) #limited to 20x20 SOMs, with 20 points binned acros the transit.
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
@@ -158,15 +148,11 @@ class Featureset(object):
             return -10
         else:
             if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 if self.useflatten:
                     lc = self.target.lightcurve_f
                 else:
                     lc = self.target.lightcurve
-                if self.sompath is None:
-                    print 'Need sompath to be set'
-                    return -10
-                else:
-                    self.som = TSOM.TSOM.LoadSOM(self.sompath,20,20,20) #limited to 20x20 SOMs, with 20 points binned acros the transit.
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
@@ -187,15 +173,11 @@ class Featureset(object):
             return -10
         else:
             if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 if self.useflatten:
                     lc = self.target.lightcurve_f
                 else:
                     lc = self.target.lightcurve
-                if self.sompath is None:
-                    print 'Need sompath to be set'
-                    return -10
-                else:
-                    self.som = TSOM.TSOM.LoadSOM(self.sompath,20,20,20) #limited to 20x20 SOMs, with 20 points binned acros the transit.
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
