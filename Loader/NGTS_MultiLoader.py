@@ -1,10 +1,11 @@
 import numpy as np
         
-try:
-    from ngtsio import ngtsio
-except ImportError:
-    from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-            
+#try:
+#    from ngtsio import ngtsio
+#except ImportError:
+#    from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+
 from Loader import Candidate
 
 
