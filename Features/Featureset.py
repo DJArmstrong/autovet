@@ -19,12 +19,13 @@ class Featureset(object):
         self.features = {}
         self.target = Candidate
         self.useflatten = useflatten
-        self.periodls = 0
+        self.periodls = None
         self.sphotarray = np.array([0])
         self.tsfresh = None
         self.som = None
         self.SOMarray = None
         self.__somlocation__ = os.path.join(os.getcwd(),'Features/TransitSOM/')
+        self.secondary = None
                         
     def CalcFeatures(self,featuredict={}):
         """
@@ -202,7 +203,7 @@ class Featureset(object):
         period -- peak peak_number from Lomb-Scargle periodogram
         """
         peak_number = args[0]
-        if not self.periodls: #checks it hasn't been defined before
+        if self.periodls is None: #checks it hasn't been defined before
             if self.target.obs == 'K2':
                 self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
             else:
@@ -400,7 +401,57 @@ class Featureset(object):
         contrast = utils.CalcContrast(self.sphotarray,np.std(lc['flux']))
         return contrast
               
+    def MaxSecDepth(self,args):
+        """
+        Returns maximum depth of secondary eclipse, in relative flux.
+        
+        Scans a box of width the transit duration over phases 0.3 to 0.7. Returns maximum significance of box relative to local phasecurve, normalised by point errors.
+        """
+        if self.secondary is None:
+            if self.useflatten:
+                lc = self.target.lightcurve_f
+            else:
+                lc = self.target.lightcurve 
+            per = self.target.candidate_data['per']
+            t0 = self.target.candidate_data['t0']
+            tdur = self.target.candidate_data['tdur']
+            self.secondary = utils.FindSecondary(lc,per,t0,tdur)
+        return self.secondary['depth']
 
+    def MaxSecPhase(self,args):
+        """
+        Returns phase location of maximum secondary eclipse.
+        
+        Scans a box of width the transit duration over phases 0.3 to 0.7. Returns maximum significance of box relative to local phasecurve, normalised by point errors.
+        """
+        if self.secondary is None:
+            if self.useflatten:
+                lc = self.target.lightcurve_f
+            else:
+                lc = self.target.lightcurve 
+            per = self.target.candidate_data['per']
+            t0 = self.target.candidate_data['t0']
+            tdur = self.target.candidate_data['tdur']
+            self.secondary = utils.FindSecondary(lc,per,t0,tdur)
+        return self.secondary['phase']
+
+    def MaxSecSig(self,args):
+        """
+        Returns significance of maximum secondary eclipse, normalised by errors.
+        
+        Scans a box of width the transit duration over phases 0.3 to 0.7. Returns maximum significance of box relative to local phasecurve, normalised by point errors.
+        """
+        if self.secondary is None:
+            if self.useflatten:
+                lc = self.target.lightcurve_f
+            else:
+                lc = self.target.lightcurve 
+            per = self.target.candidate_data['per']
+            t0 = self.target.candidate_data['t0']
+            tdur = self.target.candidate_data['tdur']
+            self.secondary = utils.FindSecondary(lc,per,t0,tdur)
+        return self.secondary['significance']
+        
 
    # def PontRedNoise(self,cut_outliers=False):
    #     lc = self.target.lightcurve
