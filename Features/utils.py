@@ -158,3 +158,46 @@ def BinPhaseLC(phaselc,nbins):
             binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
             binnedstds[bin] = np.std(phaselc[:,1])
     return binnedlc,binnedstds
+    
+def FindSecondary(lc,per,t0,tdur):
+    """
+    Returns dict of information on maximum possible secondary eclipse.
+        
+    Scans a box of width the transit duration over phases 0.3 to 0.7. Returns maximum significance of box relative to local phasecurve, normalised by point errors.
+    """
+    tdur_phase = tdur/per
+    flux = lc['flux'].copy()
+    err = lc['error'].copy()
+    phase = np.mod(lc['time']-t0,per)/per
+    idx = np.argsort(phase)
+    flux = flux[idx]
+    phase = phase[idx]
+    err = err[idx]
+        
+    #scan a box of width tdur over phase 0.3-0.7.
+    scanresolution = tdur_phase/10.
+    ntests = int(0.4*per/scanresolution)
+    centphases = np.linspace(0.3,0.7,ntests)
+    minphases = centphases - tdur_phase*0.5
+    maxphases = centphases + tdur_phase*0.5
+    secdepths = np.zeros(ntests)
+    secdepthsigs = np.zeros(ntests)
+    for t in range(ntests):
+        lolim = np.searchsorted(phase,minphases[t])
+        hilim = np.searchsorted(phase,maxphases[t])
+        npoints = hilim-lolim
+        if npoints > 0:
+            base1 = np.median(flux[lolim-npoints*2:lolim])
+            base2 = np.median(flux[hilim:hilim+npoints*2])
+            base = (base1+base2)*0.5
+            depth = base - np.mean(flux[lolim:hilim])
+            deptherror = np.mean(err[lolim:hilim])/np.sqrt(npoints)
+            secdepthsigs[t] = depth/deptherror
+            secdepths[t] = depth
+    maxidx = np.argmax(secdepthsigs)
+    secondary = {}
+    secondary['phase'] = centphases[maxidx]
+    secondary['depth'] = secdepths[maxidx]
+    secondary['significance'] = secdepthsigs[maxidx]
+    return secondary
+
