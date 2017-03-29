@@ -140,9 +140,8 @@ def FillGaps_Linear(time,flux):
     interp_flux = interp_obj(interp_times)
     return interp_times,interp_flux
 
-
-def phasefold(time,per):
-    return np.mod(time,per)/per
+def phasefold(time,per,t0=0):
+    return np.mod(time-t0,per)/per
     
 def BinPhaseLC(phaselc,nbins):
     bin_edges = np.arange(nbins)/float(nbins)
@@ -168,7 +167,7 @@ def FindSecondary(lc,per,t0,tdur):
     tdur_phase = tdur/per
     flux = lc['flux'].copy()
     err = lc['error'].copy()
-    phase = np.mod(lc['time']-t0,per)/per
+    phase = phasefold(lc['time'],per,t0)
     idx = np.argsort(phase)
     flux = flux[idx]
     phase = phase[idx]

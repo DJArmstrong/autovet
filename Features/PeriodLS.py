@@ -26,17 +26,7 @@ class PeriodLS():
         if len(self.periods) <= peak_number: #then calculate
         
             flux = self.data['flux']
-        
             time = self.data['time']
-
-
-            #fx, fy, nout, jmax, prob = lomb.fasper(time, magnitude, self.ofac, 1.)
-            #import pylab as p
-            #p.ion()
-            #p.clf()
-            #p.plot(fx,fy,'b.-')
-            #raw_input()
-
 
             def model(x, a, b, c, Freq):
                 return a*np.sin(2*np.pi*Freq*x)+b*np.cos(2*np.pi*Freq*x)+c
@@ -95,13 +85,19 @@ class PeriodLS():
 
             fx, fy, nout, jmax, prob = lomb.fasper(time, flux, self.ofac, 1.)
 
+            #limit allowed periods, depending on mission
             if self.obs == 'K2':
                 if time[-1]-time[0] >= 50.:
                     lowcut = 1./fx<=20.
                 else:
                     lowcut = 1./fx<=10.
-                fx = fx[lowcut]
-                fy = fy[lowcut]
+            elif self.obs == 'TESS':
+                trange = time[-1]-time[0]
+                lowcut = 1./fx <= trange/2.
+            else:
+                lowcut = 1./fx<= 1000000.
+            fx = fx[lowcut]
+            fy = fy[lowcut]
         
             if self.removethruster:
                 fx,fy = cutthrusterfreqs(fx,fy)
