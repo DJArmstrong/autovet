@@ -34,8 +34,7 @@ class Featureset(object):
         Inputs:
         featuredict -- dict of features to calculate. {} to use observatory defaults. Feature name should be key, value should be necessary arguments (will often be empty list)
 
-        Returns
-        self.features -- a dict containing all calculated features
+        Results go in self.features -- a dict containing all calculated features
         """
         if len(featuredict.keys())==0:
             if self.target.obs == 'NGTS':
@@ -48,13 +47,28 @@ class Featureset(object):
                 print 'Observatory not supported, please input desired feature list'
 
         for featurename in featuredict.keys():
-            if len(featuredict[featurename])>0:
-                testkey = featurename+str(featuredict[featurename][0])
+            flag = 0
+            if len(featuredict[featurename])>0:  #avoid recalculating features
+                keys = [featurename+str(x) for x in featuredict[featurename]]
+                for key in keys:
+                    if key not in self.features.keys():
+                        flag = 1  #will recalculate all if one entry is new
             else:
-                testkey = featurename
-            if testkey not in self.features.keys():  #avoid recalculating features
-                feature = getattr(self,featurename)(featuredict[featurename])
-                self.features[testkey] = feature
+                if featurename not in self.features.keys():  
+                    flag = 1
+            if flag:
+                try:
+                    feature = getattr(self,featurename)(featuredict[featurename])
+                    if len(featuredict[featurename])>0:
+                        for k,key in enumerate(keys):
+                            self.features[key] = feature[k]
+                    else:
+                        self.features[featurename] = feature                
+                except AttributeError:  #feature requested is not an available method. Treats this as an external feature and adds the argument passed as the feature value.
+                    if len(featuredict[featurename]) == 1:
+                        self.features[featurename] = featuredict[featurename]
+                    else:
+                        print 'Feature not recognised: '+str(featurename)    
 
     def Writeout(self,activefeatures):
         featurelist = [self.features[a] for a in activefeatures]
@@ -196,42 +210,50 @@ class Featureset(object):
         Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
         
         Inputs:
-        args -- [peak_number]
+        args -- [peak_number1,peak_number2,...]
         peak_number  --  which LS peak to extract (starts at 0 for largest peak). If multiple, should call this function with the largest peak_number desired first.
         
         Returns:
-        period -- peak peak_number from Lomb-Scargle periodogram
+        [period1,period2,...] -- peak peak_number from Lomb-Scargle periodogram
         """
-        peak_number = args[0]
         if self.periodls is None: #checks it hasn't been defined before
             if self.target.obs == 'K2':
                 self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
             else:
                 self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs,removethruster=False,removecadence=False)
-        self.periodls.fit(peak_number) #will only run fit if peak_number greater than any previously run. However, will run fit from start (fit once, remove peak, refit, etc) otherwise.
-        period = self.periodls.periods[peak_number]
-        return period
+        output = []
+        for peak_number in args:
+            self.periodls.fit(peak_number) #will only run fit if peak_number greater than any previously run. However, will run fit from start (fit once, remove peak, refit, etc) otherwise.
+            output.append(self.periodls.periods[peak_number])
+        if len(output)==1:
+            return output[0]
+        else:
+            return output
 
     def LSAmp(self,args): 
         """
         Get dominant periods and ratio of Lomb-Scargle amplitudes for each.
         
         Inputs:
-        args -- [amp_number]
-        peak_number  --  which LS peak to extract
+        args -- [amp_number1,amp_number2,...]
+        amp_number  --  which LS peak amplitude ratio to extract
         
         Returns:
-        ampratio -- ratio of peak peak_number amplitude to maximum peak amplitude
+        [ampratio1,ampratio2,...] -- ratio of peak peak_number amplitude to maximum peak amplitude
         """
-        peak_number = args[0]
         if not self.periodls: #checks it hasn't been defined before
             if self.target.obs == 'K2':
                 self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs)        
             else:
                 self.periodls = PeriodLS.PeriodLS(self.target.lightcurve,observatory=self.target.obs,removethruster=False,removecadence=False)
-        self.periodls.fit(peak_number)
-        ampratio = self.periodls.ampratios[peak_number]
-        return ampratio
+        output = []
+        for peak_number in args:
+            self.periodls.fit(peak_number)
+            output.append(self.periodls.ampratios[peak_number])
+        if len(output)==1:
+            return output[0]
+        else:
+            return output
 
     def EBPeriod(self,args):
         """
@@ -245,12 +267,12 @@ class Featureset(object):
         """
         lc = self.target.lightcurve
         if 'LSPeriod0' not in self.features.keys():
-            print 'Calculating LS Period first'
-            self.features['LSPeriod0'] = LSPeriod([0])
+            self.features['LSPeriod0'] = self.LSPeriod([0])
         period = self.features['LSPeriod0']
      
         phaselc2P = np.zeros([len(lc['time']),2])
         phaselc2P[:,0] = utils.phasefold(lc['time'],period*2)
+        phaselc2P[:,1] = lc['flux']
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
         binnedlc2P,binstd = utils.BinPhaseLC(phaselc2P,64)
 
@@ -354,9 +376,8 @@ class Featureset(object):
         if len(self.sphotarray)==1:
             lc = self.target.lightcurve
             if 'LSPeriod0' not in self.features.keys():
-                print 'Calculating LS Period first'
                 self.features['LSPeriod0'] = self.LSPeriod([0])
-                P_rot = self.features['LSPeriod0']
+            P_rot = self.features['LSPeriod0']
             self.sphotarray = utils.SPhot(lc,P_rot)
         return np.mean(self.sphotarray)
         
@@ -364,9 +385,8 @@ class Featureset(object):
         if len(self.sphotarray)==1:
             lc = self.target.lightcurve
             if 'LSPeriod0' not in self.features.keys():
-                print 'Calculating LS Period first'
                 self.features['LSPeriod0'] = self.LSPeriod([0])
-                P_rot = self.features['LSPeriod0']
+            P_rot = self.features['LSPeriod0']
             self.sphotarray = utils.SPhot(lc,P_rot)
         return np.median(self.sphotarray)
         
@@ -374,9 +394,8 @@ class Featureset(object):
         if len(self.sphotarray)==1:
             lc = self.target.lightcurve
             if 'LSPeriod0' not in self.features.keys():
-                print 'Calculating LS Period first'
                 self.features['LSPeriod0'] = self.LSPeriod([0])
-                P_rot = self.features['LSPeriod0']
+            P_rot = self.features['LSPeriod0']
             self.sphotarray = utils.SPhot(lc,P_rot)
         return np.max(self.sphotarray)    
 
@@ -384,9 +403,8 @@ class Featureset(object):
         if len(self.sphotarray)==1:
             lc = self.target.lightcurve
             if 'LSPeriod0' not in self.features.keys():
-                print 'Calculating LS Period first'
                 self.features['LSPeriod0'] = self.LSPeriod([0])
-                P_rot = self.features['LSPeriod0']
+            P_rot = self.features['LSPeriod0']
             self.sphotarray = utils.SPhot(lc,P_rot)
         return np.max(self.sphotarray)  
     
@@ -394,9 +412,8 @@ class Featureset(object):
         lc = self.target.lightcurve
         if len(self.sphotarray)==1:
             if 'LSPeriod0' not in self.features.keys():
-                print 'Calculating LS Period first'
                 self.features['LSPeriod0'] = self.LSPeriod([0])
-                P_rot = self.features['LSPeriod0']
+            P_rot = self.features['LSPeriod0']
             self.sphotarray = utils.SPhot(lc,P_rot)
         contrast = utils.CalcContrast(self.sphotarray,np.std(lc['flux']))
         return contrast
@@ -451,8 +468,49 @@ class Featureset(object):
             tdur = self.target.candidate_data['tdur']
             self.secondary = utils.FindSecondary(lc,per,t0,tdur)
         return self.secondary['significance']
-        
 
+    def LSPhase_amp(self,args):
+        lc = self.target.lightcurve
+        #if 'LSPeriod0' not in self.features.keys():
+        #    print 'Calculating LS Period first'
+        #    self.features['LSPeriod0'] = self.LSPeriod([0])
+        if 'EBPeriod' not in self.features.keys():
+            self.features['EBPeriod'] = self.EBPeriod([])
+        per = self.features['EBPeriod']
+        phase = utils.phasefold(lc['time'],per)
+        phasedat = np.array([phase,lc['flux']]).T
+        phasedat = phasedat[np.argsort(phase),:]
+        if len(lc['time']) > 500:
+            nbins = 200
+        else:
+            nbins = int(len(lc['time'])/3.)
+        binflux,binerrs = utils.BinPhaseLC(phasedat,nbins)
+        return np.max(binflux[:,1]) - np.min(binflux[:,1])
+        
+    def LSPhase_p2pmean(self,args):
+        lc = self.target.lightcurve
+        #if 'LSPeriod0' not in self.features.keys():
+        #    print 'Calculating LS Period first'
+        #    self.features['LSPeriod0'] = self.LSPeriod([0])
+        if 'EBPeriod' not in self.features.keys():
+            self.features['EBPeriod'] = self.EBPeriod([])
+        per = self.features['EBPeriod']
+        phase = utils.phasefold(lc['time'],per)
+        p2p = np.diff(lc['flux'][np.argsort(phase)])
+        return np.mean(p2p)
+
+    def LSPhase_p2pmax(self,args):        
+        lc = self.target.lightcurve
+        #if 'LSPeriod0' not in self.features.keys():
+        #    print 'Calculating LS Period first'
+        #    self.features['LSPeriod0'] = self.LSPeriod([0])
+        if 'EBPeriod' not in self.features.keys():
+            self.features['EBPeriod'] = self.EBPeriod([])
+        per = self.features['EBPeriod']
+        phase = utils.phasefold(lc['time'],per)
+        p2p = np.diff(lc['flux'][np.argsort(phase)])
+        return np.max(p2p)
+        
    # def PontRedNoise(self,cut_outliers=False):
    #     lc = self.target.lightcurve
    

@@ -58,6 +58,9 @@ class Candidate(object):
         elif self.obs=='Kepler' or self.obs=='K2':
             lc = self.KepK2load()
             info = None
+        elif self.obs=='TESS':
+            lc = self.TESSload()
+            info = None
         else:
             print 'Observatory not supported'
             
@@ -133,7 +136,25 @@ class Candidate(object):
         del dat
         return lc
 
-
+    def TESSload(self):
+        """
+        Loads a TESS lightcurve (currently just the TASC WG0 simulated ones), normalised and with NaNs removed.
+        
+        Returns:
+        lc -- lightcurve as dict, with keys time, flux, error. error is populated with zeros.
+        """
+        dat = np.genfromtxt(self.filepath)
+        time = dat[:,0]
+        flux = dat[:,1]
+        err = np.zeros(len(time))
+        nancut = np.isnan(time) | np.isnan(flux)
+        norm = np.median(flux[~nancut])
+        lc = {}
+        lc['time'] = time[~nancut]
+        lc['flux'] = flux[~nancut]/norm
+        lc['error'] = err[~nancut]/norm
+        del dat
+        return lc
 
     def Flatten(self,winsize=6.,stepsize=0.3,polydegree=3,niter=10,sigmaclip=8.,gapthreshold=1.):
         """
