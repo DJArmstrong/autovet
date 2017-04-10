@@ -49,19 +49,29 @@ class PeriodLS():
                 return flux
         
             def cutthrusterfreqs(fx,fy):
+                thrusterfreq = 0.2448
                 for i in range(4):
-                    thrustercut = (fx > 1./((i+1)*0.2448)*(1-0.01)) & (fx < 1./((i+1)*0.2448)*(1+0.01)) #just in case...   
+                    thrustercut = (fx > 1./((i+1)*thrusterfreq)*(1-0.01)) & (fx < 1./((i+1)*thrusterfreq)*(1+0.01)) #just in case...   
                     fx = fx[~thrustercut]
                     fy = fy[~thrustercut]
                 return fx,fy
                 
             def cutcadencefreqs(fx,fy):
-                for i in range(4):
-                    cadencecut = (fx > 1./((i+1)*0.020431698)*(1-0.01)) & (fx < 1./((i+1)*0.020431698)*(1+0.01)) #just in case...   
+                cadencefreq = 0.020431698
+                for i in range(4):  #cuts 4 harmonics of frequency
+                    cadencecut = (fx > 1./((i+1)*cadencefreq)*(1-0.01)) & (fx < 1./((i+1)*cadencefreq)*(1+0.01)) #just in case...   
                     fx = fx[~cadencecut]
                     fy = fy[~cadencecut]
                 return fx,fy
-                     
+        
+            def cutTESSfocusfreqs(fx,fy):
+                focusfreq = 13.49/4.  #so cuts the main one and higher frequencies
+                for i in range(4):  #cuts 4 harmonics of frequency, within +-3% of given frequency
+                    focuscut = (fx > 1./((i+1)*focusfreq)*(1-0.03)) & (fx < 1./((i+1)*focusfreq)*(1+0.03)) #just in case...   
+                    fx = fx[~focuscut]
+                    fy = fy[~focuscut]
+                return fx,fy        
+            
             if self.removethruster:        
                 thrusterfreqs = 1./np.array([0.23995485,0.24058965,0.24122445,0.24185925,0.24249405,0.24312886,0.24376366,0.24439846,0.24503326,0.24566806,0.24630286,0.24693766,0.24757246,0.24820727,0.24884207,0.24947687])
                 #thrusterfreqs = (fx > 0.2448*(1-0.05)) & (fx < 0.2448*(1+0.05))
@@ -93,7 +103,7 @@ class PeriodLS():
                     lowcut = 1./fx<=10.
             elif self.obs == 'TESS':
                 trange = time[-1]-time[0]
-                lowcut = 1./fx <= trange/2.
+                lowcut = 1./fx <= trange/2.*0.9  #less 10%, to cleanly avoid the focuser period for the 27day targets at least.
             else:
                 lowcut = 1./fx<= 1000000.
             fx = fx[lowcut]
@@ -104,10 +114,22 @@ class PeriodLS():
              
             if self.removecadence:
                 fx,fy = cutcadencefreqs(fx,fy)
- 
-            #p.figure(1)
-            #p.clf()
-            #p.plot(fx,fy,'b.-')
+            
+            if self.obs == 'TESS':
+                #print 'DIAG HERE'
+                #p.figure(1)
+                #p.clf()
+                #p.plot(fx,fy,'b.-')
+                fx,fy = cutTESSfocusfreqs(fx,fy)
+                #p.plot(fx,fy,'r.-')
+                #p.figure(2)
+                #p.clf()
+                #p.plot(time,flux,'b.')
+                #p.figure(3)
+                #p.clf()
+                #p.plot(np.mod(time,fx[np.argmax(fy)])/fx[np.argmax(fy)],flux,'r.')
+                #print fx[np.argmax(fy)]
+                #raw_input()
             #max_y = np.max(fy)
         
             #period = fx[jmax]
@@ -126,17 +148,25 @@ class PeriodLS():
                         lowcut = 1./fx<=20.
                     else:
                         lowcut = 1./fx<=10.
-                    fx = fx[lowcut]
-                    fy = fy[lowcut]
+                elif self.obs == 'TESS':
+                    trange = time[-1]-time[0]
+                    lowcut = 1./fx <= trange/2.
+                else:
+                    lowcut = 1./fx<= 1000000.
+                fx = fx[lowcut]
+                fy = fy[lowcut]
                 if self.removethruster:
                     fx,fy = cutthrusterfreqs(fx,fy)
                 if self.removecadence:
                     fx,fy = cutcadencefreqs(fx,fy)
+                if self.obs == 'TESS':
+                    fx,fy = cutTESSfocusfreqs(fx,fy)
+                
                 freq = fx[np.argmax(fy)]
                 popt, pcov = curve_fit(yfunc(freq), time, flux)
                 amp = np.sqrt(popt[0]**2+popt[1]**2)
                
-                freqs.append(fx[np.argmax(fy)])
+                freqs.append(freq)
                 ampratios.append(amp/ampmax)
                         
             #print freqs
