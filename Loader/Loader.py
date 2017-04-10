@@ -4,11 +4,11 @@ import fitsio
 import kepselfflatten
 #import itertools
         
-try:
-    from ngtsio import ngtsio
-except ImportError:
-    from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-            
+#try:
+#    from ngtsio import ngtsio
+#except ImportError:
+#    from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio            
 
 
 
