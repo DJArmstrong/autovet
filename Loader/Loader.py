@@ -8,7 +8,7 @@ import kepselfflatten
 #    from ngtsio import ngtsio
 #except ImportError:
 #    from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio            
+from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio            
 
 
 
@@ -36,6 +36,7 @@ class Candidate(object):
         self.obs = observatory 
         self.field_dic = field_dic
         self.lightcurve, self.info = self.LoadLightcurve()
+        self.exp_time = np.median(np.diff(self.lightcurve['time']))
         self.label = label
         self.candidate_data = candidate_data
         if observatory == 'Kepler' or observatory == 'K2':

@@ -200,3 +200,18 @@ def FindSecondary(lc,per,t0,tdur):
     secondary['significance'] = secdepthsigs[maxidx]
     return secondary
 
+def SplitOddEven(lc,per,t0,oddeven):
+    time = lc['time']
+    flux = lc['flux']
+    err = lc['error']
+    phase = phasefold(time,per*2,t0)
+    if oddeven=='even':
+        split = (phase <= 0.25) | (phase > 0.75)
+    else:
+        split = (phase > 0.25) & (phase <= 0.75)
+    splitlc = {'time':time[split],'flux':flux[split],'error':err[split]}
+    return splitlc
+    
+    
+    
+    
