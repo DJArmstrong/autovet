@@ -353,9 +353,9 @@ class Featureset(object):
             lc = self.target.lightcurve
         return utils.Scatter(lc,16,cut_outliers=True) #16points is 8 hours
 
-    def CDPP_6(self,args):
+    def RMS_6(self,args):
         """
-        CDPP on 6-hour timescale. Calculated through std around a 6-hour moving average.
+        RMS on 6-hour timescale. Calculated through std around a 6-hour moving average.
         """
         if self.useflatten:
             lc = self.target.lightcurve_f  #uses flattened lightcurve
@@ -523,7 +523,7 @@ class Featureset(object):
         p2p = np.diff(lc['flux'][np.argsort(phase)])
         return np.max(p2p)
 
-    def Fit_period(self,args):
+    def Fit_period(self,args):  #change to useflatten option?
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[0]
@@ -723,5 +723,78 @@ class Featureset(object):
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         #err = np.max([self.eventransitfit.errors[3],self.oddtransitfit.errors[3]])
         return np.abs(self.eventransitfit.params[3] - self.oddtransitfit.params[3])/self.eventransitfit.params[3]
-    
-    
+
+    def RPlanet(self,args):
+        if self.transitfit is None:
+            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
+        rsun = 6957000000.
+        rearth = 6371000.
+        return self.transitfit.params[3]*self.target.stellar_radius* rearth/rsun  #in earth radii
+           
+    def TransitSNR(self,args):
+        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
+        per = self.target.candidate_data['per']
+        t0 = self.target.candidate_data['t0']
+        
+        if self.useflatten:
+            lc = self.target.lightcurve_f
+        else:
+            lc = self.target.lightcurve 
+
+        #get depth of transit (using period and data, not fit).
+        binnedlc = utils.BinTransitDuration(lc,per,t0,tdur*0.8) #0.8 is to avoid ingress and egress
+        binnedlc = binnedlc[binnedlc[:,1]>=0]
+        transitbin = binnedlc[0,1]
+        noise = np.std(binnedlc[2:-2,1]) #avoids duration bins containing ingress and egress
+        return (1-transitbin)/noise
+
+    def SingleTransitEvidence(self,args):
+        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
+        per = self.target.candidate_data['per']
+        t0 = self.target.candidate_data['t0']
+        tdur_phase = tdur/per
+        
+        if self.useflatten:
+            lc = self.target.lightcurve_f
+        else:
+            lc = self.target.lightcurve 
+        
+        phase = utils.phasefold(lc['time'],per,t0)
+        transits = np.where((np.abs(np.diff(phase))>0.9)&((phase[:-1]<tdur_phase/2.)|(phase[:-1]>1-tdur_phase/2.)))[0]
+        segwidth = 9
+        sesratios = []
+        for transit in transits:
+            ttime = lc['time'][transit]
+            segstart = np.searchsorted(lc['time'],ttime-segwidth/2.*tdur)
+            segend = np.searchsorted(lc['time'],ttime+segwidth/2.*tdur)
+            lcseg = {}
+            lcseg['time'] = lc['time'][segstart:segend]
+            lcseg['flux'] = lc['flux'][segstart:segend]
+            if segend-segstart > 21:  #implies 3 points per transit duration 
+                binnedlc = utils.BinTransitDuration(lcseg,per,t0,tdur)
+                binnedlc = binnedlc[binnedlc[:,1]>=0]
+                sesratios.append((1-binnedlc[0,1])/np.std(binnedlc[2:-2,1]))
+        return np.median(np.array(sesratios))
+                    
+        #also, another feature - return a measure of the dispersion - is, roughly speaking, the evidence coming from every transit?
+        
+
+    def RMS_TDUR(self,args):
+        """
+        RMS on transit duration timescale. Calculated through std around a transit duration moving average.
+        """
+        if self.useflatten:
+            lc = self.target.lightcurve_f  #uses flattened lightcurve
+        else:
+            lc = self.target.lightcurve
+            
+        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
+        cadence = np.median(np.diff(lc['time']))
+        npoints = np.round(tdur/cadence)   
+        return utils.Scatter(lc,npoints,cut_outliers=True)
+        
+            
+        #same for just one transit - but do it by taking the above result and dividing down by number of transits square rooted or whatever the formula is.
+        
+
+        #same but the average resulting from doing this across the whole lightcurve. - as a baseline noise metric.   
