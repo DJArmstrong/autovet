@@ -18,7 +18,7 @@ class Candidate(object):
     """ Obtain meta and lightcurve information for a specific candidate. """
     
 
-    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.}):
+    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.},stellar_radius=1.):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
@@ -30,6 +30,7 @@ class Candidate(object):
         observatory -- source of candidate. Accepted values are: [NGTS,Kepler,K2]
         label       -- known classification, if known. 0 = false positive, 1 = planet. -10 if not known.
         candidate_data   -- details of candidate transit. Should be a dict containing the keys 'per', 't0' and 'tdur' (planet period, epoch and transit duration, all in days). If not filled, certain features may not work. Candidate will be ignored in flattening procedure
+        stellar_radius   -- estimate of the host star radius, in solar radii. Used to estimate the planetary radius.
         """
         self.id = id
         self.filepath = filepath
@@ -43,6 +44,7 @@ class Candidate(object):
             self.lightcurve_f = self.Flatten()
         else:
             self.lightcurve_f = self.lightcurve
+        self.stellar_radius = stellar_radius  #in solar, will default to 1 if not given
 
 
 

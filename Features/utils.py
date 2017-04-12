@@ -212,6 +212,25 @@ def SplitOddEven(lc,per,t0,oddeven):
     splitlc = {'time':time[split],'flux':flux[split],'error':err[split]}
     return splitlc
     
+def BinTransitDuration(lc,per,t0,tdur):
+    #idea is to have one bin per T23 transit duration, with the first bin covering that region of the phase curve.
+    tdur_phase = tdur/per
+    nbins = np.ceil(1./tdur_phase).astype('int')
+    phase = phasefold(lc['time']+tdur/2.,per,t0)  #+tdur/2. means that phase curve starts at the beginning of tdur
+    idx = np.argsort(phase)
+    flux = lc['flux'][idx]
+    time = lc['time'][idx]
+    phase = phase[idx]
+    bin_edges = np.arange(nbins)/float(nbins)
+    bin_indices = np.digitize(phase,bin_edges) - 1
+    binnedlc = np.zeros([nbins,2])
+    binnedlc[:,0] = 1./nbins * 0.5 +bin_edges  #fixes phase of all bins - means ignoring locations of points in bin, but necessary for SOM mapping
+    for bin in range(nbins):
+        if np.sum(bin_indices==bin) > 0:
+            binnedlc[bin,1] = np.mean(flux[bin_indices==bin])  #doesn't make use of sorted phase array, could probably be faster?
+        else:
+            binnedlc[bin,1] = -10.  #bit awkward this, but only alternative is to interpolate?
+    return binnedlc
     
     
     
