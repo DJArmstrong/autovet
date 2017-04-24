@@ -28,12 +28,13 @@ class Featureset(object):
         self.__somlocation__ = os.path.join(os.getcwd(),'Features/TransitSOM/')
         self.secondary = None
         self.transitfit = None
+        self.trapfit = None
         self.evenlc = None
         self.eventransitfit = None
         self.oddlc = None
         self.oddtransitfit = None
-        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.1])
-
+        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.01])
+        self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.01])
                         
     def CalcFeatures(self,featuredict={}):
         """
@@ -65,18 +66,18 @@ class Featureset(object):
                 if featurename not in self.features.keys():  
                     flag = 1
             if flag:
-                try:
+                #try:
                     feature = getattr(self,featurename)(featuredict[featurename])
                     if len(featuredict[featurename])>0:
                         for k,key in enumerate(keys):
                             self.features[key] = feature[k]
                     else:
                         self.features[featurename] = feature                
-                except AttributeError:  #feature requested is not an available method. Treats this as an external feature and adds the argument passed as the feature value.
-                    if len(featuredict[featurename]) == 1:
-                        self.features[featurename] = featuredict[featurename]
-                    else:
-                        print 'Feature not recognised: '+str(featurename)    
+                #except AttributeError:  #feature requested is not an available method. Treats this as an external feature and adds the argument passed as the feature value.
+                #    if len(featuredict[featurename]) == 1:
+                #        self.features[featurename] = featuredict[featurename]
+                #    else:
+                #        print 'Feature not recognised: '+str(featurename)    
 
     def Writeout(self,activefeatures):
         featurelist = [self.features[a] for a in activefeatures]
@@ -528,7 +529,7 @@ class Featureset(object):
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[0]
 
-    def Fit_epoch(self,args):
+    def Fit_t0(self,args):
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[1]
@@ -574,7 +575,7 @@ class Featureset(object):
 
     def Fit_depthSNR(self,args): #errors are currently shoddy as anything, so don't trust this feature
         if self.transitfit is None:
-            self.transitfit = utils.FitTransitModel(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
+            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[3]/self.transitfit.errors[3]
                         
     def Even_Fit_period(self,args):
@@ -776,9 +777,6 @@ class Featureset(object):
                 sesratios.append((1-binnedlc[0,1])/np.std(binnedlc[2:-2,1]))
         return np.median(np.array(sesratios))
                     
-        #also, another feature - return a measure of the dispersion - is, roughly speaking, the evidence coming from every transit?
-        
-
     def RMS_TDUR(self,args):
         """
         RMS on transit duration timescale. Calculated through std around a transit duration moving average.
@@ -787,14 +785,62 @@ class Featureset(object):
             lc = self.target.lightcurve_f  #uses flattened lightcurve
         else:
             lc = self.target.lightcurve
-            
-        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
+        tdur = self.trapfit.params[2]
         cadence = np.median(np.diff(lc['time']))
         npoints = np.round(tdur/cadence)   
         return utils.Scatter(lc,npoints,cut_outliers=True)
-        
-            
-        #same for just one transit - but do it by taking the above result and dividing down by number of transits square rooted or whatever the formula is.
-        
 
-        #same but the average resulting from doing this across the whole lightcurve. - as a baseline noise metric.   
+    def Trapfit_t0(self,args):
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.trapfit.params[0]
+
+    def Trapfit_t23phase(self,args):
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.trapfit.params[1]
+
+    def Trapfit_t14phase(self,args):
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.trapfit.params[2]
+
+    def Trapfit_depth(self,args):
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.trapfit.params[3]
+        
+    def PointDensity_ingress(self,args):
+        #phase lc on planet period
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        
+        per = self.target.candidate_data['per']
+        t0 = self.trapfit.params[0]
+        t14 = self.trapfit.params[2]
+        t23 = self.trapfit.params[1]
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        phasediffs = np.abs(phase - 0.5)
+        points_in_ingress = (phasediffs<t14/2.) & (phasediffs>t23/2.)        
+        density_in_ingress = np.sum(points_in_ingress)/(t14-t23)
+        return density_in_ingress / len(self.target.lightcurve['time'])
+        #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
+ 
+    def Plot_trapfit(self,args):
+        per = self.target.candidate_data['per']
+        print self.trapfit.params
+        import pylab as p
+        p.ion()
+        p.figure()
+        phase = utils.phasefold(self.target.lightcurve['time'],per,self.trapfit.params[0]+per/2.)
+        p.plot(phase,self.target.lightcurve['flux'],'b.')
+        model = TransitFit.Trapezoidmodel(0.5,self.trapfit.params[1],self.trapfit.params[2],self.trapfit.params[3],phase)
+        p.plot(phase,model,'r.')
+        raw_input()
+         
+     #def Plot_fit():
+     
+                  
+        

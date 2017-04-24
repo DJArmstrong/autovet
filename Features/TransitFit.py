@@ -1,7 +1,28 @@
 import numpy as np
 from scipy import optimize
 import batman
+import utils
 
+def Trapezoidmodel(t0_phase,t23,t14,depth,phase_data):
+    centrediffs = np.abs(phase_data - t0_phase)
+    model = np.ones(len(phase_data))
+    model[centrediffs<t23/2.] = 1-depth
+    in_gress = (centrediffs>=t23/2.)&(centrediffs<t14/2.)   
+    model[in_gress] = (1-depth) + (centrediffs[in_gress]-t23/2.)/(t14/2.-t23/2.)*depth
+    return model
+    
+def Trapezoidfitfunc(fitparams,y_data,y_err,x_phase_data):
+
+    t0 = fitparams[0]
+    t23 = fitparams[1]
+    t14 = fitparams[2]
+    depth = fitparams[3]
+
+    if (t0<0.4) or (t0>0.6) or (t23 < 0) or (t14 < 0) or (t14 < t23) or (depth < 0):
+        return np.ones(len(x_data))*1e8
+    
+    model = Trapezoidmodel(t0,t23,t14,depth,x_phase_data)
+    return (y_data - model)/y_err
 
 def Transitfitfunc(fitparams,y_data,y_err,x_data,m,bparams,init_per,init_t0):
     per = fitparams[0]
@@ -20,15 +41,29 @@ def Transitfitfunc(fitparams,y_data,y_err,x_data,m,bparams,init_per,init_t0):
     flux = m.light_curve(bparams)
     return (y_data - flux)/y_err
 
+
 class TransitFit(object):
 
-    def __init__(self,lc,initialguess,exp_time,sfactor):
+    def __init__(self,lc,initialguess,exp_time,sfactor,fittype='model',fixper=0.):
         self.lc = lc
         self.init = initialguess
         self.exp_time = exp_time
         self.sfactor = sfactor
-        self.params,self.cov = self.FitTransitModel()
-        self.errors,self.chisq = self.GetErrors()
+        if fittype == 'model':
+            self.params,self.cov = self.FitTransitModel()
+            self.errors,self.chisq = self.GetErrors()
+        elif fittype == 'trap':
+            self.fixper = fixper
+            self.initial_t0 = self.init[0]
+            self.params,self.cov = self.FitTrapezoid()
+            self.params[0] = (self.params[0]-0.5)*self.fixper + self.initial_t0   #convert t0 back to time
+    
+    def FitTrapezoid(self):
+        phase = utils.phasefold(self.lc['time'],self.fixper,self.initial_t0+self.fixper/2.)  #transit at phase 0.5
+        initialguess = self.init.copy()
+        initialguess[0] = 0.5
+        fit = optimize.leastsq(Trapezoidfitfunc, initialguess, args=(self.lc['flux'],self.lc['error'],phase),full_output=True)
+        return fit[0],fit[1]
 
     def FitTransitModel(self):
         #initialguess = np.array([init_per,init_t0,init_arstar,init_rprstar,init_inc])
