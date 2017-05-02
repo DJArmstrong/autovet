@@ -95,11 +95,12 @@ class Candidate(object):
                 except:
                     dic[key] = self.field_dic[key]
         
+        nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR'])
         norm = np.nanmedian(dic['FLUX'])
         lc = {}
-        lc['time'] = dic['HJD']
-        lc['flux'] = 1.*dic['FLUX']/norm
-        lc['error'] = 1.*dic['FLUX_ERR']/norm
+        lc['time'] = dic['HJD'][~nancut]
+        lc['flux'] = 1.*dic['FLUX'][~nancut]/norm
+        lc['error'] = 1.*dic['FLUX_ERR'][~nancut]/norm
         
         info = {}
         for info_key in info_keys: 
