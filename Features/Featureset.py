@@ -29,6 +29,8 @@ class Featureset(object):
         self.secondary = None
         self.transitfit = None
         self.trapfit = None
+        self.eventrapfit = None
+        self.oddtrapfit = None
         self.evenlc = None
         self.eventransitfit = None
         self.oddlc = None
@@ -161,7 +163,7 @@ class Featureset(object):
 
         #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
         self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-        self.SOMerrors = np.vstack((self.SOMerrors,np.ones(len(self.SOMerrors))))
+        self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
         map = self.som(self.SOMarray)
         map = map[0,:]
         distance = np.sqrt(np.sum( np.power( self.SOMarray - self.som.K[map[0],map[1]] , 2 ) ))
@@ -186,7 +188,7 @@ class Featureset(object):
 
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
             self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-            self.SOMerrors = np.vstack((self.SOMerrors,np.ones(len(self.SOMerrors))))
+            self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
             map = self.som(self.SOMarray)
             map = map[0,:]
             flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
@@ -211,7 +213,7 @@ class Featureset(object):
 
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
             self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-            self.SOMerrors = np.vstack((self.SOMerrors,np.ones(len(self.SOMerrors))))
+            self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
             map = self.som(self.SOMarray)
             map = map[0,:]
             flag = (map[0]==11 and map[1]==19)
@@ -368,7 +370,7 @@ class Featureset(object):
         flux = self.target.lightcurve['flux']
         return np.percentile(flux,98)-np.percentile(flux,2)
 
-    def std_ov_error(self):
+    def std_ov_error(self,args):
         """
         STD over mean error. Measures significance of variability
         """
@@ -544,28 +546,30 @@ class Featureset(object):
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[3]
 
-    def Fit_inc(self,args):
-        if self.transitfit is None:
-            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        return self.transitfit.params[4]
+#    def Fit_inc(self,args):
+#        if self.transitfit is None:
+#            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        return self.transitfit.params[4]
 
     def Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
-        tdur = self.transitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.transitfit.params[3])**2-b**2)/(self.transitfit.params[2]*np.sin(self.transitfit.params[4])))    
+        #b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
+        b = 0
+        tdur = self.transitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.transitfit.params[3])**2-b**2)/(self.transitfit.params[2]*1.))    
         return tdur
 
-    def Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
-        if self.transitfit is None:
-            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
-        return b    
+#    def Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
+#        if self.transitfit is None:
+#            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
+#        return b    
 
     def Fit_ingresstime(self,args):  #in the e=0, Rp<<Rstar<<a, b<<1-k limit
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
+        #b = self.transitfit.params[2]*np.cos(self.transitfit.params[4])
+        b = 0
         return self.transitfit.params[0]/math.pi / self.transitfit.params[2] * self.transitfit.params[3]/np.sqrt(1-b**2)       
 
     def Fit_chisq(self,args):
@@ -581,146 +585,163 @@ class Featureset(object):
     def Even_Fit_period(self,args):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[0]
 
-    def Even_Fit_epoch(self,args):
+    def Even_Fit_t0(self,args):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[1]
 
     def Even_Fit_aovrstar(self,args):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[2]
         
     def Even_Fit_rprstar(self,args):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[3]
 
-    def Even_Fit_inc(self,args):
-        if self.evenlc is None:
-            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
-            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        return self.eventransitfit.params[4]
+#    def Even_Fit_inc(self,args):
+#        if self.evenlc is None:
+#            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+#            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        return self.eventransitfit.params[4]
 
-    def Even_Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
-        if self.evenlc is None:
-            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
-            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
-        tdur = self.eventransitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.eventransitfit.params[3])**2-b**2)/(self.eventransitfit.params[2]*np.sin(self.eventransitfit.params[4])))    
-        return tdur
+#    def Even_Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
+#        if self.evenlc is None:
+#            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+#            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        #b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
+#        b = 0
+#        tdur = self.eventransitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.eventransitfit.params[3])**2-b**2)/(self.eventransitfit.params[2]*np.sin(self.eventransitfit.params[4])))    
+#        return tdur
 
-    def Even_Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
-        if self.evenlc is None:
-            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
-            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
-        return b    
+#    def Even_Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
+#        if self.evenlc is None:
+#            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+#            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
+#        return b    
 
-    def Even_Fit_ingresstime(self,args):  #in the e=0, Rp<<Rstar<<a, b<<1-k limit
-        if self.evenlc is None:
-            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
-            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
-        return self.eventransitfit.params[0]/math.pi / self.eventransitfit.params[2] * self.eventransitfit.params[3]/np.sqrt(1-b**2)       
+#    def Even_Fit_ingresstime(self,args):  #in the e=0, Rp<<Rstar<<a, b<<1-k limit
+#        if self.evenlc is None:
+#            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+#            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.eventransitfit.params[2]*np.cos(self.eventransitfit.params[4])
+#        return self.eventransitfit.params[0]/math.pi / self.eventransitfit.params[2] * self.eventransitfit.params[3]/np.sqrt(1-b**2)       
 
     def Even_Fit_chisq(self,args):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.chisq
     
     def Even_Fit_depthSNR(self,args): #errors are currently shoddy as anything, so don't trust this feature
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[3]/self.eventransitfit.errors[3]
 
     def Odd_Fit_period(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.params[0]
 
-    def Odd_Fit_epoch(self,args):
+    def Odd_Fit_t0(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.params[1]
 
     def Odd_Fit_aovrstar(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.params[2]
         
     def Odd_Fit_rprstar(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.params[3]
 
-    def Odd_Fit_inc(self,args):
-        if self.oddlc is None:
-            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        return self.oddtransitfit.params[4]
+#    def Odd_Fit_inc(self,args):
+#        if self.oddlc is None:
+#            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+#            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        return self.oddtransitfit.params[4]
 
-    def Odd_Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
-        if self.oddlc is None:
-            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
-        tdur = self.oddtransitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.oddtransitfit.params[3])**2-b**2)/(self.oddtransitfit.params[2]*np.sin(self.oddtransitfit.params[4])))    
-        return tdur
+#    def Odd_Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
+#        if self.oddlc is None:
+#            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+#            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
+#        tdur = self.oddtransitfit.params[0]/math.pi * np.arcsin(np.sqrt((1+self.oddtransitfit.params[3])**2-b**2)/(self.oddtransitfit.params[2]*np.sin(self.oddtransitfit.params[4])))    
+#        return tdur
 
-    def Odd_Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
-        if self.oddlc is None:
-            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
-        return b    
+#    def Odd_Fit_impactparam(self,args): #assumes circular at the moment, as fit doesn't allow for varying e
+#        if self.oddlc is None:
+#            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+#            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
+#        return b    
 
-    def Odd_Fit_ingresstime(self,args):  #in the e=0, Rp<<Rstar<<a, b<<1-k limit
-        if self.oddlc is None:
-            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
-        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
-        return self.oddtransitfit.params[0]/math.pi / self.oddtransitfit.params[2] * self.oddtransitfit.params[3]/np.sqrt(1-b**2)       
+#    def Odd_Fit_ingresstime(self,args):  #in the e=0, Rp<<Rstar<<a, b<<1-k limit
+#        if self.oddlc is None:
+#            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+#            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
+#        b = self.oddtransitfit.params[2]*np.cos(self.oddtransitfit.params[4])
+#        return self.oddtransitfit.params[0]/math.pi / self.oddtransitfit.params[2] * self.oddtransitfit.params[3]/np.sqrt(1-b**2)       
 
     def Odd_Fit_chisq(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.chisq
     
     def Odd_Fit_depthSNR(self,args):  #errors are currently shoddy as anything, so don't trust this feature
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.oddtransitfit.params[3]/self.oddtransitfit.errors[3]
 
     def Even_Odd_depthratio(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.eventransitfit.params[3]/self.oddtransitfit.params[3]
                 
     def Even_Odd_depthdiff_fractional(self,args):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtransitfit is None:
             self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
+        if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7)
         #err = np.max([self.eventransitfit.errors[3],self.oddtransitfit.errors[3]])
         return np.abs(self.eventransitfit.params[3] - self.oddtransitfit.params[3])/self.eventransitfit.params[3]
@@ -733,10 +754,12 @@ class Featureset(object):
         return self.transitfit.params[3]*self.target.stellar_radius* rearth/rsun  #in earth radii
            
     def TransitSNR(self,args):
-        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
-        per = self.target.candidate_data['per']
-        t0 = self.target.candidate_data['t0']
-        
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
+        per = self.target.candidate_data['per']    
+        tdur = self.trapfit.params[2]*per
+        t0 = self.trapfit.params[0]
+                
         if self.useflatten:
             lc = self.target.lightcurve_f
         else:
@@ -750,9 +773,11 @@ class Featureset(object):
         return (1-transitbin)/noise
 
     def SingleTransitEvidence(self,args):
-        tdur = self.target.candidate_data['tdur']  #NEEDS UPDATING TO TRAPEZOID FIT
-        per = self.target.candidate_data['per']
-        t0 = self.target.candidate_data['t0']
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
+        per = self.target.candidate_data['per']    
+        tdur = self.trapfit.params[2]*per
+        t0 = self.trapfit.params[0]
         tdur_phase = tdur/per
         
         if self.useflatten:
@@ -777,7 +802,7 @@ class Featureset(object):
                 sesratios.append((1-binnedlc[0,1])/np.std(binnedlc[2:-2,1]))
         return np.median(np.array(sesratios))
                     
-    def RMS_TDUR(self,args):
+    def RMS_TDur(self,args):
         """
         RMS on transit duration timescale. Calculated through std around a transit duration moving average.
         """
@@ -787,7 +812,7 @@ class Featureset(object):
             lc = self.target.lightcurve
         if self.trapfit is None:
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
-        tdur = self.trapfit.params[2]
+        tdur = self.trapfit.params[2]*self.target.candidate_data['per']
         cadence = np.median(np.diff(lc['time']))
         npoints = np.round(tdur/cadence)   
         return utils.Scatter(lc,npoints,cut_outliers=True)
@@ -807,10 +832,96 @@ class Featureset(object):
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         return self.trapfit.params[2]
 
+    def Full_partial_tdurratio(self,args):
+        if self.trapfit is None:
+            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.trapfit.params[1]/self.trapfit.params[2]
+        
     def Trapfit_depth(self,args):
         if self.trapfit is None:
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         return self.trapfit.params[3]
+
+    def Even_Trapfit_t0(self,args):
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[0]
+
+    def Even_Trapfit_t23phase(self,args):
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[1]
+
+    def Even_Trapfit_t14phase(self,args):
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[2]
+
+    def Even_Full_partial_tdurratio(self,args):
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[1]/self.eventrapfit.params[2]
+        
+    def Even_Trapfit_depth(self,args):
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[3]
+    
+    def Odd_Trapfit_t0(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.oddtrapfit.params[0]
+
+    def Odd_Trapfit_t23phase(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.oddtrapfit.params[1]
+
+    def Odd_Trapfit_t14phase(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.oddtrapfit.params[2]
+
+    def Odd_Full_partial_tdurratio(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.oddtrapfit.params[1]/self.oddtrapfit.params[2]
+        
+    def Odd_Trapfit_depth(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.oddtrapfit.params[3]
+    
+    def Even_Odd_trapdurratio(self,args):
+        if self.oddlc is None:
+            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
+        if self.oddtrapfit is None:
+            self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        if self.evenlc is None:
+            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
+        if self.eventrapfit is None:
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
+        return self.eventrapfit.params[2]/self.oddtrapfit.params[2]        
         
     def PointDensity_ingress(self,args):
         #phase lc on planet period
