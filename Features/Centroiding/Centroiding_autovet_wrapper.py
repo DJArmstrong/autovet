@@ -13,7 +13,7 @@ Email: mg719@cam.ac.uk
 
 
 import warnings
-from Centroiding import centroid
+from Features.Centroiding.Centroiding import centroid
 
 
 
@@ -25,11 +25,11 @@ def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max 
     Amendments for autovet implementation
     '''
     
-    if ( candidate.planet['per'] > 0 ) and ( 't0' in candidate.planet )  and ( 'tdur' in candidate.planet ):
+    if ( candidate.candidate_data['per'] > 0 ) and ( 't0' in candidate.candidate_data )  and ( 'tdur' in candidate.candidate_data ):
       
-        period = candidate.planet['per'] * 3600. * 24. #from days to seconds
-        epoch = candidate.planet['t0'] * 3600. * 24. #from days to seconds
-        width = candidate.planet['tdur'] * 3600. * 24. #from days to seconds
+        period = candidate.candidate_data['per'] * 3600. * 24. #from days to seconds
+        epoch = candidate.candidate_data['t0'] * 3600. * 24. #from days to seconds
+        width = candidate.candidate_data['tdur'] * 3600. * 24. #from days to seconds
         
         fieldname = candidate.info['FIELDNAME']
         obj_id = candidate.info['OBJ_ID']
