@@ -133,10 +133,10 @@ def run(dic, dic_nb, flattening='constant'):
     p0 = np.ones( N_top ) #initial guess, all have the same weight
     params_x = least_squares(errfct, p0[:], bounds=(np.zeros(N_top), np.ones(N_top)), args=(centdx_phase, xx_phase))  
     weights_x = params_x.x #'.x' calls the parameters of the fit, ie. here the weights
-    print 'x result:', params_x.x   
+#    print 'x result:', params_x.x   
     params_y = least_squares(errfct, p0[:], bounds=(np.zeros(N_top), np.ones(N_top)), args=(centdy_phase, yy_phase))  
     weights_y = params_y.x    
-    print 'y result:', params_y.x 
+#    print 'y result:', params_y.x 
         
     dic_nb['CENTDX_ref_mean'] = np.average(dic_nb['CENTDX_f'][ ind_x, : ], axis=0, weights=weights_x)
     dic_nb['CENTDY_ref_mean'] = np.average(dic_nb['CENTDY_f'][ ind_y, : ], axis=0, weights=weights_y)

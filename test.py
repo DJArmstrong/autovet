@@ -13,7 +13,12 @@ Email: mg719@cam.ac.uk
 
 import numpy as np
 import matplotlib.pyplot as plt
-from ngtsio import ngtsio
+try:
+    from ngtsio import ngtsio
+except ImportError:
+    from scripts import ngtsio_v1_1_1_autovet as ngtsio
+    warnings.warn( "Package 'ngtsio' not installed. Use version ngtsio v1.1.1 from 'scripts/' instead.", ImportWarning )
+  
 
 from Loader.Loader import Candidate
 from Loader.NGTS_MultiLoader import NGTS_MultiLoader

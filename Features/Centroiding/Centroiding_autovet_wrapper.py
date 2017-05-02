@@ -13,7 +13,7 @@ Email: mg719@cam.ac.uk
 
 
 import warnings
-from Centroiding import centroid
+from Centroiding_RDX import centroid
 
 
 
@@ -41,7 +41,8 @@ def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max 
         dic['HJD'] = candidate.lightcurve['time']
         dic['SYSREM_FLUX3'] = candidate.lightcurve['flux']
     
-        centroid( fieldname, obj_id, ngts_version = ngts_version, source = '', bls_rank = None, period = period, epoch = epoch, width = width, time_hjd = None, pixel_radius = pixel_radius, flux_min = flux_min, flux_max = flux_max, bin_width=bin_width, min_time=min_time, dt=dt, roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, flagfile=flagfile, dic=dic )
+        C = centroid( fieldname, obj_id, ngts_version = ngts_version, source = '', bls_rank = None, period = period, epoch = epoch, width = width, time_hjd = None, pixel_radius = pixel_radius, flux_min = flux_min, flux_max = flux_max, bin_width=bin_width, min_time=min_time, dt=dt, roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, flagfile=flagfile, dic=dic )
+        C.run()
 
     else:
         warnings.warn('Centroiding aborted and skipped. Analysis requires a planet period and epoch.')

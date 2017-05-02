@@ -13,12 +13,8 @@ Email: mg719@cam.ac.uk
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 import warnings
-
-try:
-    import statsmodels.api as sm
-except ImportError:
-    warnings.warn( "Package 'statsmodels' could not be imported. Omitting some analyses.", ImportWarning )
 
 
 
@@ -41,10 +37,7 @@ def pandas_prewhitening(datax, nlags=None, p=10, q=0):
     
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
-        try:
-            datax_arma_mod = sm.tsa.ARMA(datax, (p,q), dates=dates).fit(disp=0)
-        except:
-            warnings.warn('ARMA pre-whitening failed. Package "statsmodels" is not available.')
+        datax_arma_mod = sm.tsa.ARMA(datax, (p,q), dates=dates).fit(disp=0)
         
     datax_resid = datax_arma_mod.resid
     
