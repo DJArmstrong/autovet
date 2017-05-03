@@ -11,7 +11,7 @@ Cambridge CB3 0HE
 Email: mg719@cam.ac.uk
 """
 
-#import warnings
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 #from astropy.modeling import models, fitting
@@ -31,8 +31,13 @@ from astropy.stats import sigma_clipped_stats
 #from photutils import CircularAperture
 
 
-import ngtsio_v1_1_1_centroiding as ngtsio
-    
+try:
+    from ngtsio import ngtsio
+except ImportError:
+    import ngtsio_v1_1_1_autovet as ngtsio
+    warnings.warn( "Package 'ngtsio' not installed. Use version ngtsio v1.1.1 from 'scripts/' instead.", ImportWarning )
+
+
 
 def standard_fnames(fieldname, ngts_version, root=None):
     

@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import lightcurve_tools
-from scripts import stacked_images
+import stacked_images
 import pandas as pd
 #from astropy.stats import LombScargle
 #from scipy.signal import lombscargle
@@ -66,39 +66,33 @@ def plot_detrending_steps_evaluation( dic, dic_nb, dt ):
     plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=1*offset )
     axes[0].text( xtext, ytext-1*offset, 'target (flattened externally)')
         
-#    centdx = np.nanmean( dic_nb['CENTDX'], axis=0 )
-#    centdy = np.nanmean( dic_nb['CENTDY'], axis=0 )
-#    plot_phasecurves( dic, dt, centdx, centdy, color='b',  axes=axes, offset=2*offset )
-#    axes[0].text( xtext, ytext-2*offset, 'neighbours (mean of all)')
+    centdx = np.nanmean( dic_nb['CENTDX'], axis=0 )
+    centdy = np.nanmean( dic_nb['CENTDY'], axis=0 )
+    plot_phasecurves( dic, dt, centdx, centdy, color='b',  axes=axes, offset=2*offset )
+    axes[0].text( xtext, ytext-2*offset, 'neighbours (mean of all)')
 
-#    centdx = dic['CENTDX_f'] - np.nanmean( dic_nb['CENTDX'], axis=0 )
-#    centdy = dic['CENTDY_f'] - np.nanmean( dic_nb['CENTDY'], axis=0 )
-#    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=3*offset )
-#    axes[0].text( xtext, ytext-3*offset, 'target - neighbours (mean of all)')
+    centdx = dic['CENTDX_f'] - np.nanmean( dic_nb['CENTDX'], axis=0 )
+    centdy = dic['CENTDY_f'] - np.nanmean( dic_nb['CENTDY'], axis=0 )
+    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=3*offset )
+    axes[0].text( xtext, ytext-3*offset, 'target - neighbours (mean of all)')
     
     centdx = dic_nb['CENTDX_ref_mean']
     centdy = dic_nb['CENTDY_ref_mean']
-    plot_phasecurves( dic, dt, centdx, centdy, color='b',  axes=axes, offset=2*offset )
-    axes[0].text( xtext, ytext-2*offset, 'reference stars (mean of best fit)')
+    plot_phasecurves( dic, dt, centdx, centdy, color='b',  axes=axes, offset=4*offset )
+    axes[0].text( xtext, ytext-4*offset, 'reference stars (mean of best fit)')
     
     centdx = dic['CENTDX_fd']
     centdy = dic['CENTDY_fd']
-    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=3*offset )
-    axes[0].text( xtext, ytext-3*offset, 'target (flattened and detrended, best fit)')
+    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=5*offset )
+    axes[0].text( xtext, ytext-5*offset, 'target (flattened and detrended, best fit)')
     
     centdx = dic['CENTDX_fda']
     centdy = dic['CENTDY_fda']
-    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=4*offset )
-    axes[0].text( xtext, ytext-4*offset, 'target (flattened, detrended and 1 day siderial airmass correction)')
+    plot_phasecurves( dic, dt, centdx, centdy, color='orange',  axes=axes, offset=6*offset )
+    axes[0].text( xtext, ytext-6*offset, 'target (flattened, detrended and 1 day siderial airmass correction)')
     
-    axes[0].set( xlim=[-0.25,0.75], ylim=[-0.02-4*offset,0.02] )
-    axes[1].set( xlim=[-0.25,0.75], ylim=[-0.02-4*offset,0.02] )
-    
-    gap = dic['WIDTH'] / dic['PERIOD']
-    for i in [0,1]:
-        axes[i].axvspan( 0-gap/2., 0+gap/2., color='lightgrey', alpha=0.5 )
-        axes[i].axvspan( 0.5-gap/2., 0.5+gap/2., color='lightgrey', alpha=0.5 )
-    
+    axes[0].set( xlim=[-0.25,0.75], ylim=[-0.02-6*offset,0.02] )
+    axes[1].set( xlim=[-0.25,0.75], ylim=[-0.02-6*offset,0.02] )
     
     plt.tight_layout()
     return fig
@@ -148,10 +142,7 @@ def plot_hjd_curves( dic, dic_nb ):
     for i, text in enumerate( texts ): 
         ax.text( x[0], -i*offset, text )
         ax.axhline( -i*offset, color='k' )
-    if 'poly_CENTDX_BIN' in dic:
-        ax.scatter( x, dic['poly_CENTDX_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
-    else:
-        ax.scatter( x, dic['ma_CENTDX_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
+    ax.scatter( x, dic['poly_CENTDX_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
     ax.scatter( x, dic['CENTDX_fda_BIN'][slice(None)] - 4*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
     ax.set( ylim=[-0.1-4*offset,0.1], ylabel='CENTDX (BINNED)' )
         
@@ -162,10 +153,7 @@ def plot_hjd_curves( dic, dic_nb ):
     for i, text in enumerate( texts ): 
         ax.text( x[0], -i*offset, text )
         ax.axhline( -i*offset, color='k' )
-    if 'poly_CENTDY_BIN' in dic:
-        ax.scatter( x, dic['poly_CENTDY_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
-    else:
-        ax.scatter( x, dic['ma_CENTDY_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
+    ax.scatter( x, dic['poly_CENTDY_BIN'][slice(None)] - 3*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
     ax.scatter( x, dic['CENTDY_fda_BIN'][slice(None)] - 4*offset, c=c, rasterized=True, cmap=cmap, vmin=-1, vmax=1 )
     ax.set( ylim=[-0.1-4*offset,0.1], ylabel='CENTDY (BINNED)' )
 
@@ -217,28 +205,11 @@ def plot_phasecurve_1_siderial_day( dic ):
     
     
     #::: show FLUX and CENTDXY trends / polyfits
-    if 'polyfct_CENTDX' in dic:
-        axes[0].plot( dic['HJD_PHASE_1sidday'], dic['polyfct_CENTDX'](dic['HJD_PHASE_1sidday']), 'r-' )
-        axes[0].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDX_fd_PHASE_1sidday'] - dic['polyfct_CENTDX'](dic['HJD_PHASE_1sidday']), c='r', rasterized=True )
-        axes[0].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDX_fda_PHASE_1sidday'], c='g', rasterized=True )
-    
-        axes[1].plot( dic['HJD_PHASE_1sidday'], dic['polyfct_CENTDY'](dic['HJD_PHASE_1sidday']), 'r-' )
-        axes[1].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDY_fd_PHASE_1sidday'] - dic['polyfct_CENTDY'](dic['HJD_PHASE_1sidday']), c='r', rasterized=True )
-        axes[1].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDY_fda_PHASE_1sidday'], c='g', rasterized=True )
-
-    else:
-        axes[0].plot( dic['HJD_PHASE_1sidday'], dic['ma_CENTDX_PHASE_1sidday'], 'r-' )
-        axes[0].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDX_fd_PHASE_1sidday'] - dic['ma_CENTDX_PHASE_1sidday'], c='r', rasterized=True )
-        axes[0].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDX_fda_PHASE_1sidday'], c='g', rasterized=True )
-    
-        axes[1].plot( dic['HJD_PHASE_1sidday'], dic['ma_CENTDY_PHASE_1sidday'], 'r-' )
-        axes[1].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDY_fd_PHASE_1sidday'] - dic['ma_CENTDY_PHASE_1sidday'], c='r', rasterized=True )
-        axes[1].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDY_fda_PHASE_1sidday'], c='g', rasterized=True )
-    
-    
-    axes[0].set( ylim=[-0.005,0.005] )
-    axes[1].set( ylim=[-0.005,0.005] )
-    axes[2].set( ylim=[0.995,1.005] )
+    axes[0].plot( dic['HJD_PHASE_1sidday'], dic['polyfct_CENTDX'](dic['HJD_PHASE_1sidday']), 'r-' )
+    axes[0].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDX_fd_PHASE_1sidday'] - dic['polyfct_CENTDX'](dic['HJD_PHASE_1sidday']), c='r', rasterized=True )
+        
+    axes[1].plot( dic['HJD_PHASE_1sidday'], dic['polyfct_CENTDY'](dic['HJD_PHASE_1sidday']), 'r-' )
+    axes[1].scatter( dic['HJD_PHASE_1sidday'], dic['CENTDY_fd_PHASE_1sidday'] - dic['polyfct_CENTDY'](dic['HJD_PHASE_1sidday']), c='r', rasterized=True )
     
     plt.tight_layout()
     return fig
@@ -248,8 +219,6 @@ def plot_phasecurve_1_siderial_day( dic ):
 def plot_neighbours_phasecurve_and_location( fieldname, ngts_version, dic, dic_nb, dt ):
         
     N_nb = len(dic_nb['OBJ_ID'])
-    if N_nb > 20:
-        N_nb = 20
     fig, axes = plt.subplots(N_nb, 5, figsize=(20,N_nb*4))
 
     for i in range(N_nb):
@@ -323,12 +292,9 @@ def plot_neighbour_info_text(ax, dic, dic_nb, i):
     ax.text(0,0.6,'CCD distance: '+mystr(np.sqrt( (dic['CCDX'][0] - dic_nb['CCDX_0'][i])**2 + (dic['CCDY'][0] - dic_nb['CCDY_0'][i])**2 ),2))
     ax.text(0,0.5,'CCD_X distance: '+mystr(( dic['CCDX'][0] - dic_nb['CCDX_0'][i] ),2))
     ax.text(0,0.4,'CCD_Y distance: '+mystr(( dic['CCDY'][0] - dic_nb['CCDX_0'][i] ),2))
-    try:
-        ax.text(0,0.3,'B-V color: '+mystr(dic_nb['B-V'][i],2))
-        ax.text(0,0.2,'B-V color difference: '+mystr(dic['B-V'] - dic_nb['B-V'][i],2))
-        ax.text(0,0.1,'V Mag: '+mystr(dic_nb['Vmag'][i],2))
-    except:
-        pass
+    ax.text(0,0.3,'B-V color: '+mystr(dic_nb['B-V'][i],2))
+    ax.text(0,0.2,'B-V color difference: '+mystr(dic['B-V'] - dic_nb['B-V'][i],2))
+    ax.text(0,0.1,'V Mag: '+mystr(dic_nb['Vmag'][i],2))
     ax.text(0,0.0,'Corr Coeff X / Y: '+mystr(dic_nb['corrcoeff_x'][i],2) + ' / ' + mystr(dic_nb['corrcoeff_x'][i],2))
         
     

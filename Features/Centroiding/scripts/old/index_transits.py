@@ -58,7 +58,7 @@ def index_transits(dic, obj_nr=None):
     if obj_nr is not None:
         N = int( 1. * ( dic['HJD'][obj_nr][-1] - dic['EPOCH'][obj_nr] ) / dic['PERIOD'][obj_nr] ) + 1
     #    print 'N', N
-        tmid = np.array( [ dic['EPOCH'][obj_nr] + i * dic['PERIOD'][obj_nr] for i in range(N) ] )
+        tmid = [ dic['EPOCH'][obj_nr] + i * dic['PERIOD'][obj_nr] for i in range(N) ] 
     #    print 'tmid', tmid
     #    
     #    print dic['HJD'][obj_nr]
@@ -85,7 +85,7 @@ def index_transits(dic, obj_nr=None):
     else:
         N = int( 1. * ( dic['HJD'][-1] - dic['EPOCH'] ) / dic['PERIOD'] ) + 1
         
-        tmid = np.array( [ dic['EPOCH'] + i * dic['PERIOD'] for i in range(N) ] )
+        tmid = [ dic['EPOCH'] + i * dic['PERIOD'] for i in range(N) ] 
         
         _, ind_tr, mask_tr = mask_ranges( dic['HJD'], tmid - dic['WIDTH']/2., tmid + dic['WIDTH']/2. )
         _, ind_tr_half, _ = mask_ranges( dic['HJD'], tmid - dic['WIDTH']/4., tmid + dic['WIDTH']/4. )
@@ -101,57 +101,6 @@ def index_transits(dic, obj_nr=None):
     return ind_tr, ind_tr_half, ind_tr_double, ind_out, ind_out_per_tr, tmid 
     
     
-
-#::: for binaries, mark the primary and secondary eclipse
-def index_eclipses(dic, obj_nr=None):
-    """
-    output:
-    ind_ecl1: indices of points in primary eclipse
-    ind_ecl1_half: indices of the 50% innermost eclipse points
-    ind_ecl1_double: #double the transit duration, includes out of eclipse parts
-    
-    ind_ecl2: indices of points in secondary eclipse
-    ind_ecl2_half: indices of the 50% innermost eclipse points
-    ind_ecl2_double: #double the transit duration, includes out of eclipse parts
-    
-    ind_out: outside of any eclipse
-    
-    ! this assumes WIDHT1 == WIDTH2 !
-    """
-    
-    
-    if obj_nr is not None:
-        print 'Not currently implemented.'
-        return None
-
-
-    else:
-        N = int( 1. * ( dic['HJD'][-1] - dic['EPOCH'] ) / dic['PERIOD'] ) + 1
-        
-        tmid_ecl1 = np.array( [ dic['EPOCH'] +                    i * dic['PERIOD']  for i in range(N) ] )
-        tmid_ecl2 = np.array( [ dic['EPOCH'] + dic['PERIOD']/2. + i * dic['PERIOD']  for i in range(N) ] )
-        
-        _, ind_ecl1,        mask_ecl1 = mask_ranges( dic['HJD'], tmid_ecl1 - dic['WIDTH']/2., tmid_ecl1 + dic['WIDTH']/2. )
-        _, ind_ecl1_half,   _         = mask_ranges( dic['HJD'], tmid_ecl1 - dic['WIDTH']/4., tmid_ecl1 + dic['WIDTH']/4. )
-        _, ind_ecl1_double, _         = mask_ranges( dic['HJD'], tmid_ecl1 - dic['WIDTH'],    tmid_ecl1 + dic['WIDTH']    )
-              
-        _, ind_ecl2,        mask_ecl2 = mask_ranges( dic['HJD'], tmid_ecl2 - dic['WIDTH']/2., tmid_ecl2 + dic['WIDTH']/2. )
-        _, ind_ecl2_half,   _         = mask_ranges( dic['HJD'], tmid_ecl2 - dic['WIDTH']/4., tmid_ecl2 + dic['WIDTH']/4. )
-        _, ind_ecl2_double, _         = mask_ranges( dic['HJD'], tmid_ecl2 - dic['WIDTH'],    tmid_ecl2 + dic['WIDTH']    )
-        
-        ind_out = np.arange( len(dic['HJD']) )[ ~(mask_ecl1 | mask_ecl2) ]
-        
-        #::: mark the exposures/bins that lie within the night of a transit and are out of transit
-#        ind_out_per_tr = ind_tr_double[np.in1d(ind_tr_double,ind_tr,invert=True)]
-
-
-
-    return ind_ecl1, ind_ecl1_half, ind_ecl1_double, \
-           ind_ecl1, ind_ecl1_half, ind_ecl1_double, \
-           ind_out
-    
-    
-
     
     
 #if __name__ == '__main__':
