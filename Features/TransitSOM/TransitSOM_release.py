@@ -231,15 +231,22 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
                 testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_kepler.txt'))
             else:
                 testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_k2.txt'))
-                
+            pcols = (0,3)
+            fpcols = (1,2,4)
+        elif missionflag==2:
+            testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_NGTS.txt'))        
+            pcols = 1
+            fpcols = 0
         else:
             SOMarray_PDVM = np.genfromtxt(os.path.join(flocation,'SOMarray_PDVM_perfect_norm.txt'))
             groups_PDVM = np.genfromtxt(os.path.join(flocation,'groups_PDVM_perfect_norm.txt'))
             lowbound = np.floor(SOMarray.shape[1]/3).astype('int')-1
             testdistances = somtools.PixelClassifier(som.K,SOMarray_PDVM,groups_PDVM,6,lowbound=lowbound,highbound=2*lowbound+3)
+            pcols = (0,3)
+            fpcols = (1,2,4)
             
         print 'Case 2: Beginning classification'
-        planet_prob,class_power = somtools.Classify_Distances(map_all,testdistances)
+        planet_prob,class_power = somtools.Classify_Distances(map_all,testdistances,pcols=pcols,fpcols=fpcols)
 
     print 'Classification complete'
     

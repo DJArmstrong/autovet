@@ -98,9 +98,16 @@ def Classify_P_FP(class_probs,class_weights_P,class_weights_FP):
     class_probs_P_FP[:,1] = class_probs_P_FP[:,1] /np.sum(class_probs_P_FP,axis=1)
     return class_probs_P_FP
 
-def Classify_Distances(map_all,avgdistances):
-    planet_distances = np.mean(avgdistances[:,:,(0,3)],axis=2)
-    fp_distances = np.mean(avgdistances[:,:,(1,2,4)],axis=2)
+def Classify_Distances(map_all, avgdistances, pcols=(0,3), fpcols=(1,2,4)):
+    if type(pcols)==int:
+        planet_distances = avgdistances[:,:,pcols]
+    else:
+        planet_distances = np.mean(avgdistances[:,:,pcols],axis=2)
+    if type(fpcols)==int:
+        fp_distances = avgdistances[:,:,fpcols]
+    else:
+        fp_distances = np.mean(avgdistances[:,:,fpcols],axis=2)
+    
     som_power_planet = planet_distances/(planet_distances+fp_distances)
     som_power_fp = fp_distances/(planet_distances+fp_distances)
     
