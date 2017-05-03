@@ -162,8 +162,9 @@ class Featureset(object):
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
         #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-        self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-        self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
+        if len(self.SOMarray.shape)==1:
+            self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
+            self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
         map = self.som(self.SOMarray)
         map = map[0,:]
         distance = np.sqrt(np.sum( np.power( self.SOMarray - self.som.K[map[0],map[1]] , 2 ) ))
@@ -187,8 +188,9 @@ class Featureset(object):
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-            self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
+            if len(self.SOMarray.shape)==1:
+                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
+                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
             map = self.som(self.SOMarray)
             map = map[0,:]
             flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
@@ -212,8 +214,9 @@ class Featureset(object):
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-            self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
+            if len(self.SOMarray.shape)==1:
+                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
+                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
             map = self.som(self.SOMarray)
             map = map[0,:]
             flag = (map[0]==11 and map[1]==19)
@@ -814,7 +817,11 @@ class Featureset(object):
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
         tdur = self.trapfit.params[2]*self.target.candidate_data['per']
         cadence = np.median(np.diff(lc['time']))
-        npoints = np.round(tdur/cadence)   
+        npoints = np.round(tdur/cadence)  
+        print 'DIAG'
+        print lc 
+        print npoints
+        print 'ENDDIAG'
         return utils.Scatter(lc,npoints,cut_outliers=True)
 
     def Trapfit_t0(self,args):
