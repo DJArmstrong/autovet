@@ -11,20 +11,27 @@ Cambridge CB3 0HE
 Email: mg719@cam.ac.uk
 """
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, socket
 from astropy.stats import sigma_clip
 
-import ngtsio_v1_1_1_centroiding as ngtsio
-from My_Utils import mystr, medsig
+try:
+    from ngtsio import ngtsio
+except ImportError:
+    import ngtsio_v1_1_0_centroiding as ngtsio
+    warnings.warn( "Package 'ngtsio' not installed. Use version ngtsio v1.1.1 from 'scripts/' instead.", ImportWarning )
+
+
+from My_Utils_autovet import mystr, medsig
 import index_transits, deg2HMS
 from binning import binning1D_per_night
 from set_nan import set_nan  
 import timeit
 
 
-def rebin_err(t, f, ferr=None, dt = 0.02, phasefolded=False, ferr_type='medsig', ferr_style='std', sigmaclip=False):
+def rebin_err(t, f, ferr=None, dt = 0.02, ferr_type='medsig', ferr_style='std', sigmaclip=False):
     """
     @written by Ed Gillen, extended by Maximilian N. Guenther
     The standard rebin function but also dealing with errors
@@ -38,23 +45,11 @@ def rebin_err(t, f, ferr=None, dt = 0.02, phasefolded=False, ferr_type='medsig',
     """
     #::: sigma clip
     if sigmaclip is True:
-        try:
-            f = sigma_clip(f, sigma=5, iters=3)
-        except:
-            pass
-    
-    #::: make masked values to NaNs if applicable
-    try:
-        f[ f.mask ] = np.nan
-    except:
-        pass
+        f = sigma_clip(f, sigma=5)
+        f [ f.mask ] = np.nan
     
     #::: bin
-    #::: detect if it's phase-folded data or not
-    if phasefolded is False:
-        treg = np.r_[t.min():t.max():dt]
-    else:
-        treg = np.r_[-0.25:0.75:dt]
+    treg = np.r_[t.min():t.max():dt]
     nreg = len(treg)
     freg = np.zeros(nreg) + np.nan
     freg_err = np.zeros(nreg) + np.nan
@@ -62,34 +57,26 @@ def rebin_err(t, f, ferr=None, dt = 0.02, phasefolded=False, ferr_type='medsig',
     for i in np.arange(nreg):
         l = (t >= treg[i]) * (t < treg[i] + dt)
         if l.any():
-            treg[i] = np.nanmean(t[l])
+            treg[i] = np.ma.mean(t[l])
             N[i] = len(t[l])
             if ferr==None:
                 if ferr_type == 'medsig':
                     freg[i], freg_err[i] = medsig(f[l])
                 else:
-                    try:
-                        freg[i] = np.nanmean(f[l])
-                        freg_err[i] = np.nanstd(f[l])
-                    except: #e.g. in case of an empty or completely masked array
-                        freg[i] = np.nan
-                        freg_err[i] = np.nan
+                    freg[i] = np.nanmean(f[l])
+                    freg_err[i] = np.nanstd(f[l])
                     
                 if ferr_style == 'sem':
                     freg_err[i] /= np.sqrt( len(f[l]) )
             else:
                 freg[i], freg_err[i] = weighted_avg_and_std( f[l], np.ma.array([1/float(x) for x in ferr[l]]) )
-
-    if phasefolded is False:
-        k = np.isfinite(freg) #only return finite bins
-    else:
-        k = slice(None) #return the entire phase, filled with NaN replacements
+    l = np.isfinite(freg)
     
-    return treg[k], freg[k], freg_err[k], N[k]
+    return treg[l], freg[l], freg_err[l], N[l]
     
     
     
-def rebin_err_matrix(t, fmatrix, fmatrixerr=None, dt = 0.02, phasefolded=False, ferr_type='meanstd', ferr_style='sem', sigmaclip=True):
+def rebin_err_matrix(t, fmatrix, fmatrixerr=None, dt = 0.02, ferr_type='meanstd', ferr_style='sem', sigmaclip=True):
     '''
     f is a matrix, each row contains a 1D array (e.g. Flux, CENTDX, CENTDY in one array)
     '''
@@ -109,19 +96,12 @@ def rebin_err_matrix(t, fmatrix, fmatrixerr=None, dt = 0.02, phasefolded=False, 
     #::: sigma clip
     if sigmaclip is True:
         for j in range(N_items):
-            try:
-                f = sigma_clip( fmatrix[ j, : ], sigma=5, iters=3 )
-                f [ f.mask ] = np.nan
-                fmatrix[ j, : ] = f
-            except:
-                pass
+            f = sigma_clip( fmatrix[ j, : ], sigma=5 )
+            f [ f.mask ] = np.nan
+            fmatrix[ j, : ] = f
     
     #::: bin
-    #::: detect if it's phase-folded data or not
-    if phasefolded is False:
-        treg = np.r_[t.min():t.max():dt]
-    else:
-        treg = np.r_[-0.25:0.75:dt]
+    treg = np.r_[t.min():t.max():dt]
     nreg = len(treg)
     fmatrixreg = np.zeros( (N_items, nreg) ) + np.nan
     fmatrixreg_err = np.zeros( (N_items, nreg) ) + np.nan
@@ -137,9 +117,7 @@ def rebin_err_matrix(t, fmatrix, fmatrixerr=None, dt = 0.02, phasefolded=False, 
             if fmatrixerr==None:
                 if ferr_type == 'medsig':
                     #TODO
-                    fmatrixreg[:,i] = np.nanmedian(fmatrix[:,l], axis=1)
-                    fmatrixreg_err[:,i] = np.median( np.abs(fmatrix[:,l] - np.median(fmatrix[:,l], axis=1)), axis=1 )
-#                    error('not implemented yet')
+                    error('not implemented yet')
 #                    freg[i], freg_err[i] = medsig(f[l])
                 else:
 #                    print '-----'
@@ -155,14 +133,10 @@ def rebin_err_matrix(t, fmatrix, fmatrixerr=None, dt = 0.02, phasefolded=False, 
             else:
                 #TODO
                 error('not implemented yet')
-#                freg[i], freg_err[i] = weighted_avg_and_std( f[l], np.ma.array([1/float(x) for x in ferr[l]]) )            
+#                freg[i], freg_err[i] = weighted_avg_and_std( f[l], np.ma.array([1/float(x) for x in ferr[l]]) )
+    l = np.isfinite(fmatrixreg[0])
     
-    if phasefolded is False:
-        k = np.isfinite(fmatrixreg[0]) #only return finite bins
-    else:
-        k = slice(None) #return the entire phase, filled with NaN replacements
-        
-    return treg[k], fmatrixreg[:,k], fmatrixreg_err[:,k], N[k]
+    return treg[l], fmatrixreg[:,l], fmatrixreg_err[:,l], N[l]
     
     
 
@@ -186,20 +160,12 @@ def calc_phase(hjd, P, Tprim):
 def phase_fold(time, flux, P, Tprim, dt = 0.02, ferr_type='medsig', ferr_style='std', sigmaclip=False):
     phi = calc_phase( time, P, Tprim )
     phi[ phi>0.75 ] -= 1.
-    phase, phaseflux, phaseflux_err, N = rebin_err( phi, flux, None, dt=dt, phasefolded=True, ferr_type=ferr_type, ferr_style=ferr_style, sigmaclip=sigmaclip )    
+    phase, phaseflux, phaseflux_err, N = rebin_err( phi, flux, None, dt = dt, ferr_type=ferr_type, ferr_style=ferr_style, sigmaclip=sigmaclip )
     return phase, phaseflux, phaseflux_err, N, phi
     
-
-
-def phase_fold_matrix(time, flux_matrix, P, Tprim, dt = 0.02, ferr_type='medsig', ferr_style='std', sigmaclip=False):
-    phi = calc_phase( time, P, Tprim )
-    phi[ phi>0.75 ] -= 1.
-    phase, phasefluxmatrix, phasefluxmatrix_err, N = rebin_err_matrix( phi, flux_matrix, None, dt=dt, phasefolded=True, ferr_type=ferr_type, ferr_style=ferr_style, sigmaclip=sigmaclip )
-    return phase, phasefluxmatrix, phasefluxmatrix_err, N, phi
     
     
-    
-def plot_phase_folded_lightcurve(ax, time, P, Tprim, flux, ferr=None, ferr_type='meansig', ferr_style='std', normalize=True, title='', period_factor=1.):
+def plot_phase_folded_lightcurve(ax, time, P, Tprim, flux, ferr=None, ferr_type='medsig', ferr_style='std', normalize=True, title='', period_factor=1.):
 
 #    f = sigma_clip(f, sigma=5, iters=5)
 #    f [ f.mask ] = np.nan
@@ -236,7 +202,7 @@ def plot_phase_folded_lightcurve(ax, time, P, Tprim, flux, ferr=None, ferr_type=
 #    ax.plot( phi10min, f10min, '.', c='lightgrey', ms=4, lw=0, rasterized=True, zorder = -1 )
 #    ax.scatter( phi10min, f10min, c='lightgrey', s=10, lw=0, rasterized=True )
 
-    phase, phaseflux, phaseflux_err, N, phi = phase_fold(time, flux, P, Tprim, ferr_type='medsig', ferr_style='std')
+    phase, phaseflux, phaseflux_err, phi = phase_fold(time, flux, P, Tprim, ferr_type='medsig', ferr_style='std')
 
     def set_ax(ax):
         ax.plot( phi, flux, '.', c='lightgrey', ms=4, lw=0, rasterized=True, zorder = -1 )
@@ -256,6 +222,7 @@ def plot_phase_folded_lightcurve(ax, time, P, Tprim, flux, ferr=None, ferr_type=
     else:
         set_ax(ax)
 
+    
     
     
     

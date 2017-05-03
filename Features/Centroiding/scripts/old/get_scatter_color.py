@@ -20,7 +20,7 @@ import numpy as np
 ###############################################################################
 #::: only 1 object in dic
 def get_scatter_color(dic):
-    print 'Fitting airmass polynomials.'
+#    print 'Fitting airmass polynomials.'
     dic['COLOR_PER_NIGHT'] = []
     
     for i, date in enumerate( dic['UNIQUE_NIGHT'] ):
