@@ -48,12 +48,13 @@ def NGTS_Setup():
                     f.write(str(entry)+',')
                 f.write(str(diags[-1])+'\n')
         
+
 def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
-    from Features.Centroiding.Centroiding import centroid
-
+    from Features.Centroiding.Centroiding_RDX import centroid
+    
     if ( candidate.candidate_data['per'] > 0 ) and ( 't0' in candidate.candidate_data )  and ( 'tdur' in candidate.candidate_data ):
       
         period = candidate.candidate_data['per'] * 3600. * 24. #from days to seconds
@@ -70,7 +71,8 @@ def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max 
         dic['HJD'] = candidate.lightcurve['time']
         dic['SYSREM_FLUX3'] = candidate.lightcurve['flux']
     
-        centroid( fieldname, obj_id, ngts_version = ngts_version, source = '', bls_rank = None, period = period, epoch = epoch, width = width, time_hjd = None, pixel_radius = pixel_radius, flux_min = flux_min, flux_max = flux_max, bin_width=bin_width, min_time=min_time, dt=dt, roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, flagfile=flagfile, dic=dic )
+        C = centroid( fieldname, obj_id, ngts_version = ngts_version, source = '', bls_rank = None, period = period, epoch = epoch, width = width, time_hjd = None, pixel_radius = pixel_radius, flux_min = flux_min, flux_max = flux_max, bin_width=bin_width, min_time=min_time, dt=dt, roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, flagfile=flagfile, dic=dic )
+        C.run()
 
     else:
         warnings.warn('Centroiding aborted and skipped. Analysis requires a planet period and epoch.')
@@ -114,16 +116,19 @@ def NGTS_MultiLoader(infile):
             print candidate['obj_id']
             #print candidate['per']
             #print can.lightcurve
+            #Centroiding
+            #run centroid_autovet wrapper - think it saves an output file
+            #centroid_autovet(can,outdir='/home/dja/Autovetting/Centroid/')
 
             #set up candidate, featureset objects
-            #feat = Featureset(can)
+            feat = Featureset(can)
             
-            #featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+            featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
             					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
             					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
-            					'RMS_TDur':[],'SingleTransitEvidence':[],
+            					'SingleTransitEvidence':[],
             					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
             					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
             					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
@@ -133,14 +138,11 @@ def NGTS_MultiLoader(infile):
             					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
             					
    
-            #feat.CalcFeatures(featuredict=featurestocalc)
+            feat.CalcFeatures(featuredict=featurestocalc)
             
             #calculate features beyond the already in place ones
 
             
-            #Centroiding
-            #run centroid_autovet wrapper - think it saves an output file
-            centroid_autovet(can,outdir='/home/dja/Autovetting/Centroid/')
     
             #load in the already read features, and the centroid output file features
     
