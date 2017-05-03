@@ -116,9 +116,9 @@ def NGTS_MultiLoader(infile):
             #print can.lightcurve
 
             #set up candidate, featureset objects
-            feat = Featureset(can)
+            #feat = Featureset(can)
             
-            featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+            #featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
             					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -133,7 +133,7 @@ def NGTS_MultiLoader(infile):
             					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
             					
    
-            feat.CalcFeatures(featuredict=featurestocalc)
+            #feat.CalcFeatures(featuredict=featurestocalc)
             
             #calculate features beyond the already in place ones
 
