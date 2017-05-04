@@ -6,7 +6,7 @@ import fitsio
 import os
 
 #set up to be run from autovet directory
-from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+from Loader import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features import Featureset
 
