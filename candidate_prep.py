@@ -48,7 +48,7 @@ def NGTS_Setup():
                     f.write(str(entry)+',')
                 f.write(str(diags[-1])+'\n')
 
-def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
