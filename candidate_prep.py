@@ -77,7 +77,6 @@ def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max 
     else:
         warnings.warn('Centroiding aborted and skipped. Analysis requires a planet period and epoch.')
 
-    
 #with autovet code
 def NGTS_MultiLoader(infile):
     '''
@@ -115,30 +114,42 @@ def NGTS_MultiLoader(infile):
        
             print candidate['obj_id']
             #print candidate['per']
-            #print can.lightcurve
+            print can.lightcurve['time']
+            print can.candidate_data['per']
+            print np.sum(np.isnan(can.lightcurve['time'])|np.isnan(can.lightcurve['flux'])|np.isnan(can.lightcurve['error']))
             #Centroiding
             #run centroid_autovet wrapper - think it saves an output file
             #centroid_autovet(can,outdir='/home/dja/Autovetting/Centroid/')
-
+            #import pylab as p
+            #p.ion()
+            #p.figure(1)
+            #p.clf()
+            #phase = phasefold(can.lightcurve['time'],can.candidate_data['per'],can.candidate_data['t0'])
+            #p.plot(phase,can.lightcurve['flux'],'r.')
+            #sec = FindSecondary(can.lightcurve,can.candidate_data['per'],can.candidate_data['t0'],can.candidate_data['tdur'])
+            #print 'Secondary: '
+            #print sec
+            #p.pause(5)
+            #raw_input()
             #set up candidate, featureset objects
-            feat = Featureset(can)
+            #feat = Featureset(can,testplots=True)
             
-            featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
-            					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
-            					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
-            					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
-            					'SingleTransitEvidence':[],
-            					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
-            					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
-            					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
-            					'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
-            					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
-            					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
-            					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
+            #featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+           # 					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
+           # 					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
+           # 					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+           # 					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
+           # 					'SingleTransitEvidence':[],
+           # 					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
+           # 					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
+           # 					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
+           # 					'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
+           # 					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
+           # 					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
+           # 					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
             					
    
-            feat.CalcFeatures(featuredict=featurestocalc)
+            #feat.CalcFeatures(featuredict=featurestocalc)
             
             #calculate features beyond the already in place ones
 
