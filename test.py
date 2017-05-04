@@ -13,24 +13,8 @@ Email: mg719@cam.ac.uk
 
 import numpy as np
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
 
-#try:
-#    from ngtsio import ngtsio
-#except ImportError:
-#    from scripts import ngtsio_v1_1_1_autovet as ngtsio
-#    warnings.warn( "Package 'ngtsio' not installed. Use version ngtsio v1.1.1 from 'scripts/' instead.", ImportWarning )
 from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio 
-=======
-#try:
-#    from ngtsio import ngtsio
-#except ImportError:
-#    from scripts import ngtsio_v1_1_1_autovet as ngtsio
-#    warnings.warn( "Package 'ngtsio' not installed. Use version ngtsio v1.1.1 from 'scripts/' instead.", ImportWarning )
-from Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio 
-  
->>>>>>> 3513108c771c5fd87b44e2d96c557888dfb2c4b5
-
 from Loader.Loader import Candidate
 from Loader.NGTS_MultiLoader import NGTS_MultiLoader
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
