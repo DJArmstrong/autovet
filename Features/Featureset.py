@@ -977,7 +977,7 @@ class Featureset(object):
     def pmatch(self,args):
         per = self.target.candidate_data['per']
         plist = self.target.field_periods
-        match = (per/plist) >0.99 & (per/plist<1.01) & (np.abs(epoch-field_epochs)<3600/86400.)
+        match = (per/plist>0.99) & (per/plist<1.01) & (np.abs(epoch-field_epochs)<3600/86400.)
         return np.sum(match)
     
     def Plot_trapfit(self,args):
