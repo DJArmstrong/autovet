@@ -6,10 +6,12 @@ from scipy import interpolate,stats
 import utils
 import sys
 import os
+import pylab as p
+p.ion()
 
 class Featureset(object):
 
-    def __init__(self,Candidate,useflatten=False):
+    def __init__(self,Candidate,useflatten=False,testplots=False):
         """
         Calculate features for a given candidate or candidate list.
         
@@ -37,7 +39,11 @@ class Featureset(object):
         self.oddtransitfit = None
         self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.01])
         self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.01])
-                        
+        self.testplots = testplots
+        if self.testplots:
+            import pylab as p
+            p.ion()
+        
     def CalcFeatures(self,featuredict={}):
         """
         User facing function to calculate features and populate features dict.
@@ -79,7 +85,10 @@ class Featureset(object):
                 #    if len(featuredict[featurename]) == 1:
                 #        self.features[featurename] = featuredict[featurename]
                 #    else:
-                #        print 'Feature not recognised: '+str(featurename)    
+                #        print 'Feature not recognised: '+str(featurename) 
+        if self.testplots: #allows pause for plots to load
+            p.pause(5)
+            raw_input('Press return to continue')   
 
     def Writeout(self,activefeatures):
         featurelist = [self.features[a] for a in activefeatures]
@@ -136,7 +145,11 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__,missionflag=2)
-            
+        if self.testplots:
+            p.figure()
+            p.plot(self.SOMarray,'b.')
+            p.title('SOMarray')
+            print 'SOM_Stat: '+str(planet_prob)
         return planet_prob
         
     def SOM_Distance(self,args):
@@ -194,6 +207,9 @@ class Featureset(object):
             map = self.som(self.SOMarray)
             map = map[0,:]
             flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
+            if self.testplots:
+                print 'IsRamp: '+str(flag)
+                print 'Map: '+str(map[0])+' '+str(map[1])
             return int(flag)
             
     def SOM_IsVar(self,args):
@@ -451,6 +467,14 @@ class Featureset(object):
             t0 = self.target.candidate_data['t0']
             tdur = self.target.candidate_data['tdur']
             self.secondary = utils.FindSecondary(lc,per,t0,tdur)
+        if self.testplots:
+            p.figure()
+            phase = utils.phasefold(self.target.lightcurve['time'],self.target.candidate_data['per'],self.target.candidate_data['t0'])
+            p.plot(phase,self.target.lightcurve['flux'])
+            p.plot([self.secondary['phase'],self.secondary['phase']],[1-self.secondary['depth'],1],'r--')
+            p.title('Secondary Test')
+            print 'Secondary Diags:'
+            print self.secondary
         return self.secondary['depth']
 
     def MaxSecPhase(self,args):
