@@ -471,14 +471,14 @@ class Featureset(object):
             t0 = self.target.candidate_data['t0']
             tdur = self.target.candidate_data['tdur']
             self.secondary = utils.FindSecondary(lc,per,t0,tdur)
-        if self.testplots:
-            p.figure()
-            phase = utils.phasefold(self.target.lightcurve['time'],self.target.candidate_data['per'],self.target.candidate_data['t0'])
-            p.plot(phase,self.target.lightcurve['flux'])
-            p.plot([self.secondary['phase'],self.secondary['phase']],[1-self.secondary['depth'],1],'r--')
-            p.title('Secondary Test')
-            print 'Secondary Diags:'
-            print self.secondary
+        #if self.testplots:
+        #    p.figure()
+        #    phase = utils.phasefold(self.target.lightcurve['time'],self.target.candidate_data['per'],self.target.candidate_data['t0'])
+        #    p.plot(phase,self.target.lightcurve['flux'])
+        #    p.plot([self.secondary['phase'],self.secondary['phase']],[1-self.secondary['depth'],1],'r--')
+        #    p.title('Secondary Test')
+        #    print 'Secondary Diags:'
+        #    print self.secondary
         return self.secondary['depth']
 
     def MaxSecPhase(self,args):
