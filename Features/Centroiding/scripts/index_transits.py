@@ -129,7 +129,7 @@ def index_eclipses(dic, obj_nr=None):
         N = int( 1. * ( dic['HJD'][-1] - dic['EPOCH'] ) / dic['PERIOD'] ) + 1
         
         tmid_ecl1 = np.array( [ dic['EPOCH'] +                    i * dic['PERIOD']  for i in range(N) ] )
-        tmid_ecl2 = np.array( [ dic['EPOCH'] + dic['PERIOD']/2. + i * dic['PERIOD']  for i in range(N) ] )
+        tmid_ecl2 = np.array( [ dic['EPOCH'] - dic['PERIOD']/2. + i * dic['PERIOD']  for i in range(N+1) ] )
         
         _, ind_ecl1,        mask_ecl1 = mask_ranges( dic['HJD'], tmid_ecl1 - dic['WIDTH']/2., tmid_ecl1 + dic['WIDTH']/2. )
         _, ind_ecl1_half,   _         = mask_ranges( dic['HJD'], tmid_ecl1 - dic['WIDTH']/4., tmid_ecl1 + dic['WIDTH']/4. )
