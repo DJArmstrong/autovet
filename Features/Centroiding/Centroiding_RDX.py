@@ -139,7 +139,6 @@ class centroid():
                     'PERIOD','WIDTH','EPOCH','DEPTH','NUM_TRANSITS', \
                     'CANVAS_PERIOD','CANVAS_WIDTH','CANVAS_EPOCH','CANVAS_DEPTH']
             self.dic = ngtsio.get(self.fieldname, keys, obj_id = self.obj_id, time_hjd = self.time_hjd, ngts_version = self.ngts_version, bls_rank = self.bls_rank, silent = True, set_nan = True)
-            self.dic['UNIQUE_NIGHT'] = np.unique(self.dic['NIGHT']) 
 
             if self.source == 'CANVAS':
                 #::: overwrite BLS with CANVAS infos (if existing) -> copy the keys
@@ -158,6 +157,9 @@ class centroid():
         #::: set FLUX=0 entries to NaN
         # not needed anymore, now handled within ngtsio
 #        self.dic = set_nan.set_nan(self.dic) 
+        
+        #::: calculate unique nights
+        self.dic['UNIQUE_NIGHT'] = np.unique(self.dic['NIGHT']) 
         
         #::: calcualte median CCD position
         self.dic['CCDX_0'] = np.nanmedian(self.dic['CCDX'])
