@@ -974,6 +974,12 @@ class Featureset(object):
         return density_in_ingress / len(self.target.lightcurve['time'])
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
  
+    def pmatch(self,args):
+        per = self.target.candidate_data['per']
+        plist = self.target.field_periods
+        match = (per/plist) >0.99 & (per/plist<1.01) & (np.abs(epoch-field_epochs)<3600/86400.)
+        return np.sum(match)
+    
     def Plot_trapfit(self,args):
         per = self.target.candidate_data['per']
         print self.trapfit.params
