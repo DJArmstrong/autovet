@@ -20,7 +20,7 @@ from Features.Centroiding.Centroiding_RDX import centroid
 ###########################################################################
 #::: load data (all nights) of the target - AUTOVET version
 ###########################################################################
-def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
