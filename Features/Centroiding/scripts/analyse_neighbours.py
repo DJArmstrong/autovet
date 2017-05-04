@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import lightcurve_tools
-from scripts import stacked_images
+import stacked_images
 import pandas as pd
 #from astropy.stats import LombScargle
 #from scipy.signal import lombscargle
