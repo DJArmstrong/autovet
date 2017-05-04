@@ -3,12 +3,8 @@ import fitsio
 #import os
 import kepselfflatten
 #import itertools
-        
-#try:
-#    from ngtsio import ngtsio
-#except ImportError:
-#    from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio            
+
+import ngtsio_v1_1_1_autovet as ngtsio            
 
 
 

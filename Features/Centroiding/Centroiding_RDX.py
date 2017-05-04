@@ -76,7 +76,7 @@ class centroid():
     if user wants to manually overwrite the BLS or CANVAS period
     '''
     
-    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None):
 #        super(centroid, self).__init__(parent)
             
         self.roots = roots
@@ -105,6 +105,7 @@ class centroid():
         self.dt = dt
         self.show_plot = show_plot
         self.flagfile = flagfile
+        self.dic = dic
         
         self.crosscorr = {}
         
@@ -129,32 +130,36 @@ class centroid():
     ###########################################################################
     def load_object(self):
         
-#        print self.obj_id
-    
-        #::: get infos for the target object
-        keys = ['OBJ_ID','FLUX_MEAN','RA','DEC', \
-                'NIGHT','AIRMASS', \
-                'HJD','CCDX','CCDY','CENTDX','CENTDY','SYSREM_FLUX3', \
-                'PERIOD','WIDTH','EPOCH','DEPTH','NUM_TRANSITS', \
-                'CANVAS_PERIOD','CANVAS_WIDTH','CANVAS_EPOCH','CANVAS_DEPTH']
-        self.dic = ngtsio.get(self.fieldname, keys, obj_id = self.obj_id, time_hjd = self.time_hjd, ngts_version = self.ngts_version, bls_rank = self.bls_rank, silent = True, set_nan = True)
-        self.dic['UNIQUE_NIGHT'] = np.unique(self.dic['NIGHT']) 
-        
-        if self.source == 'CANVAS':
-            #::: overwrite BLS with CANVAS infos (if existing) -> copy the keys
-            for key in ['PERIOD','WIDTH','EPOCH','DEPTH']:
-                #::: if the CANVAS data exists, use it
-                if ('CANVAS_'+key in self.dic) and (~np.isnan( self.dic['CANVAS_'+key] )): 
-                    self.dic[key] = self.dic['CANVAS_'+key].copy()
-                    #::: convert CANVAS depth (in mmag) into the standard BLS depth (float)
-                    if key == 'DEPTH': self.dic[key] *= -1E-3
-                #::: if the CANVAS data is missing, make BLS the source
-                else:
-                    self.source = 'BLS'
+        #::: if no basic dic has been given, load it via ngtsio
+        if self.dic is None:
+            #::: get infos for the target object
+            keys = ['OBJ_ID','FLUX_MEAN','RA','DEC', \
+                    'NIGHT','AIRMASS', \
+                    'HJD','CCDX','CCDY','CENTDX','CENTDY','SYSREM_FLUX3', \
+                    'PERIOD','WIDTH','EPOCH','DEPTH','NUM_TRANSITS', \
+                    'CANVAS_PERIOD','CANVAS_WIDTH','CANVAS_EPOCH','CANVAS_DEPTH']
+            self.dic = ngtsio.get(self.fieldname, keys, obj_id = self.obj_id, time_hjd = self.time_hjd, ngts_version = self.ngts_version, bls_rank = self.bls_rank, silent = True, set_nan = True)
+
+            if self.source == 'CANVAS':
+                #::: overwrite BLS with CANVAS infos (if existing) -> copy the keys
+                for key in ['PERIOD','WIDTH','EPOCH','DEPTH']:
+                    #::: if the CANVAS data exists, use it
+                    if ('CANVAS_'+key in self.dic) and (~np.isnan( self.dic['CANVAS_'+key] )): 
+                        self.dic[key] = self.dic['CANVAS_'+key].copy()
+                        #::: convert CANVAS depth (in mmag) into the standard BLS depth (float)
+                        if key == 'DEPTH': self.dic[key] *= -1E-3
+                    #::: if the CANVAS data is missing, make BLS the source
+                    else:
+                        self.source = 'BLS'
+        else:
+            pass #(self.dic does already exist)
                     
         #::: set FLUX=0 entries to NaN
         # not needed anymore, now handled within ngtsio
 #        self.dic = set_nan.set_nan(self.dic) 
+        
+        #::: calculate unique nights
+        self.dic['UNIQUE_NIGHT'] = np.unique(self.dic['NIGHT']) 
         
         #::: calcualte median CCD position
         self.dic['CCDX_0'] = np.nanmedian(self.dic['CCDX'])
