@@ -4,7 +4,7 @@ import fitsio
 import kepselfflatten
 #import itertools
 
-from Features.Centroiding.scripts import ngtsio_v1_1_1_centroiding as ngtsio            
+import ngtsio_v1_1_1_autovet as ngtsio            
 
 
 
