@@ -13,11 +13,7 @@ Email: mg719@cam.ac.uk
 
 
 import warnings
-<<<<<<< HEAD
-from Features.Centroiding.Centroiding import centroid
-=======
 from Features.Centroiding.Centroiding_RDX import centroid
->>>>>>> 3513108c771c5fd87b44e2d96c557888dfb2c4b5
 
 
 
