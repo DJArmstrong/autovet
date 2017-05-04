@@ -186,11 +186,15 @@ def FindSecondary(lc,per,t0,tdur):
         hilim = np.searchsorted(phase,maxphases[t])
         npoints = hilim-lolim
         if npoints > 0:
-            base1 = np.median(flux[lolim-npoints*2:lolim])
-            base2 = np.median(flux[hilim:hilim+npoints*2])
-            base = (base1+base2)*0.5
+            #base1 = np.median(flux[lolim-npoints*2:lolim])
+            #base2 = np.median(flux[hilim:hilim+npoints*2])
+            #base = (base1+base2)*0.5
+            #print base
+            base = np.median(flux)
             depth = base - np.mean(flux[lolim:hilim])
-            deptherror = np.mean(err[lolim:hilim])/np.sqrt(npoints)
+            deptherror = np.std(flux[lolim:hilim])/np.sqrt(npoints)
+            #deptherror = np.mean(err[lolim:hilim])/np.sqrt(npoints)
+            #print depth
             secdepthsigs[t] = depth/deptherror
             secdepths[t] = depth
     maxidx = np.argmax(secdepthsigs)
@@ -199,7 +203,7 @@ def FindSecondary(lc,per,t0,tdur):
     secondary['depth'] = secdepths[maxidx]
     secondary['significance'] = secdepthsigs[maxidx]
     return secondary
-
+    
 def SplitOddEven(lc,per,t0,oddeven):
     time = lc['time']
     flux = lc['flux']
