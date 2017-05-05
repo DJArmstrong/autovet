@@ -76,7 +76,7 @@ class centroid():
     if user wants to manually overwrite the BLS or CANVAS period
     '''
     
-    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None):
+    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None, nancut=None):
 #        super(centroid, self).__init__(parent)
             
         self.roots = roots
@@ -106,6 +106,7 @@ class centroid():
         self.show_plot = show_plot
         self.flagfile = flagfile
         self.dic = dic
+        self.nancut = nancut
         
         self.crosscorr = {}
         
@@ -233,6 +234,14 @@ class centroid():
 #        print self.dic_nb['CENTDY'].shape
 #        print self.dic_nb['CCDX'].shape
 #        print self.dic_nb['CCDY'].shape
+        
+        #::: apply same nancut as for target object to all neighbours 
+        #::: ("autovet" specific only)
+        if self.nancut is not None:
+            for key in self.dic_nb: 
+                if isinstance(self.dic_nb[key], np.ndarray):
+                    if (self.dic_nb[key].ndim==2) :
+                        self.dic_nb[key] = self.dic_nb[key][slice(None), ~self.nancut]
     
 
 
@@ -613,6 +622,11 @@ class centroid():
     
     
     def plot_info_text(self, ax):
+        if 'DEPTH' not in self.dic: depth = ''
+        else: depth = mystr(np.abs(self.dic['DEPTH'])*1000.,2)
+        if 'NUM_TRANSITS' not in self.dic: num_transits = ''
+        else: depth = mystr(self.dic['NUM_TRANSITS'],0)
+            
         ax.set_xlim([0,1])
         ax.set_ylim([0,1])
         ax.axis('off')
@@ -630,8 +644,8 @@ class centroid():
 #        ax.text(0,0.4,'Width (s): '+mystr(self.dic['WIDTH'],2))
         ax.text(0,0.2,'Width (h): '+mystr(self.dic['WIDTH']/3600.,2))
 #        ax.text(0,0.2,'EPOCH (s): '+mystr(self.dic['EPOCH'],2))
-        ax.text(0,0.1,'Depth (mmag): '+mystr(np.abs(self.dic['DEPTH'])*1000.,2))
-        ax.text(0,0.0,'Num Transits: '+mystr(self.dic['NUM_TRANSITS'],0))
+        ax.text(0,0.1,'Depth (mmag): '+depth)
+        ax.text(0,0.0,'Num Transits: '+num_transits)
         
 
 

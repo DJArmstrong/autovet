@@ -4,9 +4,10 @@ import glob
 import numpy as np
 import fitsio
 import os
+import warnings
 
 #set up to be run from autovet directory
-from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+from Loader import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features import Featureset
 
@@ -48,7 +49,7 @@ def NGTS_Setup():
                     f.write(str(entry)+',')
                 f.write(str(diags[-1])+'\n')
 
-def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
@@ -82,14 +83,12 @@ def NGTS_MultiLoader(infile):
     infile (string): link to a file containing the columns
        fieldname    ngts_version    obj_id    label    per   t0   tdur
     '''
-    
     #::: read list of all fields
     indata = np.genfromtxt(infile, names=True, dtype=None)
     
     field_ids = [ x+'_'+y for (x,y) in zip(indata['fieldname'], indata['ngts_version']) ]
     
     unique_field_ids = np.unique(field_ids)
-    
     
     #:::: loop over all fields
     for field_id in unique_field_ids:
@@ -108,12 +107,13 @@ def NGTS_MultiLoader(infile):
         #get the full list of periods in this field
         field_periods = indata['per']
         field_epochs = indata['t0']
-        
+
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-        
-            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data={'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}, field_periods=field_periods, field_epochs=field_epochs)
-       
+            
+            candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
+            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
+            
             print candidate['obj_id']
             #print candidate['per']
             #print can.lightcurve['time']

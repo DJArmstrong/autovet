@@ -14,7 +14,7 @@ class Candidate(object):
     """ Obtain meta and lightcurve information for a specific candidate. """
     
 
-    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.},stellar_radius=1.,field_periods=None, field_epochs=None):
+    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.},stellar_radius=1., field_periods=None, field_epochs=None):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
@@ -34,17 +34,18 @@ class Candidate(object):
         self.filepath = filepath
         self.obs = observatory 
         self.field_dic = field_dic
-        self.lightcurve, self.info = self.LoadLightcurve()
-        self.exp_time = np.median(np.diff(self.lightcurve['time']))
         self.label = label
         self.candidate_data = candidate_data
+        self.stellar_radius = stellar_radius  #in solar, will default to 1 if not given
+        
+        self.lightcurve, self.info = self.LoadLightcurve()
+        self.exp_time = np.median(np.diff(self.lightcurve['time']))
         self.field_periods = field_periods
         self.field_epochs = field_epochs
         if observatory == 'Kepler' or observatory == 'K2':
             self.lightcurve_f = self.Flatten()
         else:
             self.lightcurve_f = self.lightcurve
-        self.stellar_radius = stellar_radius  #in solar, will default to 1 if not given
 
 
 
@@ -85,15 +86,16 @@ class Candidate(object):
             fieldname, ngts_version = self.filepath
             dic = ngtsio.get( fieldname, lc_keys + info_keys, obj_id=str(self.id).zfill(6), ngts_version=ngts_version, silent=True, set_nan=True )
             
-        #if a field_dic is passed (in memory), then select the specific object
+        #if a field_dic was passed (in memory), then select the specific object and store it into dic
         else:
             ind_obj = np.where( self.field_dic['OBJ_ID'] == self.id )[0]
             dic = {}
-            for key in self.field_dic:
-                try:
-                    dic[key] = self.field_dic[key][ind_obj].flatten()
-                except:
-                    dic[key] = self.field_dic[key]
+            for key in ['OBJ_ID','FLUX_MEAN','RA','DEC']:
+                dic[key] = self.field_dic[key][ind_obj][0]
+            for key in ['HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY']:
+                dic[key] = self.field_dic[key][ind_obj].flatten()
+            for key in ['FIELDNAME','NGTS_VERSION','NIGHT','AIRMASS']:
+                dic[key] = self.field_dic[key]
         
         nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR'])
         norm = np.nanmedian(dic['FLUX'])
@@ -104,8 +106,12 @@ class Candidate(object):
         
         info = {}
         for info_key in info_keys: 
-            info[info_key] = dic[info_key]
-            
+            if isinstance(dic[info_key], np.ndarray):
+                info[info_key] = dic[info_key][~nancut]
+            else:
+                info[info_key] = dic[info_key]
+        info['nancut'] = nancut
+        
         del dic
         return lc, info
         
