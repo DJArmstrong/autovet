@@ -104,11 +104,15 @@ def NGTS_MultiLoader(infile):
         #::: load this field into memory with ngtsio
         field_dic = ngtsio.get(fieldname, ['OBJ_ID','HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS'], obj_id=target_obj_ids_in_this_field, ngts_version=ngts_version)
         
+        #get the full list of periods in this field
+        field_periods = indata['per']
+        field_epochs = indata['t0']
+
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
             
             candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
-            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data)
+            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
             
             print candidate['obj_id']
             #print candidate['per']
