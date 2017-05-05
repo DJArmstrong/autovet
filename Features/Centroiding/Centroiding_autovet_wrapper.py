@@ -20,7 +20,9 @@ from Features.Centroiding.Centroiding_RDX import centroid
 ###########################################################################
 #::: load data (all nights) of the target - AUTOVET version
 ###########################################################################
-def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., \
+                     method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., \
+                     dt=0.001, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
@@ -41,7 +43,16 @@ def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max =
         dic['HJD'] = candidate.lightcurve['time']
         dic['SYSREM_FLUX3'] = candidate.lightcurve['flux']
     
-        C = centroid( fieldname, obj_id, ngts_version = ngts_version, source = '', bls_rank = None, user_period = period, user_epoch = epoch, user_width = width, time_hjd = None, pixel_radius = pixel_radius, flux_min = flux_min, flux_max = flux_max, bin_width=bin_width, min_time=min_time, dt=dt, roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, flagfile=flagfile, dic=dic )
+        C = centroid( fieldname, obj_id, ngts_version = ngts_version, \
+                      source = '', bls_rank = None, \
+                      user_period = period, user_epoch = epoch, user_width = width, \
+                      user_flux = None, user_centdx = None, user_centdy = None, \
+                      time_hjd = None, pixel_radius = pixel_radius, \
+                      flux_min = flux_min, flux_max = flux_max, \
+                      method=method, R_min=R_min, N_top_max=N_top_max, \
+                      bin_width=bin_width, min_time=min_time, dt=dt, \
+                      roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, \
+                      flagfile=flagfile, dic=dic, nancut=candidate.info['nancut'] )
         C.run()
 
     else:
