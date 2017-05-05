@@ -11,10 +11,10 @@ Cambridge CB3 0HE
 Email: mg719@cam.ac.uk
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
+#import numpy as np
+#import matplotlib.pyplot as plt
 
-from Features.Centroiding.scripts import ngtsio_v1_1_1_centroiding as ngtsio 
+from Loader import ngtsio_v1_1_1_autovet as ngtsio 
 from Loader.Loader import Candidate
 from Loader.NGTS_MultiLoader import NGTS_MultiLoader
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
@@ -23,8 +23,11 @@ from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 def test():
 
-    # a) laod candidate for a specific NGTS object
+    # a) load candidate for a specific NGTS object
     obj_id = '009861'
+#    obj_id = '015499' 
+#    obj_id = '017825' 
+#    obj_id = '019624'
     fieldname = 'NG0304-1115'
     ngts_version = 'TEST18'
     
@@ -39,11 +42,12 @@ def test():
     print can.info
     
     centroid_autovet( can )
-
+    
+    
 
     # b) load candidates with the NGTS_MultiLoader function
-#    infile = 'test_infile.txt'
-#    NGTS_MultiLoader(infile)
+    infile = 'test_infile.txt'
+    NGTS_MultiLoader(infile)
 
 
 

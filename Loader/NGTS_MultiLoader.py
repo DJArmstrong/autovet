@@ -1,7 +1,8 @@
 import numpy as np
         
-from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
+import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
+from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 
 # NGTS specific loader for multiple sources from various fields
@@ -31,18 +32,19 @@ def NGTS_MultiLoader(infile):
         #::: load this field into memory with ngtsio
         field_dic = ngtsio.get(fieldname, ['OBJ_ID','HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS'], obj_id=target_obj_ids_in_this_field, ngts_version=ngts_version)
         
-        #get the full list of periods in this field
+        #get the full list of periods in this field (for pmatch calculation)
         field_periods = indata['per']
         field_epochs = indata['t0']
-        
+
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-        
-            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data={'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}, field_periods=field_periods, field_epochs=field_epochs)
-       
+            
+            candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
+            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
+            
             '''
             now do the main stuff with this candidate...
             or save all candidates into a dcitionary/list of candidates and then go on from there...
-            for now:
+            for now just do centroiding :
             '''
-            print can.lightcurve
+            centroid_autovet( can )
