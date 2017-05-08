@@ -336,7 +336,7 @@ class centroid():
         self.fig_corrfy, flags_fy = self.ccfct( 'SYSREM_FLUX3_PHASE', 'CENTDY_fda_PHASE', 'FLUX vs CENTDY' )
         self.fig_corrxy, flags_xy = self.ccfct( 'CENTDX_fda_PHASE', 'CENTDY_fda_PHASE', 'CENTDX vs CENTDY' )
 
-        self.fig_autocorr = self.acfct( ['SYSREM_FLUX3_PHASE','CENTDX_fda_PHASE','CENTDY_fda_PHASE'], ['FLUX','CENTDX','CENTDY'] )            
+        #self.fig_autocorr = self.acfct( ['SYSREM_FLUX3_PHASE','CENTDX_fda_PHASE','CENTDY_fda_PHASE'], ['FLUX','CENTDX','CENTDY'] )            
              
  
     #::: autocorrelation fct
@@ -421,8 +421,8 @@ class centroid():
         x = self.phasedf[xkey]
         y = self.phasedf[ykey]
         
-        fig, axes = plt.subplots(1,2,figsize=(10,4))
-        fig.suptitle(self.obj_id + ' ' + title)
+        #fig, axes = plt.subplots(1,2,figsize=(10,4))
+        #fig.suptitle(self.obj_id + ' ' + title)
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -434,11 +434,11 @@ class centroid():
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
             self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ]
-            axes[0].plot( self.phasedf['HJD_PHASE'], correls[i].loc[ :, xkey, ykey ], label=str(windows[i] * self.dt) )
-            axes[0].axhline( 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
-            axes[0].axhline( - 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
-        axes[0].set( xlim=[-0.25,0.75], ylim=[-1,1], xlabel='phase', ylabel='rolling correlation')
-        axes[0].legend()
+        #    axes[0].plot( self.phasedf['HJD_PHASE'], correls[i].loc[ :, xkey, ykey ], label=str(windows[i] * self.dt) )
+        #    axes[0].axhline( 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
+        #    axes[0].axhline( - 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
+       # axes[0].set( xlim=[-0.25,0.75], ylim=[-1,1], xlabel='phase', ylabel='rolling correlation')
+       # axes[0].legend()
                 
 #        crosscorr, lags, crosscorr_CI95, crosscorr_CI99 = pandas_tsa.pandas_crosscorr(x, y)
 #        axes[1].plot( lags, crosscorr )
@@ -454,14 +454,15 @@ class centroid():
         self.dic['CrossCorr_'+xkey+'_'+ykey] = self.crosscorr[title]
         crosscorr_CI95 = np.concatenate( (crosscorr_CI95[ int(3*N_c/4): ], crosscorr_CI95[ :int(3*N_c/4) ]) )
         crosscorr_CI99 = np.concatenate( (crosscorr_CI99[ int(3*N_c/4): ], crosscorr_CI99[ :int(3*N_c/4) ]) )
-        axes[1].plot( self.ccf_lags, self.crosscorr[title] )
-        axes[1].plot( self.ccf_lags, crosscorr_CI99, 'k--' )
-        axes[1].plot( self.ccf_lags, -crosscorr_CI99, 'k--' )
-        axes[1].set( xlim=[self.ccf_lags[0], self.ccf_lags[-1]], ylim=[-1,1], xlabel=r'lag $\tau$ (phase shift)', ylabel='ccf (periodic)' )
+       # axes[1].plot( self.ccf_lags, self.crosscorr[title] )
+      #  axes[1].plot( self.ccf_lags, crosscorr_CI99, 'k--' )
+      #  axes[1].plot( self.ccf_lags, -crosscorr_CI99, 'k--' )
+      #  axes[1].set( xlim=[self.ccf_lags[0], self.ccf_lags[-1]], ylim=[-1,1], xlabel=r'lag $\tau$ (phase shift)', ylabel='ccf (periodic)' )
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                   
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        plt.tight_layout() 
+      #  plt.tight_layout() 
+        fig = 0
         return fig, None
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -876,10 +877,10 @@ class centroid():
             print 'binned.'
             
             #::: plot neighbours for comparison
-            start = timeit.default_timer()
-            analyse_neighbours.plot( self.dic, self.dic_nb, self.outdir, self.fieldname, self.obj_id, self.ngts_version, dt=self.dt )
-            print 'plotted neighbours.'
-            print '(time needed for this):', timeit.default_timer() - start
+     #       start = timeit.default_timer()
+        #    analyse_neighbours.plot( self.dic, self.dic_nb, self.outdir, self.fieldname, self.obj_id, self.ngts_version, dt=self.dt )
+     #       print 'plotted neighbours.'
+     #       print '(time needed for this):', timeit.default_timer() - start
     
             #TODO shift the plot parts of the following functions into seperate script
     
@@ -893,9 +894,9 @@ class centroid():
             self.do_stats()
             
             #plots
-            self.plot_scatter_matrix()
+   #         self.plot_scatter_matrix()
             
-            self.plot_phase_folded_curves()
+    #        self.plot_phase_folded_curves()
             
     ##        self.plot_rainplot_summary() #exclude
     ##        
@@ -905,11 +906,11 @@ class centroid():
     #        
     #        self.plot_detrending() #exclude
             
-            self.plot_info_page()
+     #       self.plot_info_page()
             
-            self.plot_stacked_image()
+     #       self.plot_stacked_image()
             
-            self.save_pdf()
+     #       self.save_pdf()
             
             self.save_data()
             

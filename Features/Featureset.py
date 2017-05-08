@@ -151,9 +151,14 @@ class Featureset(object):
             p.figure()
             if len(self.SOMarray.shape)!=1:
                 SOMtoplot = self.SOMarray[0,:]
+            else:
+                SOMtoplot = self.SOMarray
             p.plot(np.arange(len(SOMtoplot)),SOMtoplot,'b.')
             p.title('SOMarray')
             print 'SOM_Stat: '+str(planet_prob)
+            print self.SOMarray
+            print 'lc:'
+            print lc
         return planet_prob
         
     def SOM_Distance(self,args):
@@ -977,7 +982,9 @@ class Featureset(object):
     def pmatch(self,args):
         per = self.target.candidate_data['per']
         plist = self.target.field_periods
-        match = (per/plist>0.99) & (per/plist<1.01) & (np.abs(epoch-field_epochs)<3600/86400.)
+        epoch = self.target.candidate_data['t0']
+        elist = self.target.field_epochs
+        match = (per/plist>0.99) & (per/plist<1.01) & (np.abs(epoch-elist)<3600/86400.)
         return np.sum(match)
     
     def Plot_trapfit(self,args):
