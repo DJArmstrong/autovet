@@ -4,10 +4,9 @@ import glob
 import numpy as np
 import fitsio
 import os
-import warnings
 
 #set up to be run from autovet directory
-from Loader import ngtsio_v1_1_1_autovet as ngtsio
+from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features import Featureset
 
@@ -49,7 +48,7 @@ def NGTS_Setup():
                     f.write(str(entry)+',')
                 f.write(str(diags[-1])+'\n')
 
-def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
+def centroid_autovet(candidate, pixel_radius = 150., flux_min = 1000., flux_max = 10000., bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None):
     '''
     Amendments for autovet implementation
     '''
@@ -77,18 +76,23 @@ def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max =
     else:
         warnings.warn('Centroiding aborted and skipped. Analysis requires a planet period and epoch.')
 
+def phasefold(time,per,t0=0):
+    return np.mod(time-t0,per)/per
+
 #with autovet code
 def NGTS_MultiLoader(infile):
     '''
     infile (string): link to a file containing the columns
        fieldname    ngts_version    obj_id    label    per   t0   tdur
     '''
+    
     #::: read list of all fields
     indata = np.genfromtxt(infile, names=True, dtype=None)
     
     field_ids = [ x+'_'+y for (x,y) in zip(indata['fieldname'], indata['ngts_version']) ]
     
     unique_field_ids = np.unique(field_ids)
+    
     
     #:::: loop over all fields
     for field_id in unique_field_ids:
@@ -107,21 +111,19 @@ def NGTS_MultiLoader(infile):
         #get the full list of periods in this field
         field_periods = indata['per']
         field_epochs = indata['t0']
-
+        
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-            
-            candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
-            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
-            
+        
+            can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data={'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}, field_periods=field_periods, field_epochs=field_epochs)
+       
             print candidate['obj_id']
-            #print candidate['per']
-            #print can.lightcurve['time']
+            print candidate['per']
             #print can.candidate_data['per']
             #print np.sum(np.isnan(can.lightcurve['time'])|np.isnan(can.lightcurve['flux'])|np.isnan(can.lightcurve['error']))
             #Centroiding
             #run centroid_autovet wrapper - think it saves an output file
-           # centroid_autovet(can,outdir='/home/dja/Autovetting/Centroid/')
+            centroid_autovet(can,outdir='/home/dja/Autovetting/Centroid/')
             #import pylab as p
             #p.ion()
             #p.figure(1)
@@ -135,20 +137,21 @@ def NGTS_MultiLoader(infile):
             #raw_input()
             #set up candidate, featureset objects
             feat = Featureset(can,testplots=True)
-            
-            featurestocalc = 	{'pmatch':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
-            					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
-            					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
-            					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
-            					'SingleTransitEvidence':[],
-            					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
-            					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
-            					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
-            					'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
-            					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
-            					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
-            					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
+            print feat.target.lightcurve
+            featurestocalc = {'SOM_Stat':[]}
+            #featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+           # 					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
+           # 					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
+           # 					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+           # 					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
+           # 					'SingleTransitEvidence':[],
+           # 					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
+           # 					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
+           # 					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
+           # 					'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
+           # 					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
+           # 					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
+           # 					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
             					
    
             feat.CalcFeatures(featuredict=featurestocalc)
@@ -163,3 +166,48 @@ def NGTS_MultiLoader(infile):
     
     
 #repeat for synthetic transits
+def Synth_Iterator():
+    synthorionlist = '/ngts/pipeline/output/synthetics/*TEST18/ORION*'
+    synthpostsysremlist = '/ngts/pipeline/output/synthetics/*TEST18/POST-SYSREM*'
+
+    for synthfile in synthfilelist:
+        field = os.path.split(synthfile)[1][19:30]
+        for orionfile in synthorionlist:
+            if os.path.split(orionfile)[1][6:17] == field:
+                break
+    
+        lcf = fitsio.FITS(synthfile)
+        obj_id_list = lcf['catalogue'].read()['OBJ_ID']
+       
+        blsdat = fitsio.FITS(orionfile)
+        blsbase = blsdat['catalogue'].read()
+        bls_objids = blsbase['OBJ_ID']
+        peakmatch = blsbase['FAKE_PEAK_MATCH']
+    
+        blscatalogue = blsdat['candidates'].read()
+        periods = blscatalogue['PERIOD']
+        tdurs = blscatalogue['WIDTH']
+        t0s = blscatalogue['EPOCH']
+    
+        for i,obj_id in enumerate(bls_objids):
+           
+            print 'Preparing '+obj_id
+            try: 
+                if peakmatch[i] > 0:  #orion found injected candidate
+    
+                    #look up candidate with correct rank (are there more than these in here?)
+                    
+                    #extract diags
+    
+                   diags = np.array([cand['RANK'],cand['DELTA_CHISQ'],cand['NPTS_TRANSIT'],cand['NUM_TRANSITS'],cand['NBOUND_IN_TRANS'],cand['AMP_ELLIPSE'],cand['SN_ELLIPSE'],cand['GAP_RATIO'],cand['SN_ANTI'],cand['SDE']])
+
+                    #extract and save lc
+ 
+                    obj_index = np.where(obj_id_list==obj_id.strip(' '))[0][0]
+
+                    time = lcf['hjd'][obj_index,:][0]
+                    flux = lcf['flux'][obj_index,:][0]
+                    flux_err = lcf['flux_err'][obj_index,:][0]
+                    flags = lcf['flags'][obj_index,:][0]
+ 
+                    #calculate features (make sure field_periods is from the usual field, NOT the synths)
