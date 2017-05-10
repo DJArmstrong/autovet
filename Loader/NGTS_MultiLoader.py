@@ -63,6 +63,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
                 for now just do centroiding :
                 '''
                 if docentroid:
+                    outdir = os.path.join(outdir,'{:06d}'.format(candidate['obj_id']+'_'+str(candidate['rank']))
                     centroid_autovet( can, outdir=outdir)
                     
                 if dofeatures:

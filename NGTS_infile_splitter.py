@@ -14,7 +14,9 @@ for s,savearray in enumerate(splitarrays):
         f.write('#')
         for name in savearray.dtype.names:
             f.write(name + ' ') 
+        f.write('\n')
         for row in savearray:
             for el in row:
                 f.write(str(el)+' ')
+            f.write('\n')
             

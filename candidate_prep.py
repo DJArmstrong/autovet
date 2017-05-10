@@ -61,9 +61,9 @@ def NGTS_Setup():
 
 from Loader.NGTS_MultiLoader import NGTS_MultiLoader
 
-infile = 'multiloader_input_TEST18_v2_0.txt'
-outdir = '/home/dja/AutoVetting/Centroid/'
-NGTS_Multiloader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
+outdir = '/home/dja/Autovetting/Centroid/'
+NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
             #featurestocalc = 	{'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
            # 					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
@@ -78,7 +78,7 @@ NGTS_Multiloader(infile, outdir=outdir, docentroid=True)  #to just run the centr
            # 					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
            # 					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
            # 					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-NGTS_Multiloader(infile, dofeatures=featurestocalc)  #to just run the features (currently won't save!)
+NGTS_MultiLoader(infile, dofeatures=featurestocalc)  #to just run the features (currently won't save!)
 
 		
 def NGTS_FeatureCombiner():
