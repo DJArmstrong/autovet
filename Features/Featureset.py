@@ -984,8 +984,12 @@ class Featureset(object):
         t0 = self.target.candidate_data['t0']+per/2.  #transit at phase 0.5
         tdur_phase = self.target.candidate_data['tdur']/per
         phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        phaselc = np.zeros([len(phase),2])
+        phaselc[:,0] = phase
+        phaselc[:,1] = self.target.lightcurve['flux']
+        phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
         nbins = np.floor(10./tdur_phase).astype('int')  #10 bins across transit duration
-        binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc2P,nbins,fill_value=-10)
+        binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
         neartransit = (binnedlc[:,0] > 0.5-5*tdur_phase/2.) & (binnedlc[:,0] < 0.5+5*tdur_phase/2.)
         return np.sum(binnedlc[neartransit,1]==-10)/np.sum(neartransit)
  
