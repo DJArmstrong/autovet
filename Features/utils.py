@@ -143,20 +143,25 @@ def FillGaps_Linear(time,flux):
 def phasefold(time,per,t0=0):
     return np.mod(time-t0,per)/per
     
-def BinPhaseLC(phaselc,nbins):
+def BinPhaseLC(phaselc,nbins,fill_value=None):
     bin_edges = np.arange(nbins)/float(nbins)
     bin_indices = np.digitize(phaselc[:,0],bin_edges) - 1
     binnedlc = np.zeros([nbins,2])
     binnedlc[:,0] = 1./nbins * 0.5 +bin_edges  #fixes phase of all bins - means ignoring locations of points in bin, but necessary for SOM mapping
     binnedstds = np.zeros(nbins)
+    emptybins = 0
     for bin in range(nbins):
         if np.sum(bin_indices==bin) > 0:
             binnedlc[bin,1] = np.mean(phaselc[bin_indices==bin,1])  #doesn't make use of sorted phase array, could probably be faster?
             binnedstds[bin] = np.std(phaselc[bin_indices==bin,1])
         else:
-            binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
+            emptybins += 1
+            if fill_value is not None:
+                binnedlc[bin,1] = fill_value
+            else:
+                binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
             binnedstds[bin] = np.std(phaselc[:,1])
-    return binnedlc,binnedstds
+    return binnedlc, binnedstds, emptybins
     
 def FindSecondary(lc,per,t0,tdur):
     """
