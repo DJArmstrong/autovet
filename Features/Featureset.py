@@ -139,7 +139,7 @@ class Featureset(object):
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=1,case=2,flocation=self.__somlocation__)
             
-        elif self.target.obs == 'NGTS':
+        elif (self.target.obs == 'NGTS') or (self.target.obs == 'NGTS_synth'):
             if self.som is None:
                 self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
@@ -178,7 +178,7 @@ class Featureset(object):
                 self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'k2all_lr01_500_8_8_bin20.txt'),8,8,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
-            elif self.target.obs=='NGTS':
+            elif (self.target.obs == 'NGTS') or (self.target.obs == 'NGTS_synth'):
                 self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
@@ -196,7 +196,7 @@ class Featureset(object):
         """
         Boolean, does candidate's transit shape match the SOM pixels corresponding to ramps. NGTS only.
         """
-        if self.target.obs != 'NGTS':
+        if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
             print 'Only valid for NGTS'
             return -10
         else:
@@ -225,7 +225,7 @@ class Featureset(object):
         """
         Boolean, does candidate's transit shape match the SOM pixel corresponding to periodic variables. NGTS only.
         """
-        if self.target.obs != 'NGTS':
+        if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
             print 'Only valid for NGTS'
             return -10
         else:
