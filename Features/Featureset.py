@@ -317,7 +317,7 @@ class Featureset(object):
         phaselc2P[:,0] = utils.phasefold(lc['time'],period*2)
         phaselc2P[:,1] = lc['flux']
         phaselc2P = phaselc2P[np.argsort(phaselc2P[:,0]),:] #now in phase order
-        binnedlc2P,binstd = utils.BinPhaseLC(phaselc2P,64)
+        binnedlc2P, binstd, emptybins = utils.BinPhaseLC(phaselc2P,64)
 
         minima = np.argmin(binnedlc2P[:,1])
         posssecondary = np.mod(np.abs(binnedlc2P[:,0]-np.mod(binnedlc2P[minima,0]+0.5,1.)),1.)
@@ -535,7 +535,7 @@ class Featureset(object):
             nbins = 200
         else:
             nbins = int(len(lc['time'])/3.)
-        binflux,binerrs = utils.BinPhaseLC(phasedat,nbins)
+        binflux, binerrs, emptybins = utils.BinPhaseLC(phasedat,nbins)
         return np.max(binflux[:,1]) - np.min(binflux[:,1])
         
     def LSPhase_p2pmean(self,args):
@@ -978,6 +978,16 @@ class Featureset(object):
         density_in_ingress = np.sum(points_in_ingress)/(t14-t23)
         return density_in_ingress / len(self.target.lightcurve['time'])
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
+ 
+    def MissingDataFlag(self,args):
+        per = self.target.candidate_data['per']
+        t0 = self.target.candidate_data['t0']+per/2.  #transit at phase 0.5
+        tdur_phase = self.target.candidate_data['tdur']/per
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        nbins = np.floor(10./tdur_phase).astype('int')  #10 bins across transit duration
+        binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc2P,nbins,fill_value=-10)
+        neartransit = (binnedlc[:,0] > 0.5-5*tdur_phase/2.) & (binnedlc[:,0] < 0.5+5*tdur_phase/2.)
+        return np.sum(binnedlc[neartransit,1]==-10)/np.sum(neartransit)
  
     def pmatch(self,args):
         per = self.target.candidate_data['per']

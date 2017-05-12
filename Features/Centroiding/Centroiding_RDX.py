@@ -752,7 +752,7 @@ class centroid():
                  'Binom_Y'
                  
         with open(outfilename, 'w') as f:
-            f.write(header)
+            f.write(header+'\n')
             f.write( self.fieldname+'\t'+\
                      self.obj_id+'\t'+\
                      self.ngts_version+'\t'+\

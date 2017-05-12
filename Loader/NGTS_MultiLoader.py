@@ -1,5 +1,5 @@
 import numpy as np
-        
+import os
 import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
@@ -63,8 +63,8 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
                 for now just do centroiding :
                 '''
                 if docentroid:
-                    outdir = os.path.join(outdir,'{:06d}'.format(candidate['obj_id']+'_'+str(candidate['rank']))
-                    centroid_autovet( can, outdir=outdir)
+                    canoutdir = os.path.join(outdir,fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank']))
+                    centroid_autovet( can, outdir=canoutdir)
                     
                 if dofeatures:
                     feat = Featureset(can)

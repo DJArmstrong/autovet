@@ -59,6 +59,9 @@ class Candidate(object):
         if self.obs=='NGTS':
             #self.field = os.path.split(filepath)[1][:11]
             lc, info = self.NGTSload()
+        elif self.obs=='NGTS_synth':
+            lc = self.NGTS_synthload()
+            info = None
         elif self.obs=='Kepler' or self.obs=='K2':
             lc = self.KepK2load()
             info = None
@@ -70,7 +73,19 @@ class Candidate(object):
             
         return lc, info
         
-    
+    def NGTS_synthload(self):
+        dat = np.genfromtxt(self.filepath)
+        time = dat[:,0]
+        flux = dat[:,1]
+        err = dat[:,2]
+        nancut = np.isnan(time) | np.isnan(flux) | np.isnan(err)
+        norm = np.median(flux[~nancut])
+        lc = {}
+        lc['time'] = time[~nancut]
+        lc['flux'] = flux[~nancut]/norm
+        lc['error'] = err[~nancut]/norm
+        return lc
+ 
     
     def NGTSload(self):
         '''
