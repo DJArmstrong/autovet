@@ -81,7 +81,7 @@ class Candidate(object):
         nancut = np.isnan(time) | np.isnan(flux) | np.isnan(err)
         norm = np.median(flux[~nancut])
         lc = {}
-        lc['time'] = time[~nancut]
+        lc['time'] = time[~nancut]/86400.
         lc['flux'] = flux[~nancut]/norm
         lc['error'] = err[~nancut]/norm
         return lc
@@ -115,7 +115,7 @@ class Candidate(object):
         nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR'])
         norm = np.nanmedian(dic['FLUX'])
         lc = {}
-        lc['time'] = dic['HJD'][~nancut]
+        lc['time'] = dic['HJD'][~nancut]/86400.
         lc['flux'] = 1.*dic['FLUX'][~nancut]/norm
         lc['error'] = 1.*dic['FLUX_ERR'][~nancut]/norm
         

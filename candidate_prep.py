@@ -59,11 +59,11 @@ def NGTS_Setup():
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
-from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+#from Loader.NGTS_MultiLoader import NGTS_MultiLoader
 
-infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
-outdir = '/home/dja/Autovetting/Centroid/'
-NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+#infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
+#outdir = '/home/dja/Autovetting/Centroid/'
+#NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
             #featurestocalc = 	MissingDataFlag {'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
            # 					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
@@ -78,7 +78,7 @@ NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centr
            # 					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
            # 					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
            # 					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-NGTS_MultiLoader(infile, dofeatures=featurestocalc)  #to just run the features (currently won't save!)
+#NGTS_MultiLoader(infile, dofeatures=featurestocalc)  #to just run the features (currently won't save!)
 
 		
 def ScanCentroids(centroiddir):
@@ -129,13 +129,16 @@ def Synth_FeatureCalc():
         f.write('\n')
     
     for candidate in loaderdat:
-        print candidate['fieldname']+candidate['obj_id']
+        print candidate['fieldname']+'_'+candidate['obj_id']
+      #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00017':
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
+        lc = np.genfromtxt(filepath)
+        print lc
         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
         can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
         feat = Featureset(can)
         feat.CalcFeatures(featuredict=featurestocalc)      
-        features = feat.WriteOut(keystowrite)
+        features = feat.Writeout(keystowrite)
         orionidx = np.where((featdat['FIELD']==candidate['fieldname'])&(featdat['OBJ_ID']==candidate['obj_id']+'                    '))[0]
         
         orionfeatures = featdat[['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']][orionidx]
@@ -222,4 +225,6 @@ def Synth_Iterator():
                 output = np.array([time,flux,flux_err,flags]).T
                 np.savetxt(outfile,output)
 
-                   
+
+if __name__=='__main__':
+    Synth_FeatureCalc()
