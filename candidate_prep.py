@@ -4,11 +4,11 @@ import glob
 import numpy as np
 import fitsio
 import os
+from Loader import Candidate
+from Features import Featureset
 
 #set up to be run from autovet directory
 from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-from Loader import Candidate
-from Features import Featureset
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 def NGTS_Setup():
@@ -106,7 +106,7 @@ def Synth_FeatureCalc():
 
     featurestocalc = 	 {'MissingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
-            			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
+            			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             			'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
             			'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],'SingleTransitEvidence':[],
             			'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
@@ -115,9 +115,9 @@ def Synth_FeatureCalc():
             			'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
             			'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
             			'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
-            			'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
+            			'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
     
-    outfile = '/home/dja/Autovetting/Dataprep/synth_features.txt'
+    outfile = '/home/dja/Autovetting/Dataprep/synth_featurestest.txt'
     keystowrite = np.sort(featurestocalc.keys())
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
@@ -129,13 +129,17 @@ def Synth_FeatureCalc():
         f.write('\n')
     
     for candidate in loaderdat:
-        print candidate['fieldname']+'_'+candidate['obj_id']
-      #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00017':
+      print candidate['fieldname']+'_'+candidate['obj_id']
+      if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
-        lc = np.genfromtxt(filepath)
-        print lc
         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
         can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
+        import pylab as p
+        p.ion()
+        phase = np.mod(can.lightcurve['time']-can.candidate_data['t0'],can.candidate_data['per'])/can.candidate_data['per']
+        p.plot(phase,can.lightcurve['flux'],'r.')
+        p.pause(2)
+        raw_input()
         feat = Featureset(can)
         feat.CalcFeatures(featuredict=featurestocalc)      
         features = feat.Writeout(keystowrite)
@@ -143,9 +147,10 @@ def Synth_FeatureCalc():
         
         orionfeatures = featdat[['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']][orionidx]
         with open(outfile,'a') as f:
-            for fe in features:
+            f.write(candidate['fieldname']+'_'+candidate['obj_id']+','+candidate['label']+',')
+            for fe in features[2]:
                 f.write(str(fe)+',')
-            for fe in orionfeatures:
+            for fe in orionfeatures[0]:
                 f.write(str(fe)+',')
             f.write('\n')
 
