@@ -78,7 +78,7 @@ class Candidate(object):
         time = dat[:,0]
         flux = dat[:,1]
         err = dat[:,2]
-        nancut = np.isnan(time) | np.isnan(flux) | np.isnan(err)
+        nancut = np.isnan(time) | np.isnan(flux) | np.isnan(err) | (flux==0)
         norm = np.median(flux[~nancut])
         lc = {}
         lc['time'] = time[~nancut]/86400.
@@ -112,7 +112,7 @@ class Candidate(object):
             for key in ['FIELDNAME','NGTS_VERSION','NIGHT','AIRMASS']:
                 dic[key] = self.field_dic[key]
         
-        nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR'])
+        nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR']) | (dic['FLUX']==0)
         norm = np.nanmedian(dic['FLUX'])
         lc = {}
         lc['time'] = dic['HJD'][~nancut]/86400.

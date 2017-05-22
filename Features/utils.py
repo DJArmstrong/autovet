@@ -241,5 +241,24 @@ def BinTransitDuration(lc,per,t0,tdur):
             binnedlc[bin,1] = -10.  #bit awkward this, but only alternative is to interpolate?
     return binnedlc
     
-    
+def BinSegment(lcseg,nbins,fill_value=None):
+    flux = lcseg['flux']
+    bin_edges = np.linspace(np.min(lcseg['time']),np.max(lcseg['time']),nbins)
+    bin_indices = np.digitize(lcseg['time'],bin_edges) - 1
+    binnedlc = np.zeros([nbins,2])
+    pointsinbin = np.zeros(nbins)
+    for bin in range(nbins):
+        pointsinbin[bin] = np.sum(bin_indices==bin)
+    avgpointsinbin = np.median(pointsinbin)
+    for bin in range(nbins):
+        binnedlc[bin,0] = np.mean(lcseg['time'][bin_indices==bin])
+        if pointsinbin[bin] > avgpointsinbin*0.5:
+            binnedlc[bin,1] = np.mean(flux[bin_indices==bin])  #doesn't make use of sorted phase array, could probably be faster?
+        else:
+            if fill_value is not None:
+                binnedlc[bin,1] = fill_value
+            else:
+                binnedlc[bin,1] = np.mean(flux)  #bit awkward this, but only alternative is to interpolate?
+    return binnedlc
+   
     
