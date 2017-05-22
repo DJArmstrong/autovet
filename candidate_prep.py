@@ -59,26 +59,28 @@ def NGTS_Setup():
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
-#from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+def NGTS_FeatureCalc():
 
-#infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
-#outdir = '/home/dja/Autovetting/Centroid/'
-#NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
+    #outdir = '/home/dja/Autovetting/Centroid/'
+    #NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
-            #featurestocalc = 	MissingDataFlag {'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
-           # 					'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
-           # 					'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'MaxSecDepth':[],
-           # 					'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-           # 					'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],
-           # 					'SingleTransitEvidence':[],
-           # 					'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
-           # 					'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
-           # 					'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
-           # 					'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
-           # 					'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
-           # 					'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
-           # 					'Even_Odd_trapdurratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-#NGTS_MultiLoader(infile, dofeatures=featurestocalc)  #to just run the features (currently won't save!)
+    featurestocalc = {'pmatch':[],'MissingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+            		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
+            		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
+            		'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+            		'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],'SingleTransitEvidence':[],
+            		'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
+            		'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
+            		'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
+            		'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
+            		'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
+            		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
+            		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
+            		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
+    featoutfile = '/home/dja/Autovetting/Dataprep/real_featurestest.txt'
+    NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)  #to just run the features (currently won't save!)
 
 		
 def ScanCentroids(centroiddir):
@@ -110,11 +112,11 @@ def Synth_FeatureCalc():
             			'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
             			'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],'SingleTransitEvidence':[],
             			'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
-            			'Even_Fit_period':[],'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_t0':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
-            			'Odd_Fit_period':[],'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_t0':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
+            			'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
+            			'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
             			'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
-            			'Even_Trapfit_t0':[],'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
-            			'Odd_Trapfit_t0':[],'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
+            			'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
+            			'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
             			'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
     
     outfile = '/home/dja/Autovetting/Dataprep/synth_featurestest.txt'
@@ -130,16 +132,16 @@ def Synth_FeatureCalc():
     
     for candidate in loaderdat:
       print candidate['fieldname']+'_'+candidate['obj_id']
-      if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
+      #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
         can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
-        import pylab as p
-        p.ion()
-        phase = np.mod(can.lightcurve['time']-can.candidate_data['t0'],can.candidate_data['per'])/can.candidate_data['per']
-        p.plot(phase,can.lightcurve['flux'],'r.')
-        p.pause(2)
-        raw_input()
+        #import pylab as p
+        #p.ion()
+        #phase = np.mod(can.lightcurve['time']-can.candidate_data['t0'],can.candidate_data['per'])/can.candidate_data['per']
+        #p.plot(phase,can.lightcurve['flux'],'r.')
+        #p.pause(2)
+        #raw_input()
         feat = Featureset(can)
         feat.CalcFeatures(featuredict=featurestocalc)      
         features = feat.Writeout(keystowrite)
@@ -233,3 +235,4 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     Synth_FeatureCalc()
+    NGTS_FeaturesCalc()
