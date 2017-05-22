@@ -6,7 +6,7 @@ from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 
 # NGTS specific loader for multiple sources from various fields
-def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
+def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt'):
     '''
     infile (string): link to a file containing the columns
        fieldname    ngts_version    obj_id    label    per   t0   tdur rank
@@ -16,6 +16,8 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
     docentroid (bool): perform centroid operation on candidates
     
     dofeatures (dic): features to calculate, for format see Featureset.py
+    
+    featoutfile (str): filepath to save calculated features to
     '''
     
     #::: read list of all fields
@@ -28,6 +30,17 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
     output_per = []
     output_pmatch = []
     output_epochs = []
+    
+    #set up output files
+    if dofeatures:
+        keystowrite = np.sort(dofeatures.keys())
+        with open(featoutfile,'w') as f:
+            f.write('#')
+            for key in keystowrite:
+                f.write(str(key)+',')
+            f.write('\n')
+
+
     #:::: loop over all fields
     for field_id in unique_field_ids:
         
@@ -59,8 +72,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
             
                 '''
                 now do the main stuff with this candidate...
-                or save all candidates into a dcitionary/list of candidates and then go on from there...
-                for now just do centroiding :
+                or save all candidates into a dictionary/list of candidates and then go on from there...
                 '''
                 if docentroid:
                     canoutdir = os.path.join(outdir,fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank']))
@@ -69,4 +81,9 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False):
                 if dofeatures:
                     feat = Featureset(can)
                     feat.CalcFeatures(featuredict=dofeatures)
-                    #TODO WRITEOUT FEATURES TO FILE
+                    features = feat.Writeout(keystowrite)
+                    with open(featoutfile,'a') as f:
+                        f.write(candidate['fieldname']+'_'+candidate['obj_id']+','+candidate['label']+',')
+                        for fe in features[2]:
+                            f.write(str(fe)+',')
+                        f.write('\n')
