@@ -125,8 +125,6 @@ class TransitFit(object):
 
     def GetErrors(self):
         bparams = batman.TransitParams()       #object to store transit parameters
-        bparams.rp = self.params[3]                      #planet radius (in units of stellar radii)
-        bparams.a = self.params[2]                       #semi-major axis (in units of stellar radii)
         bparams.inc = 90.
         bparams.ecc = 0.                      #eccentricity
         bparams.w = 90.                        #longitude of periastron (in degrees)
@@ -135,9 +133,15 @@ class TransitFit(object):
         if self.fixper is None:
             bparams.t0 = self.params[1]                        #time of inferior conjunction
             bparams.per = self.params[0]                       #orbital period
+            bparams.rp = self.params[3]                      #planet radius (in units of stellar radii)
+            bparams.a = self.params[2]                       #semi-major axis (in units of stellar radii)
+
         else:
             bparams.t0 = self.fixt0
             bparams.per = self.fixper
+            bparams.rp = self.params[1]                      #planet radius (in units of stellar radii)
+            bparams.a = self.params[0]                       #semi-major axis (in units of stellar radii)
+
         m = batman.TransitModel(bparams, self.lc['time'],exp_time=self.exp_time,supersample_factor=self.sfactor)          
         flux = m.light_curve(bparams)
         if self.fixper is None:

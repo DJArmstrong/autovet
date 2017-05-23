@@ -721,7 +721,7 @@ class Featureset(object):
         if self.oddlc is None:
             self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
         if self.oddtransitfit is None:
-            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7,fixper=self.transitfit.params[0],fixt0=self.transitfit.params[1]
+            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7,fixper=self.transitfit.params[0],fixt0=self.transitfit.params[1])
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
         if self.eventransitfit is None:
@@ -868,7 +868,7 @@ class Featureset(object):
         if self.evenlc is None:
             self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
         if self.eventrapfit is None:
-            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'],fixt0=sself.trapfit.params[0])
+            self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'],fixt0=self.trapfit.params[0])
         return self.eventrapfit.params[1]
 
     def Even_Full_partial_tdurratio(self,args):
