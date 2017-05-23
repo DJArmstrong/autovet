@@ -131,7 +131,7 @@ def Synth_FeatureCalc():
         f.write('\n')
     
     for candidate in loaderdat:
-      print candidate['fieldname']+'_'+candidate['obj_id']
+        print candidate['fieldname']+'_'+candidate['obj_id']
       #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
@@ -235,4 +235,4 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     Synth_FeatureCalc()
-    NGTS_FeaturesCalc()
+    NGTS_FeatureCalc()

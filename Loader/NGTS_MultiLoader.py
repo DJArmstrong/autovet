@@ -3,6 +3,7 @@ import os
 import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
+from Features import Featureset
 
 
 # NGTS specific loader for multiple sources from various fields
@@ -83,7 +84,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
                     feat.CalcFeatures(featuredict=dofeatures)
                     features = feat.Writeout(keystowrite)
                     with open(featoutfile,'a') as f:
-                        f.write(candidate['fieldname']+'_'+candidate['obj_id']+','+candidate['label']+',')
+                        f.write(fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])+','+candidate['label']+',')
                         for fe in features[2]:
                             f.write(str(fe)+',')
                         f.write('\n')
