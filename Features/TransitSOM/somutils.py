@@ -41,7 +41,7 @@ def WeightMean_witherror(vals):
     error = np.sqrt(1./np.sum(weights))
     return mean,error
 
-def GetBinnedVals(time,x,lowerr,higherr,bins,clip_outliers=0):
+def GetBinnedVals(time,x,lowerr,higherr,bins,bin_edges,clip_outliers=0):
 
     ###
     #bins x using the mean, weighted by the inverse error squared
@@ -56,8 +56,6 @@ def GetBinnedVals(time,x,lowerr,higherr,bins,clip_outliers=0):
     tobin[:,2] = (higherr+lowerr)/2.
     tobin[:,3] = np.ones(len(x))*clip_outliers
     
-    bin_edges = np.linspace(time[0], time[-1], bins+1)
-    bin_edges[-1]+=0.0001                               #avoids edge problems
     binnumber = np.digitize(time, bin_edges)
     timemeans = np.zeros(bins)
     if clip_outliers:
@@ -120,8 +118,12 @@ def PrepareArrays(SOMarray,errorarray):
     for idx in range(SOMarray.shape[0]):
         mask = np.isnan(SOMarray[idx,:])
         #edge cases given closest valid bin value
-        SOMarray[idx,mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), SOMarray[idx,~mask])
-        SOMarray[idx,:],errorarray[idx,:] = SOMNormalise(SOMarray[idx,:],errorarray[idx,:])
+        if np.sum(mask)<len(SOMarray[idx,mask])*0.8:  #need at least 20% of points
+            SOMarray[idx,mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), SOMarray[idx,~mask],right=1.,left=1.)
+            SOMarray[idx,:],errorarray[idx,:] = SOMNormalise(SOMarray[idx,:],errorarray[idx,:])
+        else:
+            SOMarray[idx,:] = np.ones(len(SOMarray[idx,:]))
+            errorarray[idx,:] = np.ones(len(errorarray[idx,:]))
     return SOMarray,errorarray
     
 def PrepareArray(SOMarray_single,errorarray_single):
@@ -130,8 +132,12 @@ def PrepareArray(SOMarray_single,errorarray_single):
     
     mask = np.isnan(SOMarray_single)
     #edge cases given closest valid bin value
-    SOMarray_single[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), SOMarray_single[~mask])
-    SOMarray_single,errorarray_single = SOMNormalise(SOMarray_single,errorarray_single)
+    if np.sum(mask)<len(SOMarray_single)*0.8:  #need at least 20% of points
+        SOMarray_single[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), SOMarray_single[~mask],right=1.,left=1.)
+        SOMarray_single,errorarray_single = SOMNormalise(SOMarray_single,errorarray_single)
+    else:
+        SOMarray_single = np.ones(len(SOMarray_single))
+        errorarray_single = np.ones(len(errorarray_single))
     return SOMarray_single,errorarray_single
     
 def SOMNormalise(flux,errors):

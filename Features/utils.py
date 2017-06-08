@@ -179,8 +179,8 @@ def FindSecondary(lc,per,t0,tdur):
     err = err[idx]
         
     #scan a box of width tdur over phase 0.3-0.7.
-    scanresolution = tdur_phase/10.
-    ntests = int(0.4*per/scanresolution)
+    scanresolution = tdur_phase/5.
+    ntests = int(0.4/scanresolution)
     centphases = np.linspace(0.3,0.7,ntests)
     minphases = centphases - tdur_phase*0.5
     maxphases = centphases + tdur_phase*0.5
@@ -190,14 +190,14 @@ def FindSecondary(lc,per,t0,tdur):
         lolim = np.searchsorted(phase,minphases[t])
         hilim = np.searchsorted(phase,maxphases[t])
         npoints = hilim-lolim
-        if npoints > 0:
+        if npoints > 20:
             #base1 = np.median(flux[lolim-npoints*2:lolim])
             #base2 = np.median(flux[hilim:hilim+npoints*2])
             #base = (base1+base2)*0.5
             #print base
             base = np.median(flux)
             depth = base - np.mean(flux[lolim:hilim])
-            deptherror = np.std(flux[lolim:hilim])/np.sqrt(npoints)
+            deptherror = np.std(flux[lolim:hilim])#/np.sqrt(npoints)
             #deptherror = np.mean(err[lolim:hilim])/np.sqrt(npoints)
             #print depth
             secdepthsigs[t] = depth/deptherror
@@ -207,6 +207,16 @@ def FindSecondary(lc,per,t0,tdur):
     secondary['phase'] = centphases[maxidx]
     secondary['depth'] = secdepths[maxidx]
     secondary['significance'] = secdepthsigs[maxidx]
+    import pylab as p
+    p.ion()
+    p.figure(10)
+    p.clf()
+    p.plot(centphases,secdepths,'b.')
+    p.figure(11)
+    p.clf()
+    p.plot(centphases,secdepthsigs,'r.')
+    p.pause(2)
+    raw_input()
     return secondary
     
 def SplitOddEven(lc,per,t0,oddeven):

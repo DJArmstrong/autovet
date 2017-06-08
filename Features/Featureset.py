@@ -756,11 +756,9 @@ class Featureset(object):
         return (1-transitbin)/noise
 
     def SingleTransitEvidence(self,args):
-        if self.trapfit is None:
-            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         per = self.target.candidate_data['per']    
-        tdur = self.trapfit.params[2]*per
-        t0 = self.trapfit.params[0]
+        tdur = self.target.candidate_data['tdur']
+        t0 = self.target.candidate_data['t0']
         tdur_phase = tdur/per
         #print t0
         if self.useflatten:
@@ -976,37 +974,45 @@ class Featureset(object):
         return density_in_ingress / len(self.target.lightcurve['time'])
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
  
-    def MissingDataFlag(self,args):
+    def missingDataFlag(self,args):
+        '''
+        Fraction of tdur/5 width bins within 5 transit durations centred on transit, in phase
+        '''
         per = self.target.candidate_data['per']
         t0 = self.target.candidate_data['t0']+per/2.  #transit at phase 0.5
         tdur_phase = self.target.candidate_data['tdur']/per
-        phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0)
         phaselc = np.zeros([len(phase),2])
         phaselc[:,0] = phase
         phaselc[:,1] = self.target.lightcurve['flux']
         phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
-        nbins = np.floor(10./tdur_phase).astype('int')  #10 bins across transit duration
+        nbins = np.floor(5./tdur_phase).astype('int')  #5 bins across transit duration
         binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
         neartransit = (binnedlc[:,0] > 0.5-5*tdur_phase/2.) & (binnedlc[:,0] < 0.5+5*tdur_phase/2.)
         return np.sum(binnedlc[neartransit,1]==-10)/np.sum(neartransit)
  
     def pmatch(self,args):
+        '''
+        Number of other candidates in this field with matching period and epoch
+        '''
         per = self.target.candidate_data['per']
         plist = self.target.field_periods
         epoch = self.target.candidate_data['t0']
         elist = self.target.field_epochs
         match = (per/plist>0.99) & (per/plist<1.01) & (np.abs(epoch-elist)<3600/86400.)
         return np.sum(match)
-    
-    def Plot_trapfit(self,args):
-        per = self.target.candidate_data['per']
-        print self.trapfit.params
-        import pylab as p
-        p.ion()
-        p.figure()
-        phase = utils.phasefold(self.target.lightcurve['time'],per,self.trapfit.params[0]+per/2.)
-        p.plot(phase,self.target.lightcurve['flux'],'b.')
-        model = TransitFit.Trapezoidmodel(0.5,self.trapfit.params[1],self.trapfit.params[2],self.trapfit.params[3],phase)
-        p.plot(phase,model,'r.')
-        raw_input()
+
+    def ntransits(self,args):
+        '''
+        Number of transits with data
+        '''
+        per = self.target.candidate_data['per']    
+        tdur = self.target.candidate_data['tdur']
+        t0 = self.target.candidate_data['t0']
+        tdur_phase = tdur/per
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0)
+        transits = np.where((np.abs(np.diff(phase))>0.9)&((phase[:-1]<tdur_phase/2.)|(phase[:-1]>1-tdur_phase/2.)))[0]
+        return len(transits)
+        
+        
          

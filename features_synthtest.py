@@ -35,7 +35,7 @@ def Trapezoidmodel(t0_phase,t23,t14,depth,phase_data):
     return model
 
 lcdir = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Synth_Tests/LCs'
-featfilepath = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Synth_Tests/synth_features.txt'
+featfilepath = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Synth_Tests/synth_featurestest.txt'
 featfile = np.genfromtxt(featfilepath,names=True,dtype=None,delimiter=',')
 loaderdat = np.genfromtxt('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Synth_Tests/synth_input_TEST18_v2_all.txt',names=True,dtype=None)
 loaderidx = []
@@ -44,7 +44,7 @@ for cand in loaderdat:
 loaderidx = np.array(loaderidx)
 
 for i,ID in enumerate(featfile['ID']):
-  
+ #if ID=='NG0304-1115_F00790': 
   filepath = os.path.join(lcdir,ID+'_lc.txt')
   if os.path.exists(filepath):
     idx = np.where(loaderidx==ID)[0]
@@ -52,7 +52,7 @@ for i,ID in enumerate(featfile['ID']):
     candidate_data = {'per':candidate['per'][0], 't0':candidate['t0'][0], 'tdur':candidate['tdur'][0]}
     can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
     #feat=Features.Featureset(can,useflatten=False,testplots=False)
-    #feat.CalcFeatures(featuredict={'SingleTransitEvidence':[]})
+    #feat.CalcFeatures(featuredict={'MaxSecSig':[]})
     #print feat.features
     #raw_input()
     import pylab as p
@@ -98,8 +98,8 @@ for i,ID in enumerate(featfile['ID']):
     print 'Even/Odd Fit Diagnostic'
     print 'Even Fit_chisq: '+str(featfile['Even_Fit_chisq'][i])
     print 'Even Fit_depthSNR: '+str(featfile['Even_Fit_depthSNR'][i])
-    per = featfile['Even_Fit_period'][i]
-    t0 = featfile['Even_Fit_t0'][i]
+    per = featfile['Fit_period'][i]
+    t0 = featfile['Fit_t0'][i]
     aovrstar = featfile['Even_Fit_aovrstar'][i]
     rprstar = featfile['Even_Fit_rprstar'][i]
     
@@ -116,8 +116,8 @@ for i,ID in enumerate(featfile['ID']):
     #BATMAN ODD
     print 'Odd Fit_chisq: '+str(featfile['Odd_Fit_chisq'][i])
     print 'Odd Fit_depthSNR: '+str(featfile['Odd_Fit_depthSNR'][i])
-    per = featfile['Odd_Fit_period'][i]
-    t0 = featfile['Odd_Fit_t0'][i]
+    per = featfile['Fit_period'][i]
+    t0 = featfile['Fit_t0'][i]
     aovrstar = featfile['Odd_Fit_aovrstar'][i]
     rprstar = featfile['Odd_Fit_rprstar'][i]
     phase_model = np.mod(can.lightcurve['time']-t0,per)/per
@@ -147,7 +147,7 @@ for i,ID in enumerate(featfile['ID']):
     p.plot(phase_orig,model,'g.')
 
     #EVEN TRAPFIT
-    t0 = featfile['Even_Trapfit_t0'][i]
+    t0 = featfile['Trapfit_t0'][i]
     t23 = featfile['Even_Trapfit_t23phase'][i]
     t14 = featfile['Even_Trapfit_t14phase'][i]
     depth = featfile['Even_Trapfit_depth'][i] 
@@ -164,7 +164,7 @@ for i,ID in enumerate(featfile['ID']):
     p.plot(phase,model,'r.')
 
     #ODD TRAPFIT
-    t0 = featfile['Odd_Trapfit_t0'][i]
+    t0 = featfile['Trapfit_t0'][i]
     t23 = featfile['Odd_Trapfit_t23phase'][i]
     t14 = featfile['Odd_Trapfit_t14phase'][i]
     depth = featfile['Odd_Trapfit_depth'][i] 

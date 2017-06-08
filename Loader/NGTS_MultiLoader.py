@@ -37,6 +37,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
         keystowrite = np.sort(dofeatures.keys())
         with open(featoutfile,'w') as f:
             f.write('#')
+            f.write('ID,label,')
             for key in keystowrite:
                 f.write(str(key)+',')
             f.write('\n')
