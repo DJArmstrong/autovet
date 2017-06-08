@@ -113,7 +113,7 @@ class Candidate(object):
                 dic[key] = self.field_dic[key]
         
         nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR']) | (dic['FLUX']==0)
-        norm = np.nanmedian(dic['FLUX'])
+        norm = np.median(dic['FLUX'][~nancut])
         lc = {}
         lc['time'] = dic['HJD'][~nancut]/86400.
         lc['flux'] = 1.*dic['FLUX'][~nancut]/norm

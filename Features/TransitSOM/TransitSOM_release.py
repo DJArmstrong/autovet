@@ -128,10 +128,12 @@ def PrepareOneLightcurve(lc,per,t0,tdur,nbins=50,clip_outliers=5):
     highidx = np.searchsorted(phase,0.5+tdur_phase*1.5)
     lc = lc[lowidx:highidx,:]
     phase = phase[lowidx:highidx]
-
+    bin_edges = np.linspace(0.5-tdur_phase*1.5,0.5+tdur_phase*1.5,nbins+1)
+    bin_edges[-1]+=0.0001                               #avoids edge problems
+    
     #perform binning
     if len(lc[:,0]) != 0:
-        binphases,SOMtransit_bin,binerrors = somutils.GetBinnedVals(phase,lc[:,1],lc[:,2],lc[:,2],nbins,clip_outliers=clip_outliers)
+        binphases,SOMtransit_bin,binerrors = somutils.GetBinnedVals(phase,lc[:,1],lc[:,2],lc[:,2],nbins,bin_edges,clip_outliers=clip_outliers)
 
     #normalise arrays, and interpolate nans where necessary
     SOMarray_single,SOMarray_errors_single = somutils.PrepareArray(SOMtransit_bin,binerrors)

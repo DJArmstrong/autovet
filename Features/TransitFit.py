@@ -18,7 +18,7 @@ def Trapezoidfitfunc(fitparams,y_data,y_err,x_phase_data):
     t14 = fitparams[2]
     depth = fitparams[3]
 
-    if (t0<0.4) or (t0>0.6) or (t23 < 0) or (t14 < 0) or (t14 < t23) or (depth < 0):
+    if (t0<0.45) or (t0>0.55) or (t23 < 0) or (t14 < 0) or (t14 < t23) or (depth < 0):
         return np.ones(len(x_phase_data))*1e8
     
     model = Trapezoidmodel(t0,t23,t14,depth,x_phase_data)

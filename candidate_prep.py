@@ -59,14 +59,19 @@ def NGTS_Setup():
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
+def NGTS_CentroidRun():
+    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
+    outdir = '/home/dja/Autovetting/Centroid/'
+    NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+
+
 def NGTS_FeatureCalc():
 
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
-    #outdir = '/home/dja/Autovetting/Centroid/'
-    #NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
-    featurestocalc = {'pmatch':[],'MissingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = {'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             		'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -106,7 +111,7 @@ def Synth_FeatureCalc():
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synthorionfeatures_v2_all.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'
 
-    featurestocalc = 	 {'MissingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = 	 {'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             			'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -124,6 +129,7 @@ def Synth_FeatureCalc():
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
         f.write('#')
+        f.write('ID,label,')
         for key in keystowrite:
             f.write(str(key)+',')
         for key in orionkeys:
