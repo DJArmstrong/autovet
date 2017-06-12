@@ -44,17 +44,17 @@ for cand in loaderdat:
 loaderidx = np.array(loaderidx)
 
 for i,ID in enumerate(featfile['ID']):
- #if ID=='NG0304-1115_F00790': 
+ if ID=='NG0304-1115_F00013': 
   filepath = os.path.join(lcdir,ID+'_lc.txt')
   if os.path.exists(filepath):
     idx = np.where(loaderidx==ID)[0]
     candidate = loaderdat[idx]
     candidate_data = {'per':candidate['per'][0], 't0':candidate['t0'][0], 'tdur':candidate['tdur'][0]}
     can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
-    #feat=Features.Featureset(can,useflatten=False,testplots=False)
-    #feat.CalcFeatures(featuredict={'MaxSecSig':[]})
-    #print feat.features
-    #raw_input()
+    feat=Features.Featureset(can,useflatten=False,testplots=False)
+    feat.CalcFeatures(featuredict={'Full_partial_tdurratio':[]})
+    print feat.features
+    raw_input()
     import pylab as p
     p.ion()
 

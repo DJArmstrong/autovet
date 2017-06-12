@@ -74,8 +74,8 @@ def NGTS_FeatureCalc():
     featurestocalc = {'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
-            		'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            		'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],'SingleTransitEvidence':[],
+            		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+            		'TransitSNR':[],'PointDensity_ingress':[],
             		'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
             		'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
             		'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
@@ -114,8 +114,8 @@ def Synth_FeatureCalc():
     featurestocalc = 	 {'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
-            			'MaxSecPhase':[],'MaxSecSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            			'RPlanet':[],'TransitSNR':[],'PointDensity_ingress':[],'SingleTransitEvidence':[],
+            			'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+            			'TransitSNR':[],'PointDensity_ingress':[],
             			'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
             			'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
             			'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
@@ -241,4 +241,5 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     Synth_FeatureCalc()
+    NGTS_CentroidRun()
     NGTS_FeatureCalc()
