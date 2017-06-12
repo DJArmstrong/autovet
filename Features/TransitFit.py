@@ -81,7 +81,8 @@ class TransitFit(object):
             self.errors,self.chisq = self.GetErrors()
         elif fittype == 'trap':
             self.params,self.cov = self.FitTrapezoid()
-            self.params[0] = (self.params[0]-0.5)*self.fixper + self.initial_t0   #convert t0 back to time
+            if self.fixt0 is None:
+                self.params[0] = (self.params[0]-0.5)*self.fixper + self.initial_t0   #convert t0 back to time
     
     def FitTrapezoid(self):
         if self.fixt0 is None:
