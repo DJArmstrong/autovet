@@ -476,14 +476,15 @@ class Featureset(object):
             t0 = self.target.candidate_data['t0']
             tdur = self.target.candidate_data['tdur']
             self.secondary = utils.FindSecondary(lc,per,t0,tdur)
-        #if self.testplots:
-        #    p.figure()
-        #    phase = utils.phasefold(self.target.lightcurve['time'],self.target.candidate_data['per'],self.target.candidate_data['t0'])
-        #    p.plot(phase,self.target.lightcurve['flux'])
-        #    p.plot([self.secondary['phase'],self.secondary['phase']],[1-self.secondary['depth'],1],'r--')
-        #    p.title('Secondary Test')
-        #    print 'Secondary Diags:'
-        #    print self.secondary
+        #p.figure()
+        #phase = utils.phasefold(self.target.lightcurve['time'],self.target.candidate_data['per'],self.target.candidate_data['t0'])
+        #p.plot(phase,self.target.lightcurve['flux'],'b.')
+        #p.plot([self.secondary['phase'],self.secondary['phase']],[1-self.secondary['depth'],1],'r--')
+        #p.title('Secondary Test')
+        #print 'Secondary Diags:'
+        #print self.target.candidate_data['tdur']
+        #print self.target.candidate_data['per']
+        #print self.secondary
         return self.secondary['depth']
 
     def MaxSecPhase(self,args):
@@ -519,6 +520,23 @@ class Featureset(object):
             tdur = self.target.candidate_data['tdur']
             self.secondary = utils.FindSecondary(lc,per,t0,tdur)
         return self.secondary['significance']
+
+    def MaxSecSelfSig(self,args):
+        """
+        Returns significance of maximum secondary eclipse, normalised by errors.
+        
+        Scans a box of width the transit duration over phases 0.3 to 0.7. Returns maximum significance of box relative to local phasecurve, normalised by point errors.
+        """
+        if self.secondary is None:
+            if self.useflatten:
+                lc = self.target.lightcurve_f
+            else:
+                lc = self.target.lightcurve 
+            per = self.target.candidate_data['per']
+            t0 = self.target.candidate_data['t0']
+            tdur = self.target.candidate_data['tdur']
+            self.secondary = utils.FindSecondary(lc,per,t0,tdur)
+        return self.secondary['selfsignificance']
 
     def LSPhase_amp(self,args):
         lc = self.target.lightcurve
@@ -734,15 +752,13 @@ class Featureset(object):
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         rsun = 6957000000.
         rearth = 6371000.
-        return self.transitfit.params[3]*self.target.stellar_radius* rearth/rsun  #in earth radii
+        return self.transitfit.params[3]*self.target.stellar_radius* rsun/rearth  #in earth radii
            
     def TransitSNR(self,args):
-        if self.trapfit is None:
-            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])            
         per = self.target.candidate_data['per']    
-        tdur = self.trapfit.params[2]*per
-        t0 = self.trapfit.params[0]
-                
+        tdur = self.target.candidate_data['tdur']
+        t0 = self.target.candidate_data['t0']
+
         if self.useflatten:
             lc = self.target.lightcurve_f
         else:
@@ -753,7 +769,10 @@ class Featureset(object):
         binnedlc = binnedlc[binnedlc[:,1]>=0]
         transitbin = binnedlc[0,1]
         noise = np.std(binnedlc[2:-2,1]) #avoids duration bins containing ingress and egress
-        return (1-transitbin)/noise
+        if np.isnan(noise):
+            return -10
+        else:
+            return (1-transitbin)/noise
 
     def SingleTransitEvidence(self,args):
         per = self.target.candidate_data['per']    
@@ -769,40 +788,42 @@ class Featureset(object):
         phase = utils.phasefold(lc['time'],per,t0)
         transits = np.where((np.abs(np.diff(phase))>0.9)&((phase[:-1]<tdur_phase/2.)|(phase[:-1]>1-tdur_phase/2.)))[0]
         segwidth = 9  #SHOULD BE ODD. MEASURED IN TRANSIT DURATIONS
-        sesratios = []
-        #count = 0
-        #print 'STE_DIAG'
-        #print transits
-        for transit in transits:
-            ttime = lc['time'][transit]
-            #print ttime
-            #print t0+count*per
-            segstart = np.searchsorted(lc['time'],ttime-segwidth/2.*tdur)
-            segend = np.searchsorted(lc['time'],ttime+segwidth/2.*tdur)
-            lcseg = {}
-            lcseg['time'] = lc['time'][segstart:segend]
-            lcseg['flux'] = lc['flux'][segstart:segend]
-            if segend-segstart > segwidth*3:  #implies 3 points per transit duration 
-                nbins = np.ceil((np.max(lcseg['time'])-np.min(lcseg['time']))/tdur).astype('int')
-                binnedlc = utils.BinSegment(lcseg,nbins,fill_value=1.)
-                transitidx = np.argmin(np.abs(binnedlc[:,0]-ttime))
-                transitval = binnedlc[transitidx,1]
-                binnedlc = np.ma.array(binnedlc,mask=False)
-                binnedlc.mask[transitidx]= True
-                sesratios.append((1-transitval)/np.std(binnedlc[:,1]))
-                
-            #print sesratios
-            #import pylab as p
-            #p.ion()
-            #p.figure(1)
-            #p.clf()
-            #p.plot(lcseg['time'],lcseg['flux'],'b.')
-            #p.plot(binnedlc[:,0],binnedlc[:,1],'r.-')
-            #p.plot([t0+per*count,t0+per*count],[0.99,1.],'g-')
-            #p.pause(2)
-            #raw_input()
-            #count+=1
-        return np.median(np.array(sesratios))
+        if tdur*segwidth >= per:
+            return -10
+        else:
+            sesratios = []
+            #count = 0
+            #print 'STE_DIAG'
+            #print transits
+            for transit in transits:
+                ttime = lc['time'][transit]
+                #print ttime
+                #print t0+count*per
+                segstart = np.searchsorted(lc['time'],ttime-segwidth/2.*tdur)
+                segend = np.searchsorted(lc['time'],ttime+segwidth/2.*tdur)
+                lcseg = {}
+                lcseg['time'] = lc['time'][segstart:segend]
+                lcseg['flux'] = lc['flux'][segstart:segend]
+                if segend-segstart > segwidth*3:  #implies 3 points per transit duration 
+                    nbins = np.ceil((np.max(lcseg['time'])-np.min(lcseg['time']))/tdur).astype('int')
+                    binnedlc = utils.BinSegment(lcseg,nbins,fill_value=1.)
+                    transitidx = np.argmin(np.abs(binnedlc[:,0]-ttime))
+                    transitval = binnedlc[transitidx,1]
+                    binnedlc = np.ma.array(binnedlc,mask=False)
+                    binnedlc.mask[transitidx]= True
+                    sesratios.append((1-transitval)/np.std(binnedlc[:,1]))
+                #print sesratios
+                #import pylab as p
+                #p.ion()
+                #p.figure(1)
+                #p.clf()
+                #p.plot(lcseg['time'],lcseg['flux'],'b.')
+                #p.plot(binnedlc[:,0],binnedlc[:,1],'r.-')
+                #p.plot([t0+per*count,t0+per*count],[0.99,1.],'g-')
+                #p.pause(2)
+                #raw_input()
+                #count+=1
+            return np.median(np.array(sesratios))
                     
     def RMS_TDur(self,args):
         """
