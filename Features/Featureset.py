@@ -37,8 +37,8 @@ class Featureset(object):
         self.eventransitfit = None
         self.oddlc = None
         self.oddtransitfit = None
-        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.01])
-        self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.01])
+        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.005])
+        self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.005])
         self.testplots = testplots
         if self.testplots:
             import pylab as p
@@ -145,7 +145,7 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__,missionflag=2)
-        if len(planet_prob)==2:  #the faked extra transit from a different SOM function was present
+        if type(planet_prob)='numpy.ndarray':  #the faked extra transit from a different SOM function was present
             planet_prob = planet_prob[0]
         if self.testplots:
             p.figure()
@@ -209,17 +209,20 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
+            dist1 = np.sqrt(np.sum(np.power(self.som.K[1,4,:] - self.SOMarray,2)))
+            dist2 = np.sqrt(np.sum(np.power(self.som.K[4,4,:] - self.SOMarray,2)))
+            return np.min([dist1,dist2])
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            if len(self.SOMarray.shape)==1:
-                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
-            map = self.som(self.SOMarray)
-            map = map[0,:]
-            flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
-            if self.testplots:
-                print 'IsRamp: '+str(flag)
-                print 'Map: '+str(map[0])+' '+str(map[1])
-            return int(flag)
+            #if len(self.SOMarray.shape)==1:
+            #    self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
+            #    self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
+            #map = self.som(self.SOMarray)
+            #map = map[0,:]
+            #flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
+            #if self.testplots:
+            #    print 'IsRamp: '+str(flag)
+            #    print 'Map: '+str(map[0])+' '+str(map[1])
+            #return int(flag)
             
     def SOM_IsVar(self,args):
         """
@@ -237,15 +240,17 @@ class Featureset(object):
                     lc = self.target.lightcurve
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
+            dist = np.sqrt(np.sum(np.power(self.som.K[11,19,:] - self.SOMarray,2)))
+            return dist
 
             #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            if len(self.SOMarray.shape)==1:
-                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
-            map = self.som(self.SOMarray)
-            map = map[0,:]
-            flag = (map[0]==11 and map[1]==19)
-            return int(flag)
+            #if len(self.SOMarray.shape)==1:
+            #    self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
+            #    self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
+            #map = self.som(self.SOMarray)
+            #map = map[0,:]
+            #flag = (map[0]==11 and map[1]==19)
+            #return int(flag)
                 
     
     def LSPeriod(self,args):
@@ -999,9 +1004,13 @@ class Featureset(object):
         #points_in_ingress = (phasediffs<t14/2.) & (phasediffs>t23/2.)  
         points_in_ingress = (phasediffs<(tdur_phase/2.)*1.1) & (phasediffs>(tdur_phase/2.)*0.9)       
         density_in_ingress = np.sum(points_in_ingress)/((tdur_phase/2.)*0.2)
-        nbins = np.floor(2./tdur_phase).astype('int')  #2 bins across transit duration
+        nbins = np.floor(2./tdur_phase).astype('int')  #2 bins per transit duration
+        phaselc = np.zeros([len(phase),2])
+        phaselc[:,0] = phase
+        phaselc[:,1] = self.target.lightcurve['flux']
+        phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
         binnedlc, binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
-        populated_fraction_of_lc = np.sum(binnedlc[:,1]==-10)/nbins
+        populated_fraction_of_lc = 1-np.sum(binnedlc[:,1]==-10)/nbins
         return density_in_ingress / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
  
@@ -1048,5 +1057,9 @@ class Featureset(object):
         transits = np.where((np.abs(np.diff(phase))>0.9)&((phase[:-1]<tdur_phase/2.)|(phase[:-1]>1-tdur_phase/2.)))[0]
         return len(transits)
         
-        
+    def tdur_phase(self,args):
+        '''
+        transit width in phase
+        '''
+        return self.target.candidates_data['tdur']/self.target.candidate_data['per']       
          

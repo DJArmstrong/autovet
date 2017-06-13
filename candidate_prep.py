@@ -65,13 +65,18 @@ def NGTS_CentroidRun():
     outdir = '/home/dja/Autovetting/Centroid/'
     NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
-
+def NGTS_LoaderTest():
+    from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
+    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt')
+    for infile in infilelist:
+        NGTS_MultiLoader(infile,dofeatures=False)
+        
 def NGTS_FeatureCalc():
 
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
 
-    featurestocalc = {'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = {'tdur_phase':[],'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -111,7 +116,7 @@ def Synth_FeatureCalc():
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synthorionfeatures_v2_all.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'
 
-    featurestocalc = 	 {'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = 	 {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             			'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -243,3 +248,4 @@ if __name__=='__main__':
     Synth_FeatureCalc()
     NGTS_CentroidRun()
     NGTS_FeatureCalc()
+    NGTS_LoaderTest()

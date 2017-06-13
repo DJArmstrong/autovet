@@ -212,6 +212,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
      
                     model = Trapezoidmodel(0.5,t23,t14,depth,phase_orig)
                     p.figure(4)
+                    p.clf()
                     p.plot(phase_orig,can.lightcurve['flux'],'b.')
                     p.plot(phase_orig,model,'g.')
 
@@ -229,6 +230,7 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
      
                     model = Trapezoidmodel(0.5,t23,t14,depth,phase)
                     p.figure(5)
+                    p.clf()
                     p.plot(phase_orig,can.lightcurve['flux'],'b.')
                     p.plot(phase,model,'r.')
 
