@@ -980,19 +980,29 @@ class Featureset(object):
         return self.eventrapfit.params[2]/self.oddtrapfit.params[2]        
         
     def PointDensity_ingress(self,args):
+        '''
+        Density of points in ingress/egress relative to average point density of lightcurve.
+        Ingress/egress calculates as within +-10% from time implied by transit duration.
+        Calculates average density ignoring empty regions of phase.
+        '''
         #phase lc on planet period
-        if self.trapfit is None:
-            self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
-        
+        #if self.trapfit is None:
+        #    self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         per = self.target.candidate_data['per']
-        t0 = self.trapfit.params[0]
-        t14 = self.trapfit.params[2]
-        t23 = self.trapfit.params[1]
+        t0 = self.target.candidate_data['t0']
+        tdur_phase = self.target.candidate_data['tdur']/per
+        #t0 = self.trapfit.params[0]
+        #t14 = self.trapfit.params[2]
+        #t23 = self.trapfit.params[1]
         phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
         phasediffs = np.abs(phase - 0.5)
-        points_in_ingress = (phasediffs<t14/2.) & (phasediffs>t23/2.)        
-        density_in_ingress = np.sum(points_in_ingress)/(t14-t23)
-        return density_in_ingress / len(self.target.lightcurve['time'])
+        #points_in_ingress = (phasediffs<t14/2.) & (phasediffs>t23/2.)  
+        points_in_ingress = (phasediffs<(tdur_phase/2.)*1.1) & (phasediffs>(tdur_phase/2.)*0.9)       
+        density_in_ingress = np.sum(points_in_ingress)/((tdur_phase/2.)*0.2)
+        nbins = np.floor(2./tdur_phase).astype('int')  #2 bins across transit duration
+        binnedlc, binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
+        populated_fraction_of_lc = np.sum(binnedlc[:,1]==-10)/nbins
+        return density_in_ingress / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
  
     def missingDataFlag(self,args):
@@ -1007,10 +1017,13 @@ class Featureset(object):
         phaselc[:,0] = phase
         phaselc[:,1] = self.target.lightcurve['flux']
         phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
-        nbins = np.floor(5./tdur_phase).astype('int')  #5 bins across transit duration
+        resolution = 5./tdur_phase
+        if resolution<40:  #means very long durations don't automatically pass this test.
+            resolution = 40
+        nbins = np.floor(resolution).astype('int')  #5 bins across transit duration
         binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
         neartransit = (binnedlc[:,0] > 0.5-5*tdur_phase/2.) & (binnedlc[:,0] < 0.5+5*tdur_phase/2.)
-        return np.sum(binnedlc[neartransit,1]==-10)/np.sum(neartransit)
+        return float(np.sum(binnedlc[neartransit,1]==-10))/float(np.sum(neartransit))
  
     def pmatch(self,args):
         '''

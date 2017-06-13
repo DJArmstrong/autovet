@@ -8,7 +8,7 @@ import os
 from Loader import Candidate
 import Features
 
-def batman_model(t0,per,rprstar,aovstar,exp_time):
+def batman_model(t0,per,rprstar,aovrstar,exp_time):
     fix_e = 0.
     fix_w = 90.
     ldlaw = 'quadratic'
