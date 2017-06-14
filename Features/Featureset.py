@@ -37,8 +37,8 @@ class Featureset(object):
         self.eventransitfit = None
         self.oddlc = None
         self.oddtransitfit = None
-        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.01])
-        self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.01])
+        self.fit_initialguess = np.array([self.target.candidate_data['per'],self.target.candidate_data['t0'],10.,0.005])
+        self.trapfit_initialguess = np.array([self.target.candidate_data['t0'],self.target.candidate_data['tdur']*0.9/self.target.candidate_data['per'],self.target.candidate_data['tdur']/self.target.candidate_data['per'],0.005])
         self.testplots = testplots
         if self.testplots:
             import pylab as p
@@ -74,18 +74,19 @@ class Featureset(object):
                 if featurename not in self.features.keys():  
                     flag = 1
             if flag:
-                #try:
+                try:
                     feature = getattr(self,featurename)(featuredict[featurename])
+                except:  #any errors lead to populating the feature with -10. Very catch-all, but worth it for the large numbers this is used on.
                     if len(featuredict[featurename])>0:
-                        for k,key in enumerate(keys):
-                            self.features[key] = feature[k]
+                        features = np.zeros(len(keys)) -10
                     else:
-                        self.features[featurename] = feature                
-                #except AttributeError:  #feature requested is not an available method. Treats this as an external feature and adds the argument passed as the feature value.
-                #    if len(featuredict[featurename]) == 1:
-                #        self.features[featurename] = featuredict[featurename]
-                #    else:
-                #        print 'Feature not recognised: '+str(featurename) 
+                        self.features[featurename] = -10 
+                if len(featuredict[featurename])>0:
+                    for k,key in enumerate(keys):
+                        self.features[key] = feature[k]
+                else:
+                    self.features[featurename] = feature   
+            
         if self.testplots: #allows pause for plots to load
             p.pause(5)
             raw_input('Press return to continue')   
@@ -145,7 +146,7 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__,missionflag=2)
-        if len(planet_prob)==2:  #the faked extra transit from a different SOM function was present
+        if type(planet_prob)='numpy.ndarray':  #the faked extra transit from a different SOM function was present
             planet_prob = planet_prob[0]
         if self.testplots:
             p.figure()
@@ -194,7 +195,7 @@ class Featureset(object):
 
     def SOM_IsRamp(self,args):
         """
-        Boolean, does candidate's transit shape match the SOM pixels corresponding to ramps. NGTS only.
+        Distance of candidate's normalised binned transit shape to the SOM pixels corresponding to ramps. NGTS only.
         """
         if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
             print 'Only valid for NGTS'
@@ -209,21 +210,14 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
-            #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            if len(self.SOMarray.shape)==1:
-                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
-            map = self.som(self.SOMarray)
-            map = map[0,:]
-            flag = (map[0]==1 and map[1]==4) or (map[0]==4 and map[1]==4)
-            if self.testplots:
-                print 'IsRamp: '+str(flag)
-                print 'Map: '+str(map[0])+' '+str(map[1])
-            return int(flag)
+            dist1 = np.sqrt(np.sum(np.power(self.som.K[1,4,:] - self.SOMarray,2)))
+            dist2 = np.sqrt(np.sum(np.power(self.som.K[4,4,:] - self.SOMarray,2)))
+            return np.min([dist1,dist2])
+
             
     def SOM_IsVar(self,args):
         """
-        Boolean, does candidate's transit shape match the SOM pixel corresponding to periodic variables. NGTS only.
+        Distance of candidate's normalised binned transit shape to the SOM pixel corresponding to periodic variables. NGTS only.
         """
         if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
             print 'Only valid for NGTS'
@@ -237,16 +231,9 @@ class Featureset(object):
                     lc = self.target.lightcurve
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
+            dist = np.sqrt(np.sum(np.power(self.som.K[11,19,:] - self.SOMarray,2)))
+            return dist
 
-            #pretending we have more than 1 transit - otherwise have to rewrite bits of pymvpa
-            if len(self.SOMarray.shape)==1:
-                self.SOMarray = np.vstack((self.SOMarray,np.ones(len(self.SOMarray))))
-                self.SOMerror = np.vstack((self.SOMerror,np.ones(len(self.SOMerror))))
-            map = self.som(self.SOMarray)
-            map = map[0,:]
-            flag = (map[0]==11 and map[1]==19)
-            return int(flag)
-                
     
     def LSPeriod(self,args):
         """
@@ -341,14 +328,22 @@ class Featureset(object):
             return period
 
     def Skew(self,args):
+        '''
+        Scipy skew function on lightcurve.
+        '''
         return stats.skew(self.target.lightcurve['flux'])
     
     def Kurtosis(self,args):
+        '''
+        Scipy Kurtosos function on lightcurve.
+        '''
         return stats.kurtosis(self.target.lightcurve['flux'])
     
     def NZeroCross(self,args,window=16):
+        '''
+        Number of zero crossings of 16-point smoothed lightcurve.
+        '''
         lc = self.target.lightcurve
-        
         time_cut, flux_cut = utils.CutOutliers(lc['time'],lc['flux'])
         
         #interpolate gaps
@@ -357,7 +352,6 @@ class Featureset(object):
         #Do smoothing
         flux_smooth = utils.MovingAverage(interp_flux,window)
         flux_smooth = flux_smooth[window/2:-window/2]
-
         norm = np.median(flux_smooth)
         flux_zeroed = flux_smooth - norm
         return ((flux_zeroed[:-1] * flux_zeroed[1:]) < 0).sum()
@@ -395,6 +389,9 @@ class Featureset(object):
         return utils.Scatter(lc,12,cut_outliers=True)  #12 for 6 hours
 
     def Peak_to_peak(self,args):
+        '''
+        98th - 2nd percentile of lightcurve flux.
+        '''
         flux = self.target.lightcurve['flux']
         return np.percentile(flux,98)-np.percentile(flux,2)
 
@@ -413,6 +410,9 @@ class Featureset(object):
         return 1.4826 * np.median(np.abs(flux - mednorm))
 
     def RMS(self,args):
+        '''
+        Lightcurve root-mean-square.
+        '''
         return np.sqrt(np.mean(np.power(self.target.lightcurve['flux']-np.median(self.target.lightcurve['flux']),2)))
 
     def SPhot_mean(self,args):
@@ -540,9 +540,6 @@ class Featureset(object):
 
     def LSPhase_amp(self,args):
         lc = self.target.lightcurve
-        #if 'LSPeriod0' not in self.features.keys():
-        #    print 'Calculating LS Period first'
-        #    self.features['LSPeriod0'] = self.LSPeriod([0])
         if 'EBPeriod' not in self.features.keys():
             self.features['EBPeriod'] = self.EBPeriod([])
         per = self.features['EBPeriod']
@@ -558,9 +555,6 @@ class Featureset(object):
         
     def LSPhase_p2pmean(self,args):
         lc = self.target.lightcurve
-        #if 'LSPeriod0' not in self.features.keys():
-        #    print 'Calculating LS Period first'
-        #    self.features['LSPeriod0'] = self.LSPeriod([0])
         if 'EBPeriod' not in self.features.keys():
             self.features['EBPeriod'] = self.EBPeriod([])
         per = self.features['EBPeriod']
@@ -570,9 +564,6 @@ class Featureset(object):
 
     def LSPhase_p2pmax(self,args):        
         lc = self.target.lightcurve
-        #if 'LSPeriod0' not in self.features.keys():
-        #    print 'Calculating LS Period first'
-        #    self.features['LSPeriod0'] = self.LSPeriod([0])
         if 'EBPeriod' not in self.features.keys():
             self.features['EBPeriod'] = self.EBPeriod([])
         per = self.features['EBPeriod']
@@ -600,11 +591,6 @@ class Featureset(object):
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[3]
 
-#    def Fit_inc(self,args):
-#        if self.transitfit is None:
-#            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-#        return self.transitfit.params[4]
-
     def Fit_duration(self,args):  #assumes circular at the moment, as fit doesn't allow for varying e
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
@@ -630,15 +616,6 @@ class Featureset(object):
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
         return self.transitfit.params[3]/self.transitfit.errors[3]
          
-#    def Even_Fit_t0(self,args):
-#        if self.transitfit is None:
-#            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-#        if self.evenlc is None:
-#            self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')
-#        if self.eventransitfit is None:
-#            self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7,fixper=self.features['Fit_period'],fixt0=self.features['Fit_t0'])
-#        return self.eventransitfit.params[1]
-
     def Even_Fit_aovrstar(self,args):
         if self.transitfit is None:
             self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
@@ -674,15 +651,6 @@ class Featureset(object):
         if self.eventransitfit is None:
             self.eventransitfit = TransitFit.TransitFit(self.evenlc,self.fit_initialguess,self.target.exp_time,sfactor=7,fixper=self.transitfit.params[0],fixt0=self.transitfit.params[1])
         return self.eventransitfit.params[1]/self.eventransitfit.errors[1]
-
-#    def Odd_Fit_t0(self,args):
-#        if self.transitfit is None:
-#            self.transitfit = TransitFit.TransitFit(self.target.lightcurve,self.fit_initialguess,self.target.exp_time,sfactor=7)
-#        if self.oddlc is None:
-#            self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-#        if self.oddtransitfit is None:
-#            self.oddtransitfit = TransitFit.TransitFit(self.oddlc,self.fit_initialguess,self.target.exp_time,sfactor=7,fixper=self.transitfit.params[0],fixt0=self.transitfit.params[1])
-#        return self.oddtransitfit.params[1]
 
     def Odd_Fit_aovrstar(self,args):
         if self.transitfit is None:
@@ -792,13 +760,11 @@ class Featureset(object):
             return -10
         else:
             sesratios = []
-            #count = 0
             #print 'STE_DIAG'
             #print transits
             for transit in transits:
                 ttime = lc['time'][transit]
                 #print ttime
-                #print t0+count*per
                 segstart = np.searchsorted(lc['time'],ttime-segwidth/2.*tdur)
                 segend = np.searchsorted(lc['time'],ttime+segwidth/2.*tdur)
                 lcseg = {}
@@ -822,7 +788,6 @@ class Featureset(object):
                 #p.plot([t0+per*count,t0+per*count],[0.99,1.],'g-')
                 #p.pause(2)
                 #raw_input()
-                #count+=1
             return np.median(np.array(sesratios))
                     
     def RMS_TDur(self,args):
@@ -865,13 +830,6 @@ class Featureset(object):
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         return self.trapfit.params[3]
 
-    #def Even_Trapfit_t0(self,args):
-    #    if self.evenlc is None:
-    #        self.evenlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'even')            
-    #    if self.eventrapfit is None:
-    #        self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
-    #    return self.eventrapfit.params[0]
-
     def Even_Trapfit_t23phase(self,args):
         if self.trapfit is None:
             self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
@@ -907,15 +865,6 @@ class Featureset(object):
         if self.eventrapfit is None:
             self.eventrapfit = TransitFit.TransitFit(self.evenlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'],fixt0=self.trapfit.params[0])
         return self.eventrapfit.params[2]
-    
-    #def Odd_Trapfit_t0(self,args):
-    #    if self.trapfit is None:
-    #        self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
-    #    if self.oddlc is None:
-    #        self.oddlc = utils.SplitOddEven(self.target.lightcurve,self.target.candidate_data['per'],self.target.candidate_data['t0'],'odd')
-    #    if self.oddtrapfit is None:
-    #        self.oddtrapfit = TransitFit.TransitFit(self.oddlc,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'],fixt0=self.features['Trapfit_t0'])
-    #    return self.oddtrapfit.params[0]
 
     def Odd_Trapfit_t23phase(self,args):
         if self.trapfit is None:
@@ -986,22 +935,20 @@ class Featureset(object):
         Calculates average density ignoring empty regions of phase.
         '''
         #phase lc on planet period
-        #if self.trapfit is None:
-        #    self.trapfit = TransitFit.TransitFit(self.target.lightcurve,self.trapfit_initialguess,self.target.exp_time,sfactor=7,fittype='trap',fixper=self.target.candidate_data['per'])
         per = self.target.candidate_data['per']
         t0 = self.target.candidate_data['t0']
         tdur_phase = self.target.candidate_data['tdur']/per
-        #t0 = self.trapfit.params[0]
-        #t14 = self.trapfit.params[2]
-        #t23 = self.trapfit.params[1]
         phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
         phasediffs = np.abs(phase - 0.5)
-        #points_in_ingress = (phasediffs<t14/2.) & (phasediffs>t23/2.)  
         points_in_ingress = (phasediffs<(tdur_phase/2.)*1.1) & (phasediffs>(tdur_phase/2.)*0.9)       
         density_in_ingress = np.sum(points_in_ingress)/((tdur_phase/2.)*0.2)
-        nbins = np.floor(2./tdur_phase).astype('int')  #2 bins across transit duration
+        nbins = np.floor(2./tdur_phase).astype('int')  #2 bins per transit duration
+        phaselc = np.zeros([len(phase),2])
+        phaselc[:,0] = phase
+        phaselc[:,1] = self.target.lightcurve['flux']
+        phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
         binnedlc, binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
-        populated_fraction_of_lc = np.sum(binnedlc[:,1]==-10)/nbins
+        populated_fraction_of_lc = 1-np.sum(binnedlc[:,1]==-10)/nbins
         return density_in_ingress / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
  
@@ -1048,5 +995,9 @@ class Featureset(object):
         transits = np.where((np.abs(np.diff(phase))>0.9)&((phase[:-1]<tdur_phase/2.)|(phase[:-1]>1-tdur_phase/2.)))[0]
         return len(transits)
         
-        
+    def tdur_phase(self,args):
+        '''
+        transit width in phase
+        '''
+        return self.target.candidates_data['tdur']/self.target.candidate_data['per']       
          

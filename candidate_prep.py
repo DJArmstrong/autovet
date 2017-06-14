@@ -4,6 +4,7 @@ import glob
 import numpy as np
 import fitsio
 import os
+import sys
 from Loader import Candidate
 from Features import Featureset
 
@@ -65,13 +66,20 @@ def NGTS_CentroidRun():
     outdir = '/home/dja/Autovetting/Centroid/'
     NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
-
-def NGTS_FeatureCalc():
-
+def NGTS_LoaderTest():
+    from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
+    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt')
+    for infile in infilelist:
+        NGTS_MultiLoader(infile,dofeatures=False)
+        
+def NGTS_FeatureCalc(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    for input in inputs:
+        infile = infilelist[int(input)]
+        #infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
 
-    featurestocalc = {'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+        featurestocalc = {'tdur_phase':[],'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -84,8 +92,8 @@ def NGTS_FeatureCalc():
             		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-    featoutfile = '/home/dja/Autovetting/Dataprep/real_featurestest.txt'
-    NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)  #to just run the features (currently won't save!)
+        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/',os.path.split(infile)[1][:-4]+'_featurecalc_v0.txt')
+        NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)  #to just run the features (currently won't save!)
 
 		
 def ScanCentroids(centroiddir):
@@ -111,7 +119,7 @@ def Synth_FeatureCalc():
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synthorionfeatures_v2_all.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'
 
-    featurestocalc = 	 {'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = 	 {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
             			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             			'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
@@ -240,6 +248,8 @@ def Synth_Iterator():
 
 
 if __name__=='__main__':
-    Synth_FeatureCalc()
-    NGTS_CentroidRun()
-    NGTS_FeatureCalc()
+    #Synth_FeatureCalc()
+    #NGTS_CentroidRun()
+    inputs = sys.argv[1:]
+    NGTS_FeatureCalc(inputs)
+    #NGTS_LoaderTest()
