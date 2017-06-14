@@ -92,12 +92,11 @@ def NGTS_FeatureCalc(inputs):
             		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/',os.path.split(infile)[1][:-4]+'_featurecalc_v0.txt')
-        NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)  #to just run the features (currently won't save!)
+        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
+        NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)
 
 		
 def ScanCentroids(centroiddir):
-    
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
     for dir in dirlist:
         infofile = glob.glob(os.path.join(dir,'*centroid_info.txt'))

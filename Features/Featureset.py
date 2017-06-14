@@ -146,7 +146,7 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__,missionflag=2)
-        if type(planet_prob)='numpy.ndarray':  #the faked extra transit from a different SOM function was present
+        if type(planet_prob)=='numpy.ndarray':  #the faked extra transit from a different SOM function was present
             planet_prob = planet_prob[0]
         if self.testplots:
             p.figure()

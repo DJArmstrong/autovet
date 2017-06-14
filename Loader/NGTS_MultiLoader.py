@@ -71,21 +71,22 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
             
                 candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
                 can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
-            
-                '''
-                now do the main stuff with this candidate...
-                or save all candidates into a dictionary/list of candidates and then go on from there...
-                '''
-                if docentroid:
-                    canoutdir = os.path.join(outdir,fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank']))
-                    centroid_autovet( can, outdir=canoutdir)
+                if len(can.lightcurve['time'])>0:
+                    if can.lightcurve['time'][0] != -10: #signal that loading candidate didn't work
+                        '''
+                        now do the main stuff with this candidate...
+                        or save all candidates into a dictionary/list of candidates and then go on from there...
+                        '''
+                        if docentroid:
+                            canoutdir = os.path.join(outdir,fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank']))
+                            centroid_autovet( can, outdir=canoutdir)
                     
-                if dofeatures:
-                    feat = Featureset(can)
-                    feat.CalcFeatures(featuredict=dofeatures)
-                    features = feat.Writeout(keystowrite)
-                    with open(featoutfile,'a') as f:
-                        f.write(fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])+','+candidate['label']+',')
-                        for fe in features[2]:
-                            f.write(str(fe)+',')
-                        f.write('\n')
+                        if dofeatures:
+                            feat = Featureset(can)
+                            feat.CalcFeatures(featuredict=dofeatures)
+                            features = feat.Writeout(keystowrite)
+                            with open(featoutfile,'a') as f:
+                                f.write(fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])+','+candidate['label']+',')
+                                for fe in features[2]:
+                                    f.write(str(fe)+',')
+                                f.write('\n')
