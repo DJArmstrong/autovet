@@ -5,9 +5,17 @@ from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 from Features import Featureset
 
+def FeatFile_Setup(featoutfile, dofeatures):
+    keystowrite = np.sort(dofeatures.keys())
+    with open(featoutfile,'w') as f:
+        f.write('#')
+        f.write('ID,label,')
+        for key in keystowrite:
+            f.write(str(key)+',')
+        f.write('\n')
 
 # NGTS specific loader for multiple sources from various fields
-def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt'):
+def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt', overwrite=True):
     '''
     infile (string): link to a file containing the columns
        fieldname    ngts_version    obj_id    label    per   t0   tdur rank
@@ -19,6 +27,8 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
     dofeatures (dic): features to calculate, for format see Featureset.py
     
     featoutfile (str): filepath to save calculated features to
+    
+    overwrite (bool): overwrite feature output file and start again (if True), or skip already processed candidates (if False)
     '''
     
     #::: read list of all fields
@@ -33,16 +43,19 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
     output_epochs = []
     
     #set up output files
+    processed_ids = []
     if dofeatures:
+        if not os.path.exists(featoutfile):
+            FeatFile_Setup(featoutfile, dofeatures)
+        else:
+            if overwrite:
+                FeatFile_Setup(featoutfile, dofeatures)
+            else:
+                featfile = np.genfromtxt(featoutfile,names=True,delimiter=',',dtype=None)
+                for cand in featfile:
+                    processed_ids.append(cand['ID'])
         keystowrite = np.sort(dofeatures.keys())
-        with open(featoutfile,'w') as f:
-            f.write('#')
-            f.write('ID,label,')
-            for key in keystowrite:
-                f.write(str(key)+',')
-            f.write('\n')
-
-
+            
     #:::: loop over all fields
     for field_id in unique_field_ids:
         
@@ -63,30 +76,31 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
         
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-            
-            #apply pmatch cut. This is being put in early to reduce the numbers we have to deal with
             print candidate['obj_id']
-            pmatch = np.sum((field_periods/candidate['per']>0.998) & (field_periods/candidate['per']<1.002))
-            if pmatch <= 5:#cuts to ~27115 total in TEST18 (down from 96716 after cutting same object same per peaks)
+            save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])
+            if save_id not in processed_ids:
+                #apply pmatch cut. This is being put in early to reduce the numbers we have to deal with
+                pmatch = np.sum((field_periods/candidate['per']>0.998) & (field_periods/candidate['per']<1.002))
+                if pmatch <= 5:#cuts to ~27115 total in TEST18 (down from 96716 after cutting same object same per peaks)
             
-                candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
-                can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
-                if len(can.lightcurve['time'])>0:
-                    if can.lightcurve['time'][0] != -10: #signal that loading candidate didn't work
-                        '''
-                        now do the main stuff with this candidate...
-                        or save all candidates into a dictionary/list of candidates and then go on from there...
-                        '''
-                        if docentroid:
-                            canoutdir = os.path.join(outdir,fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank']))
-                            centroid_autovet( can, outdir=canoutdir)
+                    candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
+                    can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)
+                    if len(can.lightcurve['time'])>0:
+                        if can.lightcurve['time'][0] != -10: #signal that loading candidate didn't work
+                            '''
+                            now do the main stuff with this candidate...
+                            or save all candidates into a dictionary/list of candidates and then go on from there...
+                            '''
+                            if docentroid:
+                                canoutdir = os.path.join(outdir,save_id)
+                                centroid_autovet( can, outdir=canoutdir)
                     
-                        if dofeatures:
-                            feat = Featureset(can)
-                            feat.CalcFeatures(featuredict=dofeatures)
-                            features = feat.Writeout(keystowrite)
-                            with open(featoutfile,'a') as f:
-                                f.write(fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])+','+candidate['label']+',')
-                                for fe in features[2]:
-                                    f.write(str(fe)+',')
-                                f.write('\n')
+                            if dofeatures:
+                                feat = Featureset(can)
+                                feat.CalcFeatures(featuredict=dofeatures)
+                                features = feat.Writeout(keystowrite)
+                                with open(featoutfile,'a') as f:
+                                    f.write(save_id+','+candidate['label']+',')
+                                    for fe in features[2]:
+                                        f.write(str(fe)+',')
+                                    f.write('\n')

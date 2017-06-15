@@ -5,12 +5,6 @@ import numpy as np
 import fitsio
 import os
 import sys
-from Loader import Candidate
-from Features import Featureset
-
-#set up to be run from autovet directory
-from Features.Centroiding.scripts import ngtsio_v1_1_1_autovet as ngtsio
-from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 def NGTS_Setup():
     mloader = 'multiloader_input_TEST18_v2.txt'
@@ -93,7 +87,7 @@ def NGTS_FeatureCalc(inputs):
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
         featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
-        NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile)
+        NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 		
 def ScanCentroids(centroiddir):
@@ -114,6 +108,9 @@ def NGTS_FeatureCombiner():
             #save
 
 def Synth_FeatureCalc():
+    from Loader import Candidate
+    from Features import Featureset
+
     loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synth_input_TEST18_v2_all.txt',names=True,dtype=None)
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synthorionfeatures_v2_all.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'

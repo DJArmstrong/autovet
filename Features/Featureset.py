@@ -78,9 +78,9 @@ class Featureset(object):
                     feature = getattr(self,featurename)(featuredict[featurename])
                 except:  #any errors lead to populating the feature with -10. Very catch-all, but worth it for the large numbers this is used on.
                     if len(featuredict[featurename])>0:
-                        features = np.zeros(len(keys)) -10
+                        feature = np.zeros(len(keys)) -10
                     else:
-                        self.features[featurename] = -10 
+                        feature = -10 
                 if len(featuredict[featurename])>0:
                     for k,key in enumerate(keys):
                         self.features[key] = feature[k]
