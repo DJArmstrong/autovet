@@ -111,24 +111,25 @@ def Synth_FeatureCalc():
     from Loader import Candidate
     from Features import Featureset
 
-    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synth_input_TEST18_v2_all.txt',names=True,dtype=None)
-    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/synthorionfeatures_v2_all.txt',names=True,delimiter=',',dtype=None)
-    lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'
+    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
+    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
+    lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
 
-    featurestocalc = 	 {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
-            			'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
-            			'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
-            			'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            			'TransitSNR':[],'PointDensity_ingress':[],
-            			'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
-            			'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
-            			'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
-            			'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
-            			'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
-            			'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
-            			'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-    
-    outfile = '/home/dja/Autovetting/Dataprep/synth_featurestest.txt'
+    featurestocalc = {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+            		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
+            		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
+            		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
+            		'TransitSNR':[],'PointDensity_ingress':[],
+            		'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
+            		'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
+            		'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
+            		'Trapfit_t0':[],'Trapfit_t23phase':[],'Trapfit_t14phase':[],'Trapfit_depth':[],
+            		'Even_Trapfit_t23phase':[],'Even_Trapfit_t14phase':[],'Even_Trapfit_depth':[],
+            		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
+            		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
+            		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}  
+            		
+    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_features_alex.txt'
     keystowrite = np.sort(featurestocalc.keys())
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
@@ -155,7 +156,7 @@ def Synth_FeatureCalc():
         feat = Featureset(can)
         feat.CalcFeatures(featuredict=featurestocalc)      
         features = feat.Writeout(keystowrite)
-        orionidx = np.where((featdat['FIELD']==candidate['fieldname'])&(featdat['OBJ_ID']==candidate['obj_id']+'                    '))[0]
+        orionidx = np.where((featdat['FIELD']==candidate['fieldname'])&(featdat['OBJ_ID']==candidate['obj_id']))[0]
         
         orionfeatures = featdat[['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']][orionidx]
         with open(outfile,'a') as f:
@@ -168,16 +169,22 @@ def Synth_FeatureCalc():
 
 #repeat for synthetic transits
 def Synth_Iterator():
-    synthorionlist = glob.glob('/ngts/pipeline/output/synthetics/*TEST18/ORION*')
-    synthpostsysremlist = glob.glob('/ngts/pipeline/output/synthetics/*TEST18/POST-SYSREM*')
-    outdir = '/home/dja/Autovetting/Dataprep/SynthLCs/'
-    mloader = 'synth_input_TEST18_v2.txt'
-    orionfeatfile = 'synthorionfeatures_v2.txt'
+    synthdir = '/wasp/scratch/alexsmith/synthetics/'
+    synthruns = ['NG0522-2518-802-TEST18_4','NG0304-1115-809-TEST18_shallow','NG2047-0248-810-TEST18_shallow']
+    synthorionlist = []
+    synthpostsysremlist = []
+    for run in synthruns:
+        synthorionlist.append(glob.glob(os.path.join(synthdir,run)+'/ORION*')[0])
+        synthpostsysremlist.append(glob.glob(os.path.join(synthdir,run)+'/POST-SYSREM*')[0])
+        
+    outdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
+    mloader = 'synth_input_TEST18_alex.txt'
+    orionfeatfile = 'synthorionfeatures_alex.txt'
 
-    with open(mloader,'w') as f:
+    with open(os.path.join(outdir,mloader),'w') as f:
         f.write('#fieldname ngts_version obj_id label per t0 tdur rank\n')
 
-    with open(orionfeatfile,'w') as f:
+    with open(os.path.join(outdir,orionfeatfile),'w') as f:
         f.write('#OBJ_ID, FIELD, VERSION, LABEL, RANK, DELTA_CHISQ, NPTS_TRANSIT, NUM_TRANSITS, NBOUND_IN_TRANS, AMP_ELLIPSE, SN_ELLIPSE, GAP_RATIO, SN_ANTI, SDE\n')
 
     
@@ -220,12 +227,12 @@ def Synth_Iterator():
                 depth = cand['DEPTH']
     
                 #fieldname ngts_version obj_id label per t0 tdur
-                with open(mloader,'a') as f:
+                with open(os.path.join(outdir,mloader),'a') as f:
                     f.write(fieldname+' '+version+' '+obj_id+' '+label+' '+str(per)+' '+str(t0)+' '+str(tdur)+' '+str(int(cand['RANK']))+'\n')
     
                 diags = np.array([cand['RANK'],cand['DELTA_CHISQ'],cand['NPTS_TRANSIT'],cand['NUM_TRANSITS'],cand['NBOUND_IN_TRANS'],cand['AMP_ELLIPSE'],cand['SN_ELLIPSE'],cand['GAP_RATIO'],cand['SN_ANTI'],cand['SDE']])
 
-                with open(orionfeatfile,'a') as f:
+                with open(os.path.join(outdir,orionfeatfile),'a') as f:
                     f.write(obj_id.strip(' ')+','+fieldname+','+version+','+label+',')
                     for entry in diags[:-1]:
                         f.write(str(entry)+',')
@@ -244,8 +251,9 @@ def Synth_Iterator():
 
 
 if __name__=='__main__':
-    #Synth_FeatureCalc()
+    #Synth_Iterator()
+    Synth_FeatureCalc()
     #NGTS_CentroidRun()
-    inputs = sys.argv[1:]
-    NGTS_FeatureCalc(inputs)
+    #inputs = sys.argv[1:]
+    #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
