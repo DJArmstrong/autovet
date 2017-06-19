@@ -47,8 +47,6 @@ class Candidate(object):
         else:
             self.lightcurve_f = self.lightcurve
 
-
-
     def LoadLightcurve(self):
         """
         Load lightcurve from set observatory.
@@ -70,7 +68,6 @@ class Candidate(object):
             info = None
         else:
             print 'Observatory not supported'
-            
         return lc, info
         
     def NGTS_synthload(self):
@@ -95,23 +92,36 @@ class Candidate(object):
 
         lc_keys = ['HJD', 'FLUX', 'FLUX_ERR']
         info_keys = ['OBJ_ID','FIELDNAME','NGTS_VERSION','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS','CCDX','CCDY','CENTDX','CENTDY']
+        passflag = False
         
         #if there is no field_dic passed, use ngtsio to read out the info for a single object from the fits files
         if self.field_dic is None:
-            fieldname, ngts_version = self.filepath
-            dic = ngtsio.get( fieldname, lc_keys + info_keys, obj_id=str(self.id).zfill(6), ngts_version=ngts_version, silent=True, set_nan=True )
-            
+            if self.filepath is not None:
+                fieldname, ngts_version = self.filepath
+                dic = ngtsio.get( fieldname, lc_keys + info_keys, obj_id=str(self.id).zfill(6), ngts_version=ngts_version, silent=True, set_nan=True )
+            else:
+                passflag = True
         #if a field_dic was passed (in memory), then select the specific object and store it into dic
         else:
             ind_obj = np.where( self.field_dic['OBJ_ID'] == self.id )[0]
-            dic = {}
-            for key in ['OBJ_ID','FLUX_MEAN','RA','DEC']:
-                dic[key] = self.field_dic[key][ind_obj][0]
-            for key in ['HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY']:
-                dic[key] = self.field_dic[key][ind_obj].flatten()
-            for key in ['FIELDNAME','NGTS_VERSION','NIGHT','AIRMASS']:
-                dic[key] = self.field_dic[key]
-        
+            if (len(ind_obj)>0) and ('FLUX_ERR' in self.field_dic.keys()):
+                dic = {}
+                for key in ['OBJ_ID','FLUX_MEAN','RA','DEC']:
+                    dic[key] = self.field_dic[key][ind_obj][0]
+                for key in ['HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY']:
+                    dic[key] = self.field_dic[key][ind_obj].flatten()
+                for key in ['FIELDNAME','NGTS_VERSION','NIGHT','AIRMASS']:
+                    dic[key] = self.field_dic[key]
+            else:  #this is a candidate that wasn't in the field_dic
+                passflag = True
+        if passflag:
+            lc = {}
+            lc['time'] = np.zeros(10)-10
+            lc['flux'] = np.zeros(10)-10
+            lc['error'] = np.zeros(10)-10
+            info = 0
+            return lc, info
+                
         nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR']) | (dic['FLUX']==0)
         norm = np.median(dic['FLUX'][~nancut])
         lc = {}
