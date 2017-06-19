@@ -93,9 +93,7 @@ def NGTS_MultiLoader(infile, outdir, docentroid=False, dofeatures=False, featout
                             or save all candidates into a dictionary/list of candidates and then go on from there...
                             '''
                             if docentroid:
-                                print outdir
                                 canoutdir = os.path.join(outdir,save_id,'')
-                                print canoutdir
                                 centroid_autovet( can, outdir=canoutdir)
                     
                             if dofeatures:
