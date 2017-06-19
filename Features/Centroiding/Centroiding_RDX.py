@@ -76,7 +76,7 @@ class centroid():
     if user wants to manually overwrite the BLS or CANVAS period
     '''
     
-    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None, nancut=None):
+    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, secondary_eclipse=True, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None, nancut=None):
 #        super(centroid, self).__init__(parent)
             
         self.roots = roots
@@ -103,6 +103,7 @@ class centroid():
         self.bin_width = bin_width #(in s)
         self.min_time = min_time #(in s) minimum coverage of innermost and out-of-transit required for including a night
         self.dt = dt
+        self.secondary_eclipse = secondary_eclipse
         self.show_plot = show_plot
         self.flagfile = flagfile
         self.dic = dic
@@ -277,10 +278,13 @@ class centroid():
 
 
 
-
     def mark_eclipses(self):
-        self.ind_out = index_transits.index_eclipses(self.dic)[-1]
-        
+        if self.secondary_eclipse is True:
+            self.ind_out = index_transits.index_eclipses(self.dic)[-1]
+        else:
+            self.ind_out = index_transits.index_transits(self.dic)[3]
+            
+
 
     def assign_airmass_colorcode(self):
         #::: assign colors for different nights; dconvert HJD from seconds into days
