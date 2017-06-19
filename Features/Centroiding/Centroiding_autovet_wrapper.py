@@ -40,7 +40,7 @@ def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max =
         dic = {}
         info_keys = ['OBJ_ID','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS','CCDX','CCDY','CENTDX','CENTDY']
         for info_key in info_keys: dic[info_key] = candidate.info[info_key]        
-        dic['HJD'] = candidate.lightcurve['time']
+        dic['HJD'] = candidate.lightcurve['time'] * 3600. * 24. #from days to seconds
         dic['SYSREM_FLUX3'] = candidate.lightcurve['flux']
     
         C = centroid( fieldname, obj_id, ngts_version = ngts_version, \
@@ -51,6 +51,7 @@ def centroid_autovet(candidate, pixel_radius = 200., flux_min = 500., flux_max =
                       flux_min = flux_min, flux_max = flux_max, \
                       method=method, R_min=R_min, N_top_max=N_top_max, \
                       bin_width=bin_width, min_time=min_time, dt=dt, \
+                      secondary_eclipse = True, \
                       roots=roots, outdir=outdir, parent=parent, show_plot=show_plot, \
                       flagfile=flagfile, dic=dic, nancut=candidate.info['nancut'] )
         C.run()
