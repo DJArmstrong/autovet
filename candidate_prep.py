@@ -54,11 +54,13 @@ def NGTS_Setup():
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
-def NGTS_CentroidRun():
+def NGTS_CentroidRun(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
-    outdir = '/home/dja/Autovetting/Centroid/'
-    NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    for input in inputs:
+        infile = infilelist[int(input)]
+        outdir = '/home/dja/Autovetting/Centroid/Run0/'
+        NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
 def NGTS_LoaderTest():
     from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
@@ -90,22 +92,26 @@ def NGTS_FeatureCalc(inputs):
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 		
-def ScanCentroids(centroiddir):
+def ScanCentroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
+    centroidkeys = ['CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','RollCorrSNR_X',
+    				'RollCorrSNR_Y','CrossCorrSNR_X','CrossCorrSNR_Y','Ttest_X',
+    				'Ttest_Y','Binom_X','Binom_Y']
+    with open(outfile,'w') as f:
+        f.write('#')
+        f.write('ID,')
+        for key in centroidkeys:
+            f.write(str(key)+',')
+        f.write('\n')    				
     for dir in dirlist:
         infofile = glob.glob(os.path.join(dir,'*centroid_info.txt'))
-        dat = np.genfromtxt(infofile)
-        	
-
-def NGTS_FeatureCombiner():
-            print 'empty'
-            #load in the already read features, the centroid output file features, and featureset features
-    
-            #simulate pmatch feature, centroid features for synth lightcurves (use overall distributions, but check certain fields aren't being completely excluded)
-
-            #combine to give large features array ready for classification
-    
-            #save
+        dat = np.genfromtxt(infofile,names=True,dtype=None)
+        with open(outfile,'a') as f:
+            f.write(os.path.basename(os.path.normpath(dir))+',')
+            for key in centroidkeys:
+                val = dat[key]
+                f.write(str(val)+',')
+            f.write('\n')
 
 def Synth_FeatureCalc():
     from Loader import Candidate
@@ -252,8 +258,9 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     #Synth_Iterator()
-    Synth_FeatureCalc()
+    #Synth_FeatureCalc()
     #NGTS_CentroidRun()
+    Scan_Centroids()
     #inputs = sys.argv[1:]
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
