@@ -999,5 +999,5 @@ class Featureset(object):
         '''
         transit width in phase
         '''
-        return self.target.candidates_data['tdur']/self.target.candidate_data['per']       
+        return self.target.candidate_data['tdur']/self.target.candidate_data['per']       
          
