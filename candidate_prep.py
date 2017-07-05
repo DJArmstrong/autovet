@@ -126,9 +126,16 @@ def NGTS_FeatureCombiner():
         fd.addData(featfile,'real_candidate')
     fd.addData(centroidfeat,'real_candidate',addrows=False)
     fd.addData(orionfeat,'real_candidate',addrows=False)
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets/trainset.txt')
+    #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets/trainset.txt')
     fd.addData(synthfeat,'synth')
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_nocentroid_nopmatch/trainset.txt')
+    #sim data
+    fd.simFeature('Binom_X','synth','binom',[0.97])
+    fd.simFeature('Binom_Y','synth','binom',[0.97])
+    fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
+    fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_withsimCentroid/trainset.txt')
     
 
 def Synth_FeatureCalc():

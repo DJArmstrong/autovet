@@ -117,7 +117,7 @@ class FeatureData():
         common_cols = np.sort(common_cols) #to give repeatable output order
         return common_cols, excludedcols  
     
-    def outputTrainingSet(self,outfile,impute_type='median'):
+    def outputTrainingSet(self,outfile,impute_type='fill'):
         '''
         Writes out one file from self.data, containing only columns
         common to all labels. Suitable for use as immediate training set. First col will
@@ -125,9 +125,10 @@ class FeatureData():
         
         Inputs
         ------
-        outfile: str, output filepath. Files will be in csv format.
+        outfile: str
+        		 output filepath. Files will be in csv format.
         
-        impute_type: 'median','fill','None'
+        impute_type: str, options: 'median','fill','None'
         		How to deal with NaNs and infs. median uses median of that column. fill
         		replaces with -10. None leaves them as they were.
         '''
@@ -139,63 +140,33 @@ class FeatureData():
                 print excludedcols
        
             with open(outfile,'w') as f:
-                f.write('# label,')
+                f.write('#ID,label,')
                 for col in common_cols[:-1]:
                     f.write(col.strip(' ')+',')
                 f.write(common_cols[-1].strip(' ')+'\n')
                 for label in self.data.keys():
+                    ids = self.data[label].index
                     output = self.data[label][common_cols]
                     output = self.impute(output,impute_type)
-                    for row in output.values:
-                        f.write(label+',')
+                    for id,row in zip(ids,output.values):
+                        f.write(str(id)+','+label+',')
                         for item in row[:-1]:
                             f.write(str(item)+',')
                         f.write(str(row[-1])+'\n')
-                
-                       
-    def outputSets(self,outdir,impute_type='median'):
+
+    def impute(self,output,impute_type):
         '''
-        Writes out a file for each label in self.data, containing only columns
-        common to all labels.
+        Fill in blanks
         
         Inputs
         ------
-        outdir: str, output directory for files. Files will have format 'label_features.txt',
-        		and will be in csv format.
+        output: Pandas dataset
+        		Dataset to impute.
         		
         impute_type: 'median','fill','None'
         		How to deal with NaNs and infs. median uses median of that column. fill
         		replaces with -10. None leaves them as they were.
         '''
-        if len(self.data.keys())>0:
-            common_cols, excludedcols = self.findCommonCols()
-            
-            if len(excludedcols)>0:
-                print 'Warning, some columns excluded:'
-                print excludedcols
-            
-            for label in self.data.keys():
-                output = self.data[label][common_cols]
-                output = self.impute(output,impute_type)
-                with open(os.path.join(outdir,label+'_features.txt'),'w') as f:
-                    f.write('#')
-                    for col in common_cols[:-1]:
-                        f.write(col.strip(' ')+',')
-                    f.write(common_cols[-1].strip(' ')+'\n')
-                    for row in output.values:
-                        for item in row[:-1]:
-                            f.write(str(item)+',')
-                        f.write(str(row[-1])+'\n')
-
-                with open(os.path.join(outdir,label+'_ids.txt'),'w') as f:
-                    output = self.data[label].index
-                    for id in output:
-                        f.write(str(id)+'\n') 
-                print 'N objects in '+label+': ',len(self.data[label].index)           
-        else:
-            print 'No data to output'
-
-    def impute(self,output,impute_type):
         if impute_type != 'None':
             output = output.replace([np.inf, -np.inf], np.nan) #replace infs with nan
             output = output.replace([-10], np.nan) #replace -10 (the standard fill value) with nan
@@ -205,7 +176,39 @@ class FeatureData():
                 output = output.fillna(output.median())
         return output
 
-#    def sim_feature()
+    def simFeature(self,feat_to_sim,target_class,distribution,dist_params):
+        '''
+        Simulate a feature for a class, using scipy stats distributions.
+        
+        Inputs
+        ------
+        feat_to_sim: 	str
+        				Name of feature to simulate
+        
+        target_class:	str
+        				Class to create feature for
+        				        			
+        distribution:	str, in [truncnorm, expon]
+        				Distribution to draw from. Only some supported
+        				
+        dist_params:	list
+        				Distribution parameters. [a, b, mean, std] for truncnorm,
+        				[loc, scale] for expon. See scipy.stats.
+        '''
+        if distribution=='truncnorm':
+            from scipy.stats import truncnorm
+            dist = truncnorm(dist_params[0], dist_params[1], loc=dist_params[2], scale=dist_params[3])
+        elif distribution=='expon':
+            from scipy.stats import expon
+            dist = expon(loc=dist_params[0], scale=dist_params[1])
+        elif distribution=='binom':
+            from scipy.stats import binom
+            dist = binom(1,dist_params[0])
+        else:
+            print 'Distribution not supported'
+            return 0
+        if target_class in self.data.keys():
+            self.data[target_class][feat_to_sim] = pd.Series(dist.rvs(len(self.data[target_class].index)),index=self.data[target_class].index)
     
         
     
