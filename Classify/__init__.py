@@ -1,1 +1,1 @@
-from Learner import CandidateSet,TrainingSet,Learner
+from Learner import CandidateSet,TrainingSet,Classifier

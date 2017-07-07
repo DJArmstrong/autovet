@@ -15,7 +15,7 @@ def NGTS_Setup():
         f.write('#fieldname ngts_version obj_id label per t0 tdur rank\n')
 
     with open(orionfeatfile,'w') as f:
-        f.write('OBJ_ID, RANK, DELTA_CHISQ, NPTS_TRANSIT, NUM_TRANSITS, NBOUND_IN_TRANS, AMP_ELLIPSE, SN_ELLIPSE, GAP_RATIO, SN_ANTI, SDE\n')
+        f.write('ID, label, RANK, DELTA_CHISQ, NPTS_TRANSIT, NUM_TRANSITS, NBOUND_IN_TRANS, AMP_ELLIPSE, SN_ELLIPSE, GAP_RATIO, SN_ANTI, SDE\n')
 
     for indir in BLSdirs:
         infile = glob.glob(os.path.join(indir,'*.fits'))[0]
@@ -47,18 +47,21 @@ def NGTS_Setup():
                     f.write(field+' '+version+' '+obj_id+' '+label+' '+str(per)+' '+str(t0)+' '+str(tdur)+' '+str(int(cand['RANK']))+'\n')
     
                 diags = np.array([cand['RANK'],cand['DELTA_CHISQ'],cand['NPTS_TRANSIT'],cand['NUM_TRANSITS'],cand['NBOUND_IN_TRANS'],cand['AMP_ELLIPSE'],cand['SN_ELLIPSE'],cand['GAP_RATIO'],cand['SN_ANTI'],cand['SDE']])
+                save_id = field+'_'+'{:06d}'.format(obj_id)+'_'+str(int(cand['RANK']))
 
                 with open(orionfeatfile,'a') as f:
-                    f.write(obj_id+','+field+','+version+','+label+',')
+                    f.write(save_id+','+label+',')
                     for entry in diags[:-1]:
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
-def NGTS_CentroidRun():
+def NGTS_CentroidRun(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
-    outdir = '/home/dja/Autovetting/Centroid/'
-    NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    for input in inputs:
+        infile = infilelist[int(input)]
+        outdir = '/home/dja/Autovetting/Centroid/Run0/'
+        NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
 def NGTS_LoaderTest():
     from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
@@ -90,22 +93,50 @@ def NGTS_FeatureCalc(inputs):
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 		
-def ScanCentroids(centroiddir):
+def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
+    centroidkeys = ['CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','RollCorrSNR_X',
+    				'RollCorrSNR_Y','CrossCorrSNR_X','CrossCorrSNR_Y','Ttest_X',
+    				'Ttest_Y','Binom_X','Binom_Y']
+    with open(outfile,'w') as f:
+        f.write('#')
+        f.write('ID,')
+        for key in centroidkeys:
+            f.write(str(key)+',')
+        f.write('\n')    				
     for dir in dirlist:
         infofile = glob.glob(os.path.join(dir,'*centroid_info.txt'))
-        dat = np.genfromtxt(infofile)
-        	
+        if len(infofile)>0:
+            dat = np.genfromtxt(infofile,names=True,dtype=None)
+            with open(outfile,'a') as f:
+                f.write(os.path.basename(os.path.normpath(dir))+',')
+                for key in centroidkeys:
+                    val = dat[key]
+                    f.write(str(val)+',')
+                f.write('\n')
 
 def NGTS_FeatureCombiner():
-            print 'empty'
-            #load in the already read features, the centroid output file features, and featureset features
+    centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
+    genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/features_v0*.txt')
+    orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/orionfeatures_v2_fixformat.txt'
+    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/synth_features_alex.txt'
+    from Features.FeatureData import FeatureData
+    fd = FeatureData()
+    for featfile in genfeat:
+        fd.addData(featfile,'real_candidate')
+    fd.addData(centroidfeat,'real_candidate',addrows=False)
+    fd.addData(orionfeat,'real_candidate',addrows=False)
+    #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets/trainset.txt')
+    fd.addData(synthfeat,'synth')
+    #sim data
+    fd.simFeature('Binom_X','synth','binom',[0.97])
+    fd.simFeature('Binom_Y','synth','binom',[0.97])
+    fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
+    fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_withsimCentroid/trainset.txt')
     
-            #simulate pmatch feature, centroid features for synth lightcurves (use overall distributions, but check certain fields aren't being completely excluded)
-
-            #combine to give large features array ready for classification
-    
-            #save
 
 def Synth_FeatureCalc():
     from Loader import Candidate
@@ -252,8 +283,10 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     #Synth_Iterator()
-    Synth_FeatureCalc()
+    #Synth_FeatureCalc()
     #NGTS_CentroidRun()
+    #Scan_Centroids()
     #inputs = sys.argv[1:]
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
+    NGTS_FeatureCombiner()

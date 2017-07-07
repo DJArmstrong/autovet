@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import glob
 import ngtsio_v1_1_1_autovet as ngtsio
 from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
@@ -15,20 +16,24 @@ def FeatFile_Setup(featoutfile, dofeatures):
         f.write('\n')
 
 # NGTS specific loader for multiple sources from various fields
-def NGTS_MultiLoader(infile, outdir, docentroid=False, dofeatures=False, featoutfile='featurefile.txt', overwrite=True):
+def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt', overwrite=True):
     '''
-    infile (string): link to a file containing the columns
-       fieldname    ngts_version    obj_id    label    per   t0   tdur rank
+    infile (string): 	link to a file containing the columns
+       				fieldname    ngts_version    obj_id    label    per   t0   tdur rank
        
-    outdir (string): directory to save centroid outputs to
+    outdir (string): 	directory to save centroid outputs to
     
-    docentroid (bool): perform centroid operation on candidates
+    docentroid (bool): 	perform centroid operation on candidates. 
+    					NB if both dofeatures and docentroid are called, only 
+    					previously processed candidates with features calculated
+    					will be ignored
     
-    dofeatures (dic): features to calculate, for format see Featureset.py
+    dofeatures (dic): 	features to calculate, for format see Featureset.py. 
     
-    featoutfile (str): filepath to save calculated features to
+    featoutfile (str): 	filepath to save calculated features to
     
-    overwrite (bool): overwrite feature output file and start again (if True), or skip already processed candidates (if False)
+    overwrite (bool): 	overwrite feature output file and start again (if True), 
+    					or skip already processed candidates (if False)
     '''
     
     #::: read list of all fields
@@ -55,7 +60,13 @@ def NGTS_MultiLoader(infile, outdir, docentroid=False, dofeatures=False, featout
                 for cand in featfile:
                     processed_ids.append(cand['ID'])
         keystowrite = np.sort(dofeatures.keys())
-            
+        
+    elif docentroid: #if dofeatures has been called, that will overwrite the processed_ids determination.
+        centroiddirs = glob.glob(os.path.join(outdir,'NG*'))
+        for dir in centroiddirs:
+            if len(glob.glob(os.path.join(dir,'*_centroid_info.txt')))==1:
+                processed_ids.append(os.path.basename(os.path.normpath(dir)))
+    
     #:::: loop over all fields
     for field_id in unique_field_ids:
         
@@ -94,7 +105,10 @@ def NGTS_MultiLoader(infile, outdir, docentroid=False, dofeatures=False, featout
                             '''
                             if docentroid:
                                 canoutdir = os.path.join(outdir,save_id,'')
-                                centroid_autovet( can, outdir=canoutdir)
+                                try:
+                                    centroid_autovet( can, outdir=canoutdir)
+                                except ValueError: #catching the airmass poly error
+                                    pass
                     
                             if dofeatures:
                                 feat = Featureset(can)
