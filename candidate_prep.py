@@ -205,6 +205,33 @@ def Synth_FeatureCalc():
                 f.write(str(fe)+',')
             f.write('\n')
 
+def Synth_SOMPrep():
+    from Loader import Candidate
+    from Features import Featureset
+
+    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
+    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
+    lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
+    SOMoutfile = '/home/dja/SOM/nbins20/SynthSOM_TEST18_alex'
+    
+    SOMarray = []
+    SOMerrors = []
+    
+    for candidate in loaderdat:
+        print candidate['fieldname']+'_'+candidate['obj_id']
+      #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
+        filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
+        candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
+        can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
+        lc = np.array([can.lightcurve['time'],can.lightcurve['flux'],can.lightcurve['error']])
+        SOMarray_single, SOMerrors_single = TSOM.PrepareOneLightcurve(lc,candidate['per'],candidate['t0'],candidate['tdur'],nbins=20,clip_outliers=10)     
+        SOMarray.append(SOMarray_single)
+        SOMerrors.append(SOMerrors_single)
+    np.savetxt(SOMoutfile+'_array.txt',np.array(SOMarray))
+    np.savetxt(SOMoutfile+'_error.txt',np.array(SOMarray_errors))
+
+
+
 #repeat for synthetic transits
 def Synth_Iterator():
     synthdir = '/wasp/scratch/alexsmith/synthetics/'
@@ -297,4 +324,5 @@ if __name__=='__main__':
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
     NGTS_SOMPrep()
+    Synth_SOMPrep()
     #NGTS_FeatureCombiner()
