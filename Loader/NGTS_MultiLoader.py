@@ -6,6 +6,7 @@ from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 from Features import Featureset
 
+
 def FeatFile_Setup(featoutfile, dofeatures):
     keystowrite = np.sort(dofeatures.keys())
     with open(featoutfile,'w') as f:
@@ -16,7 +17,7 @@ def FeatFile_Setup(featoutfile, dofeatures):
         f.write('\n')
 
 # NGTS specific loader for multiple sources from various fields
-def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt', overwrite=True):
+def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, featoutfile='featurefile.txt', overwrite=True, prepSOM=False, SOMoutfile='SOM'):
     '''
     infile (string): 	link to a file containing the columns
        				fieldname    ngts_version    obj_id    label    per   t0   tdur rank
@@ -34,6 +35,10 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
     
     overwrite (bool): 	overwrite feature output file and start again (if True), 
     					or skip already processed candidates (if False)
+    					
+    prepSOM (bool):     produce lightcurves ready for SOM
+    
+    SOMoutfilestem (str):	file to save SOMarray to (stem, will have field and version added to it)
     '''
     
     #::: read list of all fields
@@ -67,6 +72,12 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
             if len(glob.glob(os.path.join(dir,'*_centroid_info.txt')))==1:
                 processed_ids.append(os.path.basename(os.path.normpath(dir)))
     
+    if prepSOM:
+        from Features.TransitSOM import TransitSOM_release as TSOM
+        SOMarray = []
+        som_ids = []
+        SOMerrors = []
+           
     #:::: loop over all fields
     for field_id in unique_field_ids:
         
@@ -119,3 +130,15 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
                                     for fe in features[2]:
                                         f.write(str(fe)+',')
                                     f.write('\n')
+                                    
+                            if prepSOM:
+                                lc = np.array([can.lightcurve['time'],can.lightcurve['flux'],can.lightcurve['error']])
+                                SOMarray_single, SOMerrors_single = TSOM.PrepareOneLightcurve(lc,candidate['per'],candidate['t0'],candidate['tdur'],nbins=20,clip_outliers=10)     
+                                SOMarray.append(SOMarray_single)
+                                SOMerrors.append(SOMerrors_single)
+
+        if prepSOM:
+            #save total file
+            np.savetxt(SOMoutfile+'_'+ngts_version+'_'+fieldname+'_array.txt',np.array(SOMarray))
+            np.savetxt(SOMoutfile+'_'+ngts_version+'_'+fieldname+'_error.txt',np.array(SOMarray_errors))
+ 

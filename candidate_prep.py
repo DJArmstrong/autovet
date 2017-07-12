@@ -92,7 +92,13 @@ def NGTS_FeatureCalc(inputs):
         featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
-		
+def NGTS_SOMPrep():
+    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    for infile in infilelist:
+        outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile[1])[:-4])
+        NGTS_MultiLoader(infile,prepSOM=True,SOMoutfile=outfile)
+    		
 def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
     centroidkeys = ['CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','RollCorrSNR_X',
@@ -290,4 +296,5 @@ if __name__=='__main__':
     #inputs = sys.argv[1:]
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
-    NGTS_FeatureCombiner()
+    NGTS_SOMPrep()
+    #NGTS_FeatureCombiner()
