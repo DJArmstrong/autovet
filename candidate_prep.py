@@ -92,7 +92,13 @@ def NGTS_FeatureCalc(inputs):
         featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
-		
+def NGTS_SOMPrep():
+    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    for infile in infilelist:
+        outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile[1])[:-4])
+        NGTS_MultiLoader(infile,prepSOM=True,SOMoutfile=outfile)
+    		
 def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
     centroidkeys = ['CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','RollCorrSNR_X',
@@ -129,13 +135,14 @@ def NGTS_FeatureCombiner():
     #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets/trainset.txt')
     fd.addData(synthfeat,'synth')
     #sim data
-    fd.simFeature('Binom_X','synth','binom',[0.97])
-    fd.simFeature('Binom_Y','synth','binom',[0.97])
+    fd.simFeature('Binom','synth','binom',[0.97])
+    #fd.simFeature('Binom_Y','synth','binom',[0.97])
     fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
     fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
     fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
     fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_withsimCentroid/trainset.txt')
+    fd.joinCentroids()
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_withsimCentroidjoin/trainset.txt')
     
 
 def Synth_FeatureCalc():
@@ -197,6 +204,33 @@ def Synth_FeatureCalc():
             for fe in orionfeatures[0]:
                 f.write(str(fe)+',')
             f.write('\n')
+
+def Synth_SOMPrep():
+    from Loader import Candidate
+    from Features import Featureset
+
+    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
+    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
+    lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
+    SOMoutfile = '/home/dja/SOM/nbins20/SynthSOM_TEST18_alex'
+    
+    SOMarray = []
+    SOMerrors = []
+    
+    for candidate in loaderdat:
+        print candidate['fieldname']+'_'+candidate['obj_id']
+      #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
+        filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
+        candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
+        can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
+        lc = np.array([can.lightcurve['time'],can.lightcurve['flux'],can.lightcurve['error']])
+        SOMarray_single, SOMerrors_single = TSOM.PrepareOneLightcurve(lc,candidate['per'],candidate['t0'],candidate['tdur'],nbins=20,clip_outliers=10)     
+        SOMarray.append(SOMarray_single)
+        SOMerrors.append(SOMerrors_single)
+    np.savetxt(SOMoutfile+'_array.txt',np.array(SOMarray))
+    np.savetxt(SOMoutfile+'_error.txt',np.array(SOMarray_errors))
+
+
 
 #repeat for synthetic transits
 def Synth_Iterator():
@@ -289,4 +323,6 @@ if __name__=='__main__':
     #inputs = sys.argv[1:]
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
-    NGTS_FeatureCombiner()
+    NGTS_SOMPrep()
+    Synth_SOMPrep()
+    #NGTS_FeatureCombiner()

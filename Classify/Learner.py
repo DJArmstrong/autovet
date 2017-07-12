@@ -12,11 +12,20 @@ class CandidateSet(object):
 
 class TrainingSet(CandidateSet):
     
-    def __init__(self,trainingfile):
+    def __init__(self,trainingfile,fieldstodrop=[]):
         dat = pd.read_csv(trainingfile,index_col=1)
-        dat = dat.drop('tdur_phase',1)
-        dat = dat.drop('Trapfit_t0',1)
-        dat = dat.drop('Fit_t0',1)
+        fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0','DELTA_CHISQ',
+         'Even_Fit_aovrstar', 'Even_Fit_chisq',
+       'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
+       'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase', 'Fit_aovrstar',
+       'Fit_chisq', 'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
+       'Trapfit_depth','Fit_rprstar','Fit_depthSNR',
+       'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
+       'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
+       'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
+        for field in fieldstodrop:
+            #if field in dat.columns:
+                dat = dat.drop(field,1)
         dat = dat.replace([np.inf, -np.inf], np.nan) #replace infs with nan
         dat = dat.replace([-10], np.nan) #replace -10 (the standard fill value) with nan
         dat = dat.dropna()
@@ -87,7 +96,7 @@ class Classifier(object):
         shuffleidx = np.random.choice(len(tset.known_classes),len(tset.known_classes),replace=False)
         cvfeatures = tset.features[shuffleidx,1:]
         cvgroups = tset.known_classes[shuffleidx]
-        kf = KFold(n_splits=int(cvfeatures.shape[0]/100))
+        kf = KFold(n_splits=int(cvfeatures.shape[0]/500))
         probs = []
         for train_index,test_index in kf.split(cvfeatures,cvgroups):
             print test_index

@@ -176,6 +176,10 @@ class FeatureData():
                 output = output.fillna(output.median())
         return output
 
+    #def clipOutliers(self):
+        #for label in self.data.keys():
+            #self.data[label].clip()
+    
     def simFeature(self,feat_to_sim,target_class,distribution,dist_params):
         '''
         Simulate a feature for a class, using scipy stats distributions.
@@ -198,17 +202,48 @@ class FeatureData():
         if distribution=='truncnorm':
             from scipy.stats import truncnorm
             dist = truncnorm(dist_params[0], dist_params[1], loc=dist_params[2], scale=dist_params[3])
+            simdata = dist.rvs(len(self.data[target_class].index))
         elif distribution=='expon':
             from scipy.stats import expon
             dist = expon(loc=dist_params[0], scale=dist_params[1])
+            simdata = dist.rvs(len(self.data[target_class].index))
         elif distribution=='binom':
-            from scipy.stats import binom
+            from scipy.stats import binom,truncnorm
             dist = binom(1,dist_params[0])
+            simdata = dist.rvs(len(self.data[target_class].index)).astype('float')
+            npositive = np.sum(simdata>0.5)
+            nsample = int(npositive*0.15)
+            sample = np.random.choice(np.arange(npositive),size=nsample,replace=False)
+            simdata[sample] = truncnorm(-2.5,0.,loc=1.0,scale=0.2).rvs(nsample)
         else:
             print 'Distribution not supported'
             return 0
         if target_class in self.data.keys():
-            self.data[target_class][feat_to_sim] = pd.Series(dist.rvs(len(self.data[target_class].index)),index=self.data[target_class].index)
-    
+            self.data[target_class][feat_to_sim] = pd.Series(simdata,index=self.data[target_class].index)
+
+    def joinCentroids(self):
+        self.avgCols('Binom_X','Binom_Y','Binom')
+        self.quadCols('CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','CENT_fda_PHASE_RMSE')
+        self.quadCols('CrossCorrSNR_X','CrossCorrSNR_Y','CrossCorrSNR')
+
+    def quadCols(self,col1,col2,target):
+        for label in self.data.keys():
+            if col1 in self.data[label].columns and col2 in self.data[label].columns:
+                #add quadrature column
+                quads = np.sqrt(np.power(self.data[label][col1],2) + np.power(self.data[label][col2],2))
+                self.data[label][target] = pd.Series(quads,index=self.data[label].index)
+                #remove old columns
+                self.data[label] = self.data[label].drop(col1,1)
+                self.data[label] = self.data[label].drop(col2,1)
+                
+    def avgCols(self,col1,col2,target):
+        for label in self.data.keys():
+            if col1 in self.data[label].columns and col2 in self.data[label].columns:
+                #add quadrature column
+                avg = (self.data[label][col1] + self.data[label][col2])/2.
+                self.data[label][target] = pd.Series(avg,index=self.data[label].index)
+                #remove old columns
+                self.data[label] = self.data[label].drop(col1,1)
+                self.data[label] = self.data[label].drop(col2,1)
         
     

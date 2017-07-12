@@ -1,8 +1,10 @@
 
 import Loader
-import Learner
+from Classify import Learner
 import numpy as np
 import pandas as pd
+import pylab as p
+p.ion()
 
 def Trapezoidmodel(t0_phase,t23,t14,depth,phase_data):
     centrediffs = np.abs(phase_data - t0_phase)
@@ -40,11 +42,12 @@ tset=Learner.TrainingSet(trainingfile)
 candidatedat = np.genfromtxt('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2.txt',dtype=None,names=True)
 dat_nodrop = pd.read_csv(trainingfile,index_col=0)
 
-for objid in candidate_ids:
+for o in range(len(candidatedat['fieldname'])):
+  objid = candidatedat['fieldname'][o]+'_'+'{:06d}'.format(candidatedat['obj_id'][o])+'_'+str(candidatedat['rank'][o])
+  if objid in candidate_ids:
     field = objid[:11]
     id = int(objid[13:18])
-    can_idx = np.where(candidatedat['fieldname']+'_'+'{:06d}'.format(candidatedat['obj_id'])+'_'+str(int(candidatedat['rank']))==objid)[0]
-    candidate_data = {'per':candidatedat['per'][can_idx], 't0':candidatedat['t0'][can_idx], 'tdur':candidatedat['tdur'][can_idx]}
+    candidate_data = {'per':candidatedat['per'][o], 't0':candidatedat['t0'][o], 'tdur':candidatedat['tdur'][o]}
     can=Loader.Candidate(id,[field,'TEST18'],observatory='NGTS',candidate_data=candidate_data)
     tidx = np.where(tset.ids==objid)[0]
     feat = tset.features[tidx,:]
@@ -76,5 +79,7 @@ for objid in candidate_ids:
     p.plot(phase,model,'g.')
     
     for f in range(len(tset.featurenames)):
-        print tset.featurenames[f]+': '+tset.features[tidx,f]
+        print tset.featurenames[f]+': '+str(tset.features[tidx,f])
     
+    p.pause(0.1)
+    raw_input()
