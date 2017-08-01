@@ -87,7 +87,6 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
         
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-            print candidate['obj_id']
             save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])
             print save_id
             if save_id not in processed_ids:
