@@ -76,7 +76,8 @@ class centroid():
     if user wants to manually overwrite the BLS or CANVAS period
     '''
     
-    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, secondary_eclipse=True, roots=None, outdir=None, parent=None, do_plot=True, show_plot=False, flagfile=None, dic=None, nancut=None):
+    def __init__(self, fieldname, obj_id, ngts_version = 'TEST18', source = 'CANVAS', bls_rank = 1, user_period = None, user_epoch = None, user_width=None, user_flux = None, user_centdx = None, user_centdy = None, time_hjd = None, pixel_radius = 200., flux_min = 500., flux_max = 10000., method='transit', R_min=0., N_top_max=20, bin_width=300., min_time=1800., dt=0.005, secondary_eclipse=True, roots=None, outdir=None, parent=None, show_plot=False, flagfile=None, dic=None, nancut=None):
+#        super(centroid, self).__init__(parent)
             
         self.roots = roots
         
@@ -103,7 +104,6 @@ class centroid():
         self.min_time = min_time #(in s) minimum coverage of innermost and out-of-transit required for including a night
         self.dt = dt
         self.secondary_eclipse = secondary_eclipse
-	self.do_plot = do_plot
         self.show_plot = show_plot
         self.flagfile = flagfile
         self.dic = dic
@@ -217,10 +217,24 @@ class centroid():
         #::: get infos of neighbouring objects
         self.dic_nb = ngtsio.get( self.fieldname, ['OBJ_ID','HJD','CCDX','CCDY','CENTDX','CENTDY','FLUX_MEAN'], obj_id = obj_id_nb, time_hjd = self.time_hjd, ngts_version = self.ngts_version, bls_rank = self.bls_rank, silent = True) 
         self.dic_nb['CCDX_0'] = np.nanmedian( self.dic_nb['CCDX'], axis=1 )
+#        self.dic_all['CCDX'][ind_neighbour]
         self.dic_nb['CCDY_0'] = np.nanmedian( self.dic_nb['CCDY'], axis=1 )
+#        self.dic_all['CCDY'][ind_neighbour]
+#        del self.dic_nb['CCDX']
+#        del self.dic_nb['CCDY']
         
         #::: delete the dictionary of all objects
         del self.dic_all
+        
+#        print 'N_neighbours =', len(ind_neighbour)
+#        
+#        print '***********************************'
+#        print self.dic['HJD'].shape
+#        print self.dic['SYSREM_FLUX3'].shape
+#        print self.dic_nb['CENTDX'].shape
+#        print self.dic_nb['CENTDY'].shape
+#        print self.dic_nb['CCDX'].shape
+#        print self.dic_nb['CCDY'].shape
         
         #::: apply same nancut as for target object to all neighbours 
         #::: ("autovet" specific only)
@@ -280,11 +294,20 @@ class centroid():
         
 
     def binning(self):
-
         self.dic['HJD_BIN'], \
-            [ self.dic['CENTDX_fda_BIN'], self.dic['CENTDY_fda_BIN'], self.dic['ma_CENTDX_BIN'], self.dic['ma_CENTDY_BIN'], self.dic['SYSREM_FLUX3_BIN'], self.dic['CENTDX_f_BIN'], self.dic['CENTDY_f_BIN'], self.dic['CENTDX_fd_BIN'], self.dic['CENTDY_fd_BIN'], self.dic_nb['CENTDX_ref_mean_BIN'], self.dic_nb['CENTDY_ref_mean_BIN'] ], \
-            [ self.dic['CENTDX_fda_BIN_ERR'], self.dic['CENTDY_fda_BIN_ERR'], self.dic['ma_CENTDX_BIN_ERR'], self.dic['ma_CENTDY_BIN_ERR'], self.dic['SYSREM_FLUX3_BIN_ERR'], self.dic['CENTDX_f_BIN_ERR'], self.dic['CENTDY_f_BIN_ERR'], self.dic['CENTDX_fd_BIN_ERR'], self.dic['CENTDY_fd_BIN_ERR'], self.dic_nb['CENTDX_ref_mean_BIN_ERR'], self.dic_nb['CENTDY_ref_mean_BIN_ERR'] ], \
-            _ = lightcurve_tools.rebin_err_matrix(self.dic['HJD'], np.vstack(( self.dic['CENTDX_fda'], self.dic['CENTDY_fda'], self.dic['ma_CENTDX'], self.dic['ma_CENTDY'], self.dic['SYSREM_FLUX3'], self.dic['CENTDX_f'], self.dic['CENTDY_f'], self.dic['CENTDX_fd'], self.dic['CENTDY_fd'], self.dic_nb['CENTDX_ref_mean'], self.dic_nb['CENTDY_ref_mean'] )), dt=600, sigmaclip=False, ferr_style='std' )
+            [ self.dic['CENTDX_fda_BIN'], self.dic['CENTDY_fda_BIN'], self.dic['ma_CENTDX_BIN'], self.dic['ma_CENTDY_BIN'], self.dic['COLOR_BIN'], self.dic['AIRMASS_BIN'], self.dic['SYSREM_FLUX3_BIN'], self.dic['CENTDX_f_BIN'], self.dic['CENTDY_f_BIN'], self.dic['CENTDX_fd_BIN'], self.dic['CENTDY_fd_BIN'], self.dic_nb['CENTDX_ref_mean_BIN'], self.dic_nb['CENTDY_ref_mean_BIN'] ], \
+            [ self.dic['CENTDX_fda_BIN_ERR'], self.dic['CENTDY_fda_BIN_ERR'], self.dic['ma_CENTDX_BIN_ERR'], self.dic['ma_CENTDY_BIN_ERR'], self.dic['COLOR_BIN_ERR'], self.dic['AIRMASS_BIN_ERR'], self.dic['SYSREM_FLUX3_BIN_ERR'], self.dic['CENTDX_f_BIN_ERR'], self.dic['CENTDY_f_BIN_ERR'], self.dic['CENTDX_fd_BIN_ERR'], self.dic['CENTDY_fd_BIN_ERR'], self.dic_nb['CENTDX_ref_mean_BIN_ERR'], self.dic_nb['CENTDY_ref_mean_BIN_ERR'] ], \
+            _ = lightcurve_tools.rebin_err_matrix(self.dic['HJD'], np.vstack(( self.dic['CENTDX_fda'], self.dic['CENTDY_fda'], self.dic['ma_CENTDX'], self.dic['ma_CENTDY'], self.dic['COLOR'], self.dic['AIRMASS'], self.dic['SYSREM_FLUX3'], self.dic['CENTDX_f'], self.dic['CENTDY_f'], self.dic['CENTDX_fd'], self.dic['CENTDY_fd'], self.dic_nb['CENTDX_ref_mean'], self.dic_nb['CENTDY_ref_mean'] )), dt=600, sigmaclip=False, ferr_style='std' )
+
+#        self.dic['HJD_BIN'], \
+#            [ self.dic['CENTDX_fda_BIN'], self.dic['CENTDY_fda_BIN'], self.dic['poly_CENTDX_BIN'], self.dic['poly_CENTDY_BIN'], self.dic['COLOR_BIN'], self.dic['AIRMASS_BIN'], self.dic['SYSREM_FLUX3_BIN'], self.dic['CENTDX_f_BIN'], self.dic['CENTDY_f_BIN'], self.dic['CENTDX_fd_BIN'], self.dic['CENTDY_fd_BIN'] ], \
+#            [ self.dic['CENTDX_fda_BIN_ERR'], self.dic['CENTDY_fda_BIN_ERR'], self.dic['poly_CENTDX_BIN_ERR'], self.dic['poly_CENTDY_BIN_ERR'], self.dic['COLOR_BIN_ERR'], self.dic['AIRMASS_BIN_ERR'], self.dic['SYSREM_FLUX3_BIN_ERR'], self.dic['CENTDX_f_BIN_ERR'], self.dic['CENTDY_f_BIN_ERR'], self.dic['CENTDX_fd_BIN_ERR'], self.dic['CENTDY_fd_BIN_ERR'] ], \
+#            _ = lightcurve_tools.rebin_err_matrix(self.dic['HJD'], np.vstack(( self.dic['CENTDX_fda'], self.dic['CENTDY_fda'], self.dic['poly_CENTDX'], self.dic['poly_CENTDY'], self.dic['COLOR'], self.dic['AIRMASS'], self.dic['SYSREM_FLUX3'], self.dic['CENTDX_f'], self.dic['CENTDY_f'], self.dic['CENTDX_fd'], self.dic['CENTDY_fd'] )), dt=600, sigmaclip=False, ferr_style='std' )
+#        
+#        _, \
+#            [ self.dic_nb['CENTDX_ref_mean_BIN'], self.dic_nb['CENTDY_ref_mean_BIN'] ], \
+#            [ self.dic_nb['CENTDX_ref_mean_BIN_ERR'], self.dic_nb['CENTDY_ref_mean_BIN_ERR'] ], \
+#            _ = lightcurve_tools.rebin_err_matrix(self.dic['HJD'], np.vstack(( self.dic_nb['CENTDX_ref_mean'], self.dic_nb['CENTDY_ref_mean'] )), dt=600 )
 
 
 
@@ -317,8 +340,7 @@ class centroid():
         self.fig_corrfy, flags_fy = self.ccfct( 'SYSREM_FLUX3_PHASE', 'CENTDY_fda_PHASE', 'FLUX vs CENTDY' )
         self.fig_corrxy, flags_xy = self.ccfct( 'CENTDX_fda_PHASE', 'CENTDY_fda_PHASE', 'CENTDX vs CENTDY' )
 
-	if self.do_plot:
-            self.fig_autocorr = self.acfct( ['SYSREM_FLUX3_PHASE','CENTDX_fda_PHASE','CENTDY_fda_PHASE'], ['FLUX','CENTDX','CENTDY'] )            
+        #self.fig_autocorr = self.acfct( ['SYSREM_FLUX3_PHASE','CENTDX_fda_PHASE','CENTDY_fda_PHASE'], ['FLUX','CENTDX','CENTDY'] )            
              
  
     #::: autocorrelation fct
@@ -403,28 +425,24 @@ class centroid():
         x = self.phasedf[xkey]
         y = self.phasedf[ykey]
         
-        if self.do_plot:
-            fig, axes = plt.subplots(1,2,figsize=(10,4))
-            fig.suptitle(self.obj_id + ' ' + title)
-        else:
-            fig = None
+        #fig, axes = plt.subplots(1,2,figsize=(10,4))
+        #fig.suptitle(self.obj_id + ' ' + title)
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #        win = [0.1, 0.25, 0.33]
         win = [0.25]
         windows= ( np.array(win) * (1/self.dt) ).astype(int)
-        correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
+        correls = [ self.phasedf.rolling(window=windows[i], center=True).corr() for i,_ in enumerate(windows) ]
         
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
             self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ]
-            if self.do_plot:
-                axes[0].plot( self.phasedf['HJD_PHASE'], correls[i].loc[ :, xkey, ykey ], label=str(windows[i] * self.dt) )
-                axes[0].axhline( 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
-                axes[0].axhline( - 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
-            axes[0].set( xlim=[-0.25,0.75], ylim=[-1,1], xlabel='phase', ylabel='rolling correlation')
-            axes[0].legend()
+        #    axes[0].plot( self.phasedf['HJD_PHASE'], correls[i].loc[ :, xkey, ykey ], label=str(windows[i] * self.dt) )
+        #    axes[0].axhline( 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
+        #    axes[0].axhline( - 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
+       # axes[0].set( xlim=[-0.25,0.75], ylim=[-1,1], xlabel='phase', ylabel='rolling correlation')
+       # axes[0].legend()
                 
 #        crosscorr, lags, crosscorr_CI95, crosscorr_CI99 = pandas_tsa.pandas_crosscorr(x, y)
 #        axes[1].plot( lags, crosscorr )
@@ -440,16 +458,15 @@ class centroid():
         self.dic['CrossCorr_'+xkey+'_'+ykey] = self.crosscorr[title]
         crosscorr_CI95 = np.concatenate( (crosscorr_CI95[ int(3*N_c/4): ], crosscorr_CI95[ :int(3*N_c/4) ]) )
         crosscorr_CI99 = np.concatenate( (crosscorr_CI99[ int(3*N_c/4): ], crosscorr_CI99[ :int(3*N_c/4) ]) )
-        if self.do_plot:
-            axes[1].plot( self.ccf_lags, self.crosscorr[title] )
-            axes[1].plot( self.ccf_lags, crosscorr_CI99, 'k--' )
-            axes[1].plot( self.ccf_lags, -crosscorr_CI99, 'k--' )
-            axes[1].set( xlim=[self.ccf_lags[0], self.ccf_lags[-1]], ylim=[-1,1], xlabel=r'lag $\tau$ (phase shift)', ylabel='ccf (periodic)' )
+       # axes[1].plot( self.ccf_lags, self.crosscorr[title] )
+      #  axes[1].plot( self.ccf_lags, crosscorr_CI99, 'k--' )
+      #  axes[1].plot( self.ccf_lags, -crosscorr_CI99, 'k--' )
+      #  axes[1].set( xlim=[self.ccf_lags[0], self.ccf_lags[-1]], ylim=[-1,1], xlabel=r'lag $\tau$ (phase shift)', ylabel='ccf (periodic)' )
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                   
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        if self.do_plot:
-            plt.tight_layout() 
+      #  plt.tight_layout() 
+        fig = 0
         return fig, None
         #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -541,25 +558,23 @@ class centroid():
         
         #::: detrended curves
         self.fig_phasefold, axes = plt.subplots( 4, 1, sharex=True, figsize=(16,16) )
-        print '******'
-        print self.dic['SYSREM_FLUX3_PHASE']
+        
         axes[0].plot( self.dic['PHI'], self.dic['SYSREM_FLUX3']/np.nanmedian(self.dic['SYSREM_FLUX3']), 'k.', alpha=0.1, rasterized=True )
         axes[0].errorbar( self.dic['HJD_PHASE'], self.dic['SYSREM_FLUX3_PHASE'], yerr=self.dic['SYSREM_FLUX3_PHASE_ERR'], fmt='o', color='r', ms=10, rasterized=True )
-        axes[0].set( ylabel='FLUX', ylim=[ np.nanmin(self.dic['SYSREM_FLUX3_PHASE']-self.dic['SYSREM_FLUX3_PHASE_ERR']), np.nanmax(self.dic['SYSREM_FLUX3_PHASE']+self.dic['SYSREM_FLUX3_PHASE_ERR']) ])
+        axes[0].set( ylabel='FLUX', ylim=[ np.min(self.dic['SYSREM_FLUX3_PHASE']-self.dic['SYSREM_FLUX3_PHASE_ERR']), np.max(self.dic['SYSREM_FLUX3_PHASE']+self.dic['SYSREM_FLUX3_PHASE_ERR']) ])
         
         axes[1].plot( self.dic['PHI'], self.dic['CENTDX'], 'k.', alpha=0.1, rasterized=True )
         axes[1].errorbar( self.dic['HJD_PHASE'], self.dic['CENTDX_fda_PHASE'], yerr=self.dic['CENTDX_fda_PHASE_ERR'], fmt='o', ms=10, rasterized=True ) #, color='darkgrey')
-        axes[1].set( ylabel='CENTDX (in pixel)', ylim=[ np.nanmin(self.dic['CENTDX_fda_PHASE']-self.dic['CENTDX_fda_PHASE_ERR']), np.nanmax(self.dic['CENTDX_fda_PHASE']+self.dic['CENTDX_fda_PHASE_ERR']) ])
+        axes[1].set( ylabel='CENTDX (in pixel)', ylim=[ np.min(self.dic['CENTDX_fda_PHASE']-self.dic['CENTDX_fda_PHASE_ERR']), np.max(self.dic['CENTDX_fda_PHASE']+self.dic['CENTDX_fda_PHASE_ERR']) ])
         
         axes[2].plot( self.dic['PHI'], self.dic['CENTDY'], 'k.', alpha=0.1, rasterized=True )
         axes[2].errorbar( self.dic['HJD_PHASE'], self.dic['CENTDY_fda_PHASE'], yerr=self.dic['CENTDY_fda_PHASE_ERR'], fmt='o', ms=10, rasterized=True ) #, color='darkgrey')
-        axes[2].set( ylabel='CENTDY (in pixel)', xlabel='Phase', ylim=[ np.nanmin(self.dic['CENTDY_fda_PHASE']-self.dic['CENTDY_fda_PHASE_ERR']), np.nanmax(self.dic['CENTDY_fda_PHASE']+self.dic['CENTDY_fda_PHASE_ERR']) ], xlim=[-0.25,0.75])
+        axes[2].set( ylabel='CENTDY (in pixel)', xlabel='Phase', ylim=[ np.min(self.dic['CENTDY_fda_PHASE']-self.dic['CENTDY_fda_PHASE_ERR']), np.max(self.dic['CENTDY_fda_PHASE']+self.dic['CENTDY_fda_PHASE_ERR']) ], xlim=[-0.25,0.75])
         
         axes[3].plot( self.dic['HJD_PHASE'], self.dic['N_PHASE'], 'go', ms=10, rasterized=True ) #, color='darkgrey')
         axes[3].set( ylabel='Nr of exposures', xlabel='Phase', xlim=[-0.25,0.75])
         
         plt.tight_layout()
-        plt.show()
         
            
          
@@ -689,7 +704,6 @@ class centroid():
                  'RollCorr_SYSREM_FLUX3_PHASE_CENTDX_fda_PHASE'+'\t'+'RollCorr_SYSREM_FLUX3_PHASE_CENTDY_fda_PHASE'+'\t'+'RollCorr_CENTDX_fda_PHASE_CENTDY_fda_PHASE'+'\t'+\
                  'CrossCorr_SYSREM_FLUX3_PHASE_CENTDX_fda_PHASE'+'\t'+'CrossCorr_SYSREM_FLUX3_PHASE_CENTDY_fda_PHASE'+'\t'+'CrossCorr_CENTDX_fda_PHASE_CENTDY_fda_PHASE'
         np.savetxt(outfilename, X, delimiter='\t', header=header)
-	print 'Output saved as', outfilename
         
         #::: full time series data, binned to 10min
         outfilename = os.path.join( self.outdir, self.fieldname + '_' + self.obj_id + '_' + self.ngts_version + '_centroid_data_BIN.txt' )
@@ -697,8 +711,7 @@ class centroid():
                    self.dic['CENTDX_fda_BIN'], self.dic['CENTDX_fda_BIN_ERR'], self.dic['CENTDY_fda_BIN'], self.dic['CENTDY_fda_BIN_ERR'] ]
         header = 'HJD_BIN'+'\t'+'SYSREM_FLUX3_BIN'+'\t'+'SYSREM_FLUX3_BIN_ERR'+'\t'+\
                  'CENTDX_fda_BIN'+'\t'+'CENTDX_fda_BIN_ERR'+'\t'+'CENTDY_fda_BIN'+'\t'+'CENTDY_fda_BIN_ERR'
-        np.savetxt(outfilename, X, delimiter='\t', header=header)    
-	print 'Output saved as', outfilename                              
+        np.savetxt(outfilename, X, delimiter='\t', header=header)                                  
         
         #::: full time series data, every exposure
         outfilename = os.path.join( self.outdir, self.fieldname + '_' + self.obj_id + '_' + self.ngts_version + '_centroid_data_ALL.txt' )
@@ -707,7 +720,6 @@ class centroid():
         header = 'HJD_ALL'+'\t'+'SYSREM_FLUX3_ALL'+'\t'+ \
                  'CENTDX_fda_ALL'+'\t'+'CENTDY_fda_ALL'
         np.savetxt(outfilename, X, delimiter='\t', header=header)   
-	print 'Output saved as', outfilename
         
         
         
@@ -770,7 +782,6 @@ class centroid():
                      str(self.stats['Binom_X'])+'\t'+\
                      str(self.stats['Binom_Y'])+'\n' )
                          
-	print 'Output saved as', outfilename
                 
                 
                 
@@ -796,6 +807,21 @@ class centroid():
 #        else:
 #            print "Note: flagfile is 'None'."
             
+
+ 
+                    
+            
+#    def detrend(self, method=1):
+#        if method==1:
+#            detrender = detrend_centroid_external_RDX_1.detrend_centroid(self.dic, self.dic_nb)
+#        if method==2:
+#            detrender = detrend_centroid_external_RDX_2.detrend_centroid(self.dic, self.dic_nb)
+#        if method==3:
+#            detrender = detrend_centroid_external_RDX_3.detrend_centroid(self.dic, self.dic_nb)
+#        if method==4:
+#            detrender = detrend_centroid_external_RDX_4.detrend_centroid(self.dic, self.dic_nb)
+#            
+#        self.dic, self.dic_nb = detrender.run()        
     
     
     def detrend(self):
@@ -807,20 +833,11 @@ class centroid():
     def check_object(self):
         self.valid = True
         
-	if self.nancut is None:
-            for key in ['X','Y']:
-                N_nan = np.count_nonzero(np.isnan(self.dic['CENTD'+key]))
-                N_tot = len(self.dic['CENTD'+key])
-                #if more than half of all entries are NaN, declare the object as invalid
-                if (1.*N_nan/N_tot > 0.5): self.valid = False
-        else:
-            N_nan = np.count_nonzero(self.nancut)
-            N_tot = len( self.nancut )
+        for key in ['X','Y']:
+            N_nan = np.count_nonzero(np.isnan(self.dic['CENTD'+key]))
+            N_tot = len(self.dic['CENTD'+key])
             #if more than half of all entries are NaN, declare the object as invalid
             if (1.*N_nan/N_tot > 0.5): self.valid = False
-
-        if self.valid == False:
-            warnings.warn('Object '+self.obj_id+' skipped: too many NaNs in CENTD array (' + str(100.*N_nan/N_tot)[:4] + ' %).')
             
             
             
@@ -834,9 +851,9 @@ class centroid():
         print 'loaded object.'
         
         self.check_object()
+        print 'object is valid.'
         
         if self.valid:
-            print 'object is valid.'
             #::: overwrite transit parameters with a simulated transit
     #        self.dic = simulate_signal.simulate( self.dic, tipo='EB_FGKM', plot=False )
             
@@ -850,10 +867,6 @@ class centroid():
             
             self.mark_eclipses()
             print 'marked eclipses and out-of-eclipse.'
-            
-            #::: assign colorcode corresponding to airmass
-            #self.assign_airmass_colorcode()
-            #print 'assigned airmass color codes.'
             
             #::: detrend the centroid
             self.detrend()
@@ -873,21 +886,17 @@ class centroid():
     
             #::: to study a target in detail
             self.phase_fold()
-            print 'phase folded.'
             
             #::: calculate and plot ccf and acf
             self.cross_correlate()
-            print 'cross-correlation calculated.'
             
             #::: calculate stats (SNR, Ttest, Bimod-test)
             self.do_stats()
-            print 'stats calculated.'
             
             #plots
-            if self.do_plot:
-                self.plot_scatter_matrix()
+   #         self.plot_scatter_matrix()
             
-                self.plot_phase_folded_curves()
+    #        self.plot_phase_folded_curves()
             
     ##        self.plot_rainplot_summary() #exclude
     ##        
@@ -897,26 +906,20 @@ class centroid():
     #        
     #        self.plot_detrending() #exclude
             
-                self.plot_info_page()
+     #       self.plot_info_page()
             
-                self.plot_stacked_image()
+     #       self.plot_stacked_image()
             
-                self.save_pdf()
-                print 'plots saved.'
+     #       self.save_pdf()
             
-            #data files
             self.save_data()
-            print 'data files saved.'
             
             self.save_info()
-            print 'info files saved.'
                       
             self.save_flagfile()
-            print 'flagfile saved.'
             
         else:
-            pass
-           #  warnings.warn('Object '+self.obj_id+' skipped: too many NaNs in CENTD array.')
+            warnings.warn('Object '+self.obj_id+' skipped: too many NaNs in CENTD array.')
             
             
         
@@ -952,7 +955,7 @@ if __name__ == '__main__':
         
     elif len(sys.argv) == 7:
         print 'Input:', sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
-        C = centroid(str(sys.argv[1]), str(sys.argv[2]), ngts_version=str(sys.argv[3]), user_period=float(sys.argv[4]), user_epoch=float(sys.argv[5]), user_width=float(sys.argv[6]) )
+        C = centroid(str(sys.argv[1]), str(sys.argv[2]), ngts_version=str(sys.argv[3]), user_period=float(sys.argv[4]), user_epoch=float(sys.argv[5]), dt=float(sys.argv[6]) )
         C.run()        
         
     print 'execution time:', timeit.default_timer() - start

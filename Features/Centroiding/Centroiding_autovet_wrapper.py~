@@ -14,6 +14,7 @@ Email: mg719@cam.ac.uk
 
 import warnings
 from Centroiding_RDX import centroid
+import numpy as np
 
 
 
