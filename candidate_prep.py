@@ -96,7 +96,7 @@ def NGTS_SOMPrep():
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
     for infile in infilelist:
-        outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile[1])[:-4])
+        outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile)[1][:-4])
         NGTS_MultiLoader(infile,prepSOM=True,SOMoutfile=outfile)
     		
 def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
@@ -148,7 +148,7 @@ def NGTS_FeatureCombiner():
 def Synth_FeatureCalc():
     from Loader import Candidate
     from Features import Featureset
-
+ 
     loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
@@ -208,7 +208,7 @@ def Synth_FeatureCalc():
 def Synth_SOMPrep():
     from Loader import Candidate
     from Features import Featureset
-
+    from Features.TransitSOM import TransitSOM_release as TSOM
     loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
@@ -223,13 +223,25 @@ def Synth_SOMPrep():
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
         can = Candidate(candidate['obj_id'], filepath=filepath, observatory='NGTS_synth', label=candidate['label'], candidate_data=candidate_data)
-        lc = np.array([can.lightcurve['time'],can.lightcurve['flux'],can.lightcurve['error']])
+        lc = np.array([can.lightcurve['time'],can.lightcurve['flux'],can.lightcurve['error']]).T
         SOMarray_single, SOMerrors_single = TSOM.PrepareOneLightcurve(lc,candidate['per'],candidate['t0'],candidate['tdur'],nbins=20,clip_outliers=10)     
         SOMarray.append(SOMarray_single)
         SOMerrors.append(SOMerrors_single)
     np.savetxt(SOMoutfile+'_array.txt',np.array(SOMarray))
-    np.savetxt(SOMoutfile+'_error.txt',np.array(SOMarray_errors))
+    np.savetxt(SOMoutfile+'_error.txt',np.array(SOMerrors))
 
+def SOM_arrayjoiner():
+    SOMarrays = np.sort(glob.glob(os.path.join('/home/dja/SOM/nbins20/Run1/*array.txt',)))
+    SOMerrors = np.sort(glob.glob(os.path.join('/home/dja/SOM/nbins20/Run1/*error.txt',)))
+    totalarray = np.empty(20)
+    totalerrors = np.empty(20)
+    for Sarray,Serror in zip(SOMarrays,SOMerrors):
+        totalarray = np.vstack((totalarray,np.genfromtxt(Sarray)))
+        totalerrors = np.vstack((totalerrors,np.genfromtxt(Serror)))
+        print Sarray
+        print Serror
+    np.savetxt('/home/dja/SOM/nbins20/Run1/SOMarray_all.txt',totalarray[1:,:])
+    np.savetxt('/home/dja/SOM/nbins20/Run1/SOMerror_all.txt',totalerrors[1:,:])
 
 
 #repeat for synthetic transits
@@ -323,6 +335,6 @@ if __name__=='__main__':
     #inputs = sys.argv[1:]
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
-    NGTS_SOMPrep()
+    #NGTS_SOMPrep()
     Synth_SOMPrep()
     #NGTS_FeatureCombiner()
