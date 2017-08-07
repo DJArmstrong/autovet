@@ -661,7 +661,7 @@ class detrend_centroid():
         '''
         
         #::: phasefold to one sidereal day
-#         self.dic['HJD_PHASE_1sidday'], self.dic['COLOR_PHASE_1sidday'], self.dic['COLOR_PHASE_1sidday_ERR'], _, _ = lightcurve_tools.phase_fold( self.dic['HJD'], self.dic['COLOR'], self.sidereal_day_period, self.sidereal_day_epoch, dt = self.dt, ferr_type='meansig', ferr_style='sem', sigmaclip=True)
+        self.dic['HJD_PHASE_1sidday'], self.dic['COLOR_PHASE_1sidday'], self.dic['COLOR_PHASE_1sidday_ERR'], _, _ = lightcurve_tools.phase_fold( self.dic['HJD'], self.dic['COLOR'], self.sidereal_day_period, self.sidereal_day_epoch, dt = self.dt, ferr_type='meansig', ferr_style='sem', sigmaclip=True)
 #        _, self.dic['AIRMASS_PHASE_1sidday'], self.dic['AIRMASS_PHASE_1sidday_ERR'], _, _ = lightcurve_tools.phase_fold( self.dic['HJD'], self.dic['AIRMASS'], self.sidereal_day_period, self.sidereal_day_epoch, dt = self.dt, ferr_type='meansig', ferr_style='sem', sigmaclip=True)
         _, self.dic['SYSREM_FLUX3_PHASE_1sidday'], self.dic['SYSREM_FLUX3_PHASE_1sidday_ERR'], _, _ = lightcurve_tools.phase_fold(self.dic['HJD'], self.dic['SYSREM_FLUX3'] / np.nanmedian(self.dic['SYSREM_FLUX3']), self.sidereal_day_period, self.sidereal_day_epoch, dt = self.dt, ferr_type='meansig', ferr_style='std', sigmaclip=True)
         

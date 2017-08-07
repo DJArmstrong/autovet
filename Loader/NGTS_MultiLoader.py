@@ -100,15 +100,14 @@ def NGTS_MultiLoader(infile, outdir=None, docentroid=False, dofeatures=False, fe
             field_periods = indata['per'][ ind ]
             field_epochs = indata['t0'][ ind ]
         
-            #::: loop over all candidates in this field
-            for candidate in target_candidates_in_this_field:
-                print candidate['obj_id']
-                save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])
-                print save_id
-                if save_id not in processed_ids:
-                    #apply pmatch cut. This is being put in early to reduce the numbers we have to deal with
-                    pmatch = np.sum((field_periods/candidate['per']>0.998) & (field_periods/candidate['per']<1.002))
-                    if pmatch <= 5:#cuts to ~27115 total in TEST18 (down from 96716 after cutting same object same per peaks)
+        #::: loop over all candidates in this field
+        for candidate in target_candidates_in_this_field:
+            save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])
+            print save_id
+            if save_id not in processed_ids:
+                #apply pmatch cut. This is being put in early to reduce the numbers we have to deal with
+                pmatch = np.sum((field_periods/candidate['per']>0.998) & (field_periods/candidate['per']<1.002))
+                if pmatch <= 5:#cuts to ~27115 total in TEST18 (down from 96716 after cutting same object same per peaks)
             
                         candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
                         can = Candidate('{:06d}'.format(candidate['obj_id']), filepath=None, observatory='NGTS', field_dic=field_dic, label=candidate['label'], candidate_data=candidate_data, field_periods=field_periods, field_epochs=field_epochs)

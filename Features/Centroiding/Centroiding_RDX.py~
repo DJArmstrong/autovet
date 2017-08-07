@@ -311,6 +311,7 @@ class centroid():
     ########################################################################### 
     def cross_correlate(self):
         #::: create pandas df from parts of self.dic
+        print dic['SYSREM_FLUX3_PHASE']
         self.phasedf = pd.DataFrame( {k: self.dic[k] for k in ('HJD_PHASE', 'SYSREM_FLUX3_PHASE', 'CENTDX_fda_PHASE', 'CENTDY_fda_PHASE')}, columns=['HJD_PHASE', 'CENTDX_fda_PHASE', 'CENTDY_fda_PHASE', 'SYSREM_FLUX3_PHASE'] )
    
         self.fig_corrfx, flags_fx = self.ccfct( 'SYSREM_FLUX3_PHASE', 'CENTDX_fda_PHASE', 'FLUX vs CENTDX' )
@@ -414,7 +415,7 @@ class centroid():
 #        win = [0.1, 0.25, 0.33]
         win = [0.25]
         windows= ( np.array(win) * (1/self.dt) ).astype(int)
-        correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
+        correls = [ self.phasedf.rolling(window=windows[i], center=True).corr() for i,_ in enumerate(windows) ]
         
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
@@ -559,7 +560,6 @@ class centroid():
         axes[3].set( ylabel='Nr of exposures', xlabel='Phase', xlim=[-0.25,0.75])
         
         plt.tight_layout()
-        plt.show()
         
            
          
