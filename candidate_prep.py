@@ -76,11 +76,11 @@ def NGTS_FeatureCalc(inputs):
         infile = infilelist[int(input)]
         #infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
 
-        featurestocalc = {'tdur_phase':[],'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+        featurestocalc = {'tdur_phase':[],'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Theta1':[],'SOM_Distance':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            		'TransitSNR':[],'PointDensity_ingress':[],
+            		'TransitSNR':[],'PointDensity_ingress':[],'PointDensity_transit':[],'Scatter_transit':[],
             		'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
             		'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
             		'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],
@@ -153,11 +153,11 @@ def Synth_FeatureCalc():
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
 
-    featurestocalc = {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Stat':[],'SOM_Distance':[],'SOM_IsRamp':[],'SOM_IsVar':[],
+    featurestocalc = {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Theta1':[],'SOM_Distance':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
             		'Peak_to_peak':[],'std_ov_error':[],'MAD':[],'RMS':[],'RMS_TDur':[],'MaxSecDepth':[],
             		'MaxSecPhase':[],'MaxSecSig':[],'MaxSecSelfSig':[],'Even_Odd_depthratio':[],'Even_Odd_depthdiff_fractional':[],
-            		'TransitSNR':[],'PointDensity_ingress':[],
+            		'TransitSNR':[],'PointDensity_ingress':[],'PointDensity_transit':[],'Scatter_transit':[],
             		'Fit_period':[],'Fit_chisq':[],'Fit_depthSNR':[],'Fit_t0':[],'Fit_aovrstar':[],'Fit_rprstar':[],
             		'Even_Fit_chisq':[],'Even_Fit_depthSNR':[],'Even_Fit_aovrstar':[],'Even_Fit_rprstar':[],
             		'Odd_Fit_chisq':[],'Odd_Fit_depthSNR':[],'Odd_Fit_aovrstar':[],'Odd_Fit_rprstar':[],

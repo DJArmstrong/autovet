@@ -118,7 +118,51 @@ class Featureset(object):
 
         return self.tsfresh[args[0]][1.0]
 
-    def SOM_Stat(self,args):
+    def SOM_Theta1(self,args):
+        """
+        SOM Theta1 statistic from Armstrong et al 2017. Uses pre-trained SOMs, produces statistic ranking candidate's transit shape.
+        """
+        if self.useflatten:
+            lc = self.target.lightcurve_f
+        else:
+            lc = self.target.lightcurve
+        if self.target.obs == 'Kepler':
+            if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'snrcut_30_lr01_300_20_20_bin50.txt'),20,20,50,0.1)
+                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
+                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=50)
+            planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=0,case=1,flocation=self.__somlocation__)
+            
+        elif self.target.obs == 'K2':
+            if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'k2all_lr01_500_8_8_bin20.txt'),8,8,20,0.1)
+                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
+                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
+            planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=1,case=1,flocation=self.__somlocation__)
+            
+        elif (self.target.obs == 'NGTS') or (self.target.obs == 'NGTS_synth'):
+            if self.som is None:
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_20_20_100_0.1.txt'),20,20,20,0.1)
+                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
+                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
+            planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=2,case=1,flocation=self.__somlocation__)
+        if type(planet_prob)=='numpy.ndarray':  #the faked extra transit from a different SOM function was present
+            planet_prob = planet_prob[0]
+        if self.testplots:
+            p.figure()
+            if len(self.SOMarray.shape)!=1:
+                SOMtoplot = self.SOMarray[0,:]
+            else:
+                SOMtoplot = self.SOMarray
+            p.plot(np.arange(len(SOMtoplot)),SOMtoplot,'b.')
+            p.title('SOMarray')
+            print 'SOM_Stat: '+str(planet_prob)
+            print self.SOMarray
+            print 'lc:'
+            print lc
+        return planet_prob
+
+    def SOM_Theta2(self,args):
         """
         SOM Theta2 statistic from Armstrong et al 2017. Uses pre-trained SOMs, produces statistic ranking candidate's transit shape.
         """
@@ -145,7 +189,7 @@ class Featureset(object):
                 self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
-            planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,som=self.som,case=2,flocation=self.__somlocation__,missionflag=2)
+            planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=2,case=2,flocation=self.__somlocation__)
         if type(planet_prob)=='numpy.ndarray':  #the faked extra transit from a different SOM function was present
             planet_prob = planet_prob[0]
         if self.testplots:
@@ -192,48 +236,6 @@ class Featureset(object):
         map = map[0,:]
         distance = np.sqrt(np.sum( np.power( self.SOMarray - self.som.K[map[0],map[1]] , 2 ) ))
         return distance
-
-    def SOM_IsRamp(self,args):
-        """
-        Distance of candidate's normalised binned transit shape to the SOM pixels corresponding to ramps. NGTS only.
-        """
-        if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
-            print 'Only valid for NGTS'
-            return -10
-        else:
-            if self.som is None:
-                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
-                if self.useflatten:
-                    lc = self.target.lightcurve_f
-                else:
-                    lc = self.target.lightcurve
-                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
-                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
-
-            dist1 = np.sqrt(np.sum(np.power(self.som.K[1,4,:] - self.SOMarray,2)))
-            dist2 = np.sqrt(np.sum(np.power(self.som.K[4,4,:] - self.SOMarray,2)))
-            return np.min([dist1,dist2])
-
-            
-    def SOM_IsVar(self,args):
-        """
-        Distance of candidate's normalised binned transit shape to the SOM pixel corresponding to periodic variables. NGTS only.
-        """
-        if (self.target.obs != 'NGTS') and (self.target.obs != 'NGTS_synth'):
-            print 'Only valid for NGTS'
-            return -10
-        else:
-            if self.som is None:
-                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
-                if self.useflatten:
-                    lc = self.target.lightcurve_f
-                else:
-                    lc = self.target.lightcurve
-                lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
-                self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
-            dist = np.sqrt(np.sum(np.power(self.som.K[11,19,:] - self.SOMarray,2)))
-            return dist
-
     
     def LSPeriod(self,args):
         """
@@ -951,7 +953,42 @@ class Featureset(object):
         populated_fraction_of_lc = 1-np.sum(binnedlc[:,1]==-10)/nbins
         return density_in_ingress / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
         #return: range of densities?, ingress/egress density over average?, std of densities? ingress/egress density over nearby bin density?
- 
+
+    def PointDensity_transit(self,args):
+        '''
+        Density of points in transit relative to average point density of lightcurve.
+        Calculates average density ignoring empty regions of phase.
+        '''
+        per = self.target.candidate_data['per']
+        t0 = self.target.candidate_data['t0']
+        tdur_phase = self.target.candidate_data['tdur']/per
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        phasediffs = np.abs(phase - 0.5)
+        points_in_transit = phasediffs<(tdur_phase/2.)     
+        density_in_transit = np.sum(points_in_transit)/(tdur_phase)
+        nbins = np.floor(1./tdur_phase).astype('int')  #1 bin per transit duration
+        phaselc = np.zeros([len(phase),2])
+        phaselc[:,0] = phase
+        phaselc[:,1] = self.target.lightcurve['flux']
+        phaselc = phaselc[np.argsort(phaselc[:,0]),:] #now in phase order
+        binnedlc, binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
+        populated_fraction_of_lc = 1-np.sum(binnedlc[:,1]==-10)/nbins
+        return density_in_transit / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
+    
+    def Scatter_transit(self,args)
+        '''
+        Scatter of points in transit relative to average scatter of lightcurve.
+        '''
+        per = self.target.candidate_data['per']
+        t0 = self.target.candidate_data['t0']
+        tdur_phase = self.target.candidate_data['tdur']/per
+        phase = utils.phasefold(self.target.lightcurve['time'],per,t0+per/2.)
+        phasediffs = np.abs(phase - 0.5)
+        points_in_transit = phasediffs<(tdur_phase/2.)     
+        scatter_transit = np.std(self.target.lightcurve['flux'][points_in_transit])
+        avg_scatter = np.std(self.target.lightcurve['flux'])
+        return scatter_transit/avg_scatter
+     
     def missingDataFlag(self,args):
         '''
         Fraction of tdur/5 width bins within 5 transit durations centred on transit, in phase

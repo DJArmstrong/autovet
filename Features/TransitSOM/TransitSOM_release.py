@@ -142,7 +142,7 @@ def PrepareOneLightcurve(lc,per,t0,tdur,nbins=50,clip_outliers=5):
         
   
 
-def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag=0,case=1,map_all=np.zeros([5,5,5])-1,flocation=''):
+def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=0,case=1,map_all=np.zeros([5,5,5])-1,flocation=''):
     """
         Produces Theta1 or Theta2 statistic to classify transit shapes using a SOM.
         Either uses the trained SOM from Armstrong et al (2016), or a user-provided SOM object.
@@ -153,8 +153,8 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
                 SOMerrors: Errors corresponding to SOMarray values. Must be same shape as SOMarray.
                 n_mc: Number of Monte Carlo iterations, default 1000. Must be positive int >=1.
                 som: Trained som object, like output from CreateSOM(). Optional. If not provided, previously trained SOMs will be used.
-                groups: Required if case=1 and user som provided. Array of ints, one per SOMarray row. 0 for planets, 1 for false positives, 2 for candidates.
-                missionflag: 0 for Kepler, 1 for K2. Ignored if user som provided.        
+                groups: Required if case=1 and not Kepler, K2 or NGTS. Array of ints, one per SOMarray row. 0 for planets, 1 for false positives, 2 for candidates.
+                missionflag: 0 for Kepler, 1 for K2, 2 for NGTS. Ignored if user som provided.        
                 case: 1 or 2. 1 for Theta1 statistic, 2 for Theta2.
                 map_all: previously run output of somtools.MapErrors_MC(). Will be run if not provided
     
@@ -171,7 +171,7 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
     try:
         assert SOMarray.shape==SOMerrors.shape, 'Error array must be same shape as input array.'
         assert n_mc>=1, 'Number of Monte Carlo iterations must be >= 1.'
-        assert (missionflag==0) or (missionflag==1) or (som!=None), 'If no user-defined SOM, missionflag must be 0 (Kepler) or 1 (K2).'
+        assert (missionflag==0) or (missionflag==1) or (missionflag==2) or (som!=None), 'If no user-defined SOM, missionflag must be 0 (Kepler) or 1 (K2) or 2 (NGTS).'
         if case ==1:
             if som!=None:
                 assert groups!=None, 'For Case = 1 and user-defined SOM, groups array must be provided.'
@@ -185,8 +185,10 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
         selfflag = 1
         if missionflag == 0:    
             som = LoadSOM(os.path.join(flocation,'snrcut_30_lr01_300_20_20_bin50.txt'),20,20,50,0.1)      
-        else:
+        elif missionflag == 1:
             som = LoadSOM(os.path.join(flocation,'k2all_lr01_500_8_8_bin20.txt'),8,8,20,0.1)
+        elif missionflag == 2:    
+            som = LoadSOM(os.path.join(flocation,'NGTSOM_20_20_100_0.1.txt'),20,20,20,0.1)
     else:
         selfflag = 0
     
@@ -214,11 +216,12 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
             if missionflag==0:
                 prop = somtools.KohonenLoad(os.path.join(flocation,'prop_snrcut_all_kepler.txt'))
                 prop_weights = np.genfromtxt(os.path.join(flocation,'prop_snrcut_all_weights_kepler.txt'))
-            else:
+            elif missionflag==1:
                 prop = somtools.KohonenLoad(os.path.join(flocation,'prop_all_k2.txt'))
                 prop_weights = np.genfromtxt(os.path.join(flocation,'prop_all_weights_k2.txt'))
-                
-        
+            elif missionflag==2:
+                prop = somtools.KohonenLoad(os.path.join(flocation,'prop_ngts_run1.txt'))
+                prop_weights = np.genfromtxt(os.path.join(flocation,'prop_weights_ngts_run1.txt'))                
         else:  #create new proportions
             prop ,prop_weights= somtools.Proportions(som.K,mapped,groups,2,som.K.shape[0],som.K.shape[1])
         
@@ -231,14 +234,16 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=1000,som=None,groups=None,missionflag
         if selfflag:
             if missionflag==0:
                 testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_kepler.txt'))
-            else:
+                pcols = (0,3)
+                fpcols = (1,2,4)
+            elif missionflag==1:
                 testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_k2.txt'))
-            pcols = (0,3)
-            fpcols = (1,2,4)
-        elif missionflag==2:
-            testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_NGTS.txt'))        
-            pcols = 1
-            fpcols = 0
+                pcols = (0,3)
+                fpcols = (1,2,4)
+            elif missionflag==2:
+                testdistances = somtools.KohonenLoad(os.path.join(flocation,'testdistances_NGTS.txt'))        
+                pcols = 1
+                fpcols = 0
         else:
             SOMarray_PDVM = np.genfromtxt(os.path.join(flocation,'SOMarray_PDVM_perfect_norm.txt'))
             groups_PDVM = np.genfromtxt(os.path.join(flocation,'groups_PDVM_perfect_norm.txt'))
