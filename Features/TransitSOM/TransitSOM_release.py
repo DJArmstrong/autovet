@@ -220,8 +220,8 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=
                 prop = somtools.KohonenLoad(os.path.join(flocation,'prop_all_k2.txt'))
                 prop_weights = np.genfromtxt(os.path.join(flocation,'prop_all_weights_k2.txt'))
             elif missionflag==2:
-                prop = somtools.KohonenLoad(os.path.join(flocation,'prop_ngts_run1.txt'))
-                prop_weights = np.genfromtxt(os.path.join(flocation,'prop_weights_ngts_run1.txt'))                
+                prop = somtools.KohonenLoad(os.path.join(flocation,'prop_ngts_run1_fix.txt'))
+                prop_weights = np.genfromtxt(os.path.join(flocation,'prop_weights_ngts_run1_fix.txt'))                
         else:  #create new proportions
             prop ,prop_weights= somtools.Proportions(som.K,mapped,groups,2,som.K.shape[0],som.K.shape[1])
         
