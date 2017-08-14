@@ -132,6 +132,9 @@ class FeatureData():
         		How to deal with NaNs and infs. median uses median of that column. fill
         		replaces with -10. None leaves them as they were.
         '''
+        if not os.path.exists(os.path.split(outfile)[0]):
+            os.makedirs(os.path.split(outfile)[0])
+            
         if len(self.data.keys())>0:
             common_cols, excludedcols = self.findCommonCols()
 

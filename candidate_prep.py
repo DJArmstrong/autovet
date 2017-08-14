@@ -123,26 +123,26 @@ def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/
 
 def NGTS_FeatureCombiner():
     centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
-    genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/features_v0*.txt')
-    orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/orionfeatures_v2_fixformat.txt'
-    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/synth_features_alex.txt'
+    genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/features_v1*.txt')
+    orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/orionfeatures_v2_fixformat.txt'
+    synthfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1*')
     from Features.FeatureData import FeatureData
     fd = FeatureData()
     for featfile in genfeat:
         fd.addData(featfile,'real_candidate')
     fd.addData(centroidfeat,'real_candidate',addrows=False)
     fd.addData(orionfeat,'real_candidate',addrows=False)
-    #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets/trainset.txt')
-    fd.addData(synthfeat,'synth')
+    for synthfile in synthfeat:
+        fd.addData(synthfile,'synth')
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid/trainset.txt')
     #sim data
     fd.simFeature('Binom','synth','binom',[0.97])
-    #fd.simFeature('Binom_Y','synth','binom',[0.97])
     fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
     fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
     fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
     fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
     fd.joinCentroids()
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/TrainingSets_withsimCentroidjoin/trainset.txt')
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin/trainset.txt')
     
 
 def Synth_FeatureCalc():
@@ -336,5 +336,5 @@ if __name__=='__main__':
     #NGTS_FeatureCalc(inputs)
     #NGTS_LoaderTest()
     #NGTS_SOMPrep()
-    Synth_SOMPrep()
-    #NGTS_FeatureCombiner()
+    #Synth_SOMPrep()
+    NGTS_FeatureCombiner()

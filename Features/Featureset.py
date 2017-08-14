@@ -975,7 +975,7 @@ class Featureset(object):
         populated_fraction_of_lc = 1-np.sum(binnedlc[:,1]==-10)/nbins
         return density_in_transit / (len(self.target.lightcurve['time'])/populated_fraction_of_lc)
     
-    def Scatter_transit(self,args)
+    def Scatter_transit(self,args):
         '''
         Scatter of points in transit relative to average scatter of lightcurve.
         '''
