@@ -159,7 +159,7 @@ class FeatureData():
         common_cols = np.sort(common_cols) #to give repeatable output order
         return common_cols, excludedcols  
     
-    def outputTrainingSet(self,outfile,impute_type='fill',cetroid=False):
+    def outputTrainingSet(self,outfile,impute_type='fill',centroid=False):
         '''
         Writes out one file from self.data, containing only columns
         common to all labels. Suitable for use as immediate training set. First col will
