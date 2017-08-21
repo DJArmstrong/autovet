@@ -7,9 +7,9 @@ import os
 import sys
 
 def NGTS_Setup():
-    mloader = 'multiloader_input_TEST18_v2.txt'
-    orionfeatfile = 'orionfeatures_v2.txt'
-    BLSdirs = glob.glob('/ngts/prodstore/02/BLSPipe*TEST18')
+    mloader = 'multiloader_input_CYCLE1706.txt'
+    orionfeatfile = 'orionfeatures_CYCLE1706.txt'
+    BLSdirs = glob.glob('/ngts/prodstore/02/BLSPipe*CYCLE1706')
    
     with open(mloader,'w') as f:
         f.write('#fieldname ngts_version obj_id label per t0 tdur rank\n')
@@ -89,7 +89,7 @@ def NGTS_FeatureCalc(inputs):
             		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
+        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v1/','features_v1'+os.path.split(infile)[1])
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 def NGTS_SOMPrep():
@@ -125,24 +125,28 @@ def NGTS_FeatureCombiner():
     centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
     genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/features_v1*.txt')
     orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/orionfeatures_v2_fixformat.txt'
-    synthfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1*')
+    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1_alex.txt'
+    somfix = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_features_v1*.txt')
+    synthsomfix = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_synth_v1features_alex.txt'
     from Features.FeatureData import FeatureData
     fd = FeatureData()
+    for somfixfile in somfix:
+        fd.addData(somfixfile,'real_candidate')
     for featfile in genfeat:
-        fd.addData(featfile,'real_candidate')
-    fd.addData(centroidfeat,'real_candidate',addrows=False)
+        fd.addData(featfile,'real_candidate',addrows=False)
+    fd.addCentroidData(centroidfeat,'real_candidate',addrows=False)
     fd.addData(orionfeat,'real_candidate',addrows=False)
-    for synthfile in synthfeat:
-        fd.addData(synthfile,'synth')
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid/trainset.txt')
+    fd.addData(synthsomfix,'synth')
+    fd.addData(synthfeat,'synth',addrows=False)
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid_somfix/trainset.txt',centroid=True)
     #sim data
-    fd.simFeature('Binom','synth','binom',[0.97])
-    fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
-    fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
-    fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
-    fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
-    fd.joinCentroids()
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin/trainset.txt')
+    #fd.simFeature('Binom','synth','binom',[0.97])
+    #fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    #fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    #fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
+    #fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
+    #fd.joinCentroids()
+    #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin_somfix/trainset.txt')
     
 
 def Synth_FeatureCalc():
@@ -167,7 +171,7 @@ def Synth_FeatureCalc():
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}  
             		
-    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_features_alex.txt'
+    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_v1features_alex.txt'
     keystowrite = np.sort(featurestocalc.keys())
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
@@ -292,7 +296,7 @@ def Synth_Iterator():
         for i,obj_id in enumerate(bls_objids):
             
             print 'Preparing '+obj_id
-            if peakmatch[i] > 0:  #orion found injected candidate
+            if (peakmatch[i] > 0) and (obj_id[0]=='F'):  #orion found injected candidate, and it is an injection
               outfile = os.path.join(outdir,fieldname+'_'+obj_id.strip(' ')+'_lc.txt')
               if not os.path.exists(outfile):
                 #look up candidate with correct rank (are there more than these in here?)

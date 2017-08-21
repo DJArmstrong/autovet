@@ -15,6 +15,7 @@ class FeatureData():
     	normalise numerical features, etc, eventually
         '''
         self.data = {}
+        self.centroiddata = {}
     
     
     def addData(self,filepath,label,addrows=True):
@@ -39,51 +40,10 @@ class FeatureData():
         			only uses ids which are already in self.data
         '''
         try:
-            #dat = np.genfromtxt(filepath,names=True,delimiter=',',dtype=None)
             dat = pd.read_csv(filepath,index_col=0)
             dat.columns = dat.columns.str.strip()
-            #if 'ID' not in dat.dtype.names:
-            #    print 'File must have ID column'
-            #    return 0
             if label in self.data.keys():
-                #scan for all new ids
-                newids = []
-                oldids = []
-                
-                for id in dat.index:
-                    if id not in self.data[label].index:
-                        if addrows:
-                            newids.append(id)
-                    else:
-                        oldids.append(id)
-                    
-                #scan for all new columns
-                newcols = []
-                oldcols = []
-                for col in dat.columns:
-                    if col != 'label':
-                        if col not in self.data[label].columns:
-                            newcols.append(col)
-                        else:
-                            oldcols.append(col)
-                        
-                # use .join on the new columns
-                joinarray = self.data[label].join(dat[newcols])  #will leave out newids
-
-                #use pd.concat on the new ids
-                if len(newids)>0:
-                    joinarray = pd.concat([joinarray,dat.loc[newids,:]])
-                
-                #if len(newids)==0 and len(newcols)==0:
-                #    joinarray = self.data[label]
-                    
-                #for loop over all remaining (old columns combined with old ids)
-                for id in oldids:
-                    for col in oldcols:
-                        #if the corresponding old entry is NaN, update
-                        if type(joinarray.loc[id,col]) is not str:
-                            if np.isnan(joinarray.loc[id,col]):
-                                joinarray.loc[id,col] = dat.loc[id,col]
+                joinarray = self.scanForNewInfo(self.data[label],dat)
                 self.data[label] = joinarray
             else:
                 self.data[label] = dat
@@ -91,7 +51,89 @@ class FeatureData():
             print 'Loading Error, nothing happened. Error copied below.'
             print e
             print 'Loading Error, nothing happened. Error copied above.'
-            
+
+    def addCentroidData(self,filepath,label):
+        """
+        Adds Centroid data. This can either be incorporated into a training set like
+        other columns, or saved separately to allow centroid flagging independent of
+        classifications
+        
+        Inputs
+        ------
+        filepath:	str
+        			filepath of data array, csv format, first row must be column names.
+        			First column will be used as index.
+        			Cannot contain duplicate indices, or matching will fail.
+        			
+        			Will add on new columns, new ids, and replaces any previously empty
+        			data with values if possible.
+        
+        label:		str
+        			label to add data to. e.g. real_candidate, false...
+        """
+        try:
+            dat = pd.read_csv(filepath,index_col=0)
+            dat.columns = dat.columns.str.strip()
+            if label in self.centroiddata.keys:
+                joinarray = self.scanForNewInfo(self.centroiddata[label],dat)
+                self.centroiddata[label] = joinarray        
+            else:
+                self.centroiddata[label] = dat
+        except IOError as e:
+            print 'Loading Error, nothing happened. Error copied below.'
+            print e
+            print 'Loading Error, nothing happened. Error copied above.'
+
+    def scanForNewInfo(self,base,new):
+        """
+        Compares new to base and creates an array of base plus any new ids or columns
+        found in new. Missing cells will be NaNs. Much faster if only adding new ids
+        with each new file.
+        
+        Inputs
+        ------
+        base:		pandas Dataset
+        
+        new:		pandas Dataset
+        """
+        #scan for all new ids
+        newids = []
+        oldids = []
+                
+        for id in new.index:
+            if id not in base.index:
+                if addrows:
+                    newids.append(id)
+            else:
+                oldids.append(id)
+                    
+        #scan for all new columns
+        newcols = []
+        oldcols = []
+        for col in new.columns:
+            if col != 'label':
+                if col not in base.columns:
+                    newcols.append(col)
+                else:
+                    oldcols.append(col)
+                        
+        # use .join on the new columns
+        joinarray = base.join(new[newcols])  #will leave out newids
+        #use pd.concat on the new ids
+        if len(newids)>0:
+            joinarray = pd.concat([joinarray,new.loc[newids,:]])
+                
+        #if len(newids)==0 and len(newcols)==0:
+        #    joinarray = self.data[label]  
+        #for loop over all remaining (old columns combined with old ids)
+        for id in oldids:
+            for col in oldcols:
+                #if the corresponding old entry is NaN, update
+                if type(joinarray.loc[id,col]) is not str:
+                    if np.isnan(joinarray.loc[id,col]):
+                        joinarray.loc[id,col] = new.loc[id,col]
+        return joinarray
+              
     def findCommonCols(self):
         common_cols = []
         excludedcols = []
@@ -117,7 +159,7 @@ class FeatureData():
         common_cols = np.sort(common_cols) #to give repeatable output order
         return common_cols, excludedcols  
     
-    def outputTrainingSet(self,outfile,impute_type='fill'):
+    def outputTrainingSet(self,outfile,impute_type='fill',cetroid=False):
         '''
         Writes out one file from self.data, containing only columns
         common to all labels. Suitable for use as immediate training set. First col will
@@ -125,12 +167,16 @@ class FeatureData():
         
         Inputs
         ------
-        outfile: str
-        		 output filepath. Files will be in csv format.
+        outfile: 		str
+        		 		output filepath. Files will be in csv format.
         
-        impute_type: str, options: 'median','fill','None'
-        		How to deal with NaNs and infs. median uses median of that column. fill
-        		replaces with -10. None leaves them as they were.
+        impute_type: 	str, options: 'median','fill','None'
+        				How to deal with NaNs and infs. median uses median of that column. 
+        				fill replaces with -10. None leaves them as they were.
+        
+        centroid:		Write a file containing centroid columns (from self.centroiddata)
+        				To include centroid data in the training set, add it using
+        				self.addData() instead of self.addCentroidData().
         '''
         if not os.path.exists(os.path.split(outfile)[0]):
             os.makedirs(os.path.split(outfile)[0])
@@ -156,7 +202,41 @@ class FeatureData():
                         for item in row[:-1]:
                             f.write(str(item)+',')
                         f.write(str(row[-1])+'\n')
-
+        if centroid:
+            #use any info provided in this case
+            all_cols = self.findCentroidCols()
+        
+            with open(outfile[:-4]+'_centroidinfo.txt','w') as f:
+                f.write('#ID,label,')
+                for col in all_cols[:-1]:
+                    f.write(col.strip(' ')+',')
+                f.write(all_cols[-1].strip(' ')+'\n')
+                
+                for label in self.centroiddata.keys():
+                    ids = self.centroiddata[label].index
+                    output = np.zeros([len(ids),len(all_cols)]) - 10
+                    for c,col in enumerate(all_cols):
+                        if col in self.centroiddata[label].columns:
+                            output[:,c] = self.centroiddata[label][col]
+                            
+                    for i,id in enumerate(ids):
+                        f.write(str(id)+','+label+',')
+                        for item in output[i,:-1]:
+                            f.write(str(item)+',')
+                        f.write(str(output[i,-1])+'\n')
+            
+    def findCentroidCols(self):
+        labels = self.centroiddata.keys()
+        cols = list(self.centroiddata[labels[0]].columns)
+        
+        if len(labels)>=2:
+            for label in labels[1:]:
+                for newcol in self.centroiddata[label].columns:
+                    if newcol not in cols:
+                        cols.append(newcol)
+        return cols
+            
+    
     def impute(self,output,impute_type):
         '''
         Fill in blanks

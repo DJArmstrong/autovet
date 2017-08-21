@@ -152,7 +152,7 @@ def SOMNormalise(flux,errors):
     flux -= lowlevel
     flux *= norm
     errors *= norm
-    errors[~np.isfinite(errors))] = 1.0  #catches infs in the error array
+    errors[~np.isfinite(errors)] = 1.0  #catches infs in the error array
     return flux,errors
 
 

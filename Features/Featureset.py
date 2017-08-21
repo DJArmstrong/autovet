@@ -186,7 +186,7 @@ class Featureset(object):
             
         elif (self.target.obs == 'NGTS') or (self.target.obs == 'NGTS_synth'):
             if self.som is None:
-                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_20_20_100_0.1.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             planet_prob = TSOM.TSOM.ClassifyPlanet(self.SOMarray,self.SOMerror,missionflag=2,case=2,flocation=self.__somlocation__)
@@ -224,7 +224,7 @@ class Featureset(object):
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
             elif (self.target.obs == 'NGTS') or (self.target.obs == 'NGTS_synth'):
-                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_bin20_iter100.txt'),20,20,20,0.1)
+                self.som = TSOM.TSOM.LoadSOM(os.path.join(self.__somlocation__,'NGTSOM_20_20_100_0.1.txt'),20,20,20,0.1)
                 lc_sominput = np.array([lc['time'],lc['flux'],lc['error']]).T
                 self.SOMarray,self.SOMerror = TSOM.TSOM.PrepareOneLightcurve(lc_sominput,self.target.candidate_data['per'],self.target.candidate_data['t0'],self.target.candidate_data['tdur'],nbins=20)
 
@@ -235,6 +235,8 @@ class Featureset(object):
         map = self.som(self.SOMarray)
         map = map[0,:]
         distance = np.sqrt(np.sum( np.power( self.SOMarray - self.som.K[map[0],map[1]] , 2 ) ))
+        self.SOMarray = self.SOMarray[0,:]
+        self.SOMerror = self.SOMerror[0,:]
         return distance
     
     def LSPeriod(self,args):
