@@ -7,9 +7,9 @@ import os
 import sys
 
 def NGTS_Setup():
-    mloader = 'multiloader_input_TEST18_v2.txt'
-    orionfeatfile = 'orionfeatures_v2.txt'
-    BLSdirs = glob.glob('/ngts/prodstore/02/BLSPipe*TEST18')
+    mloader = 'multiloader_input_CYCLE1706.txt'
+    orionfeatfile = 'orionfeatures_CYCLE1706.txt'
+    BLSdirs = glob.glob('/ngts/prodstore/02/BLSPipe*CYCLE1706')
    
     with open(mloader,'w') as f:
         f.write('#fieldname ngts_version obj_id label per t0 tdur rank\n')
@@ -57,7 +57,7 @@ def NGTS_Setup():
 
 def NGTS_CentroidRun(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt'))
     for input in inputs:
         infile = infilelist[int(input)]
         outdir = '/home/dja/Autovetting/Centroid/Run0/'
@@ -65,13 +65,13 @@ def NGTS_CentroidRun(inputs):
 
 def NGTS_LoaderTest():
     from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
-    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt')
+    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt')
     for infile in infilelist:
         NGTS_MultiLoader(infile,dofeatures=False)
         
 def NGTS_FeatureCalc(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt'))
     for input in inputs:
         infile = infilelist[int(input)]
         #infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
@@ -89,17 +89,17 @@ def NGTS_FeatureCalc(inputs):
             		'Odd_Trapfit_t23phase':[],'Odd_Trapfit_t14phase':[],'Odd_Trapfit_depth':[],
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
-        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/Featurerun_v0/','features_v0'+os.path.split(infile)[1])
+        featoutfile = os.path.join('/home/dja/Autovetting/Dataprep/CYCLE1706/Featurerun/','features_'+os.path.split(infile)[1])
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 def NGTS_SOMPrep():
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_v2_*.txt'))
     for infile in infilelist:
         outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile)[1][:-4])
         NGTS_MultiLoader(infile,prepSOM=True,SOMoutfile=outfile)
     		
-def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/Run0/',outfile='/home/dja/Autovetting/Centroid/Run0/centroid_features_run0.txt'):
+def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/CYCLE1706/',outfile='/home/dja/Autovetting/Centroid/CYCLE1706/centroid_features_CYCLE1706.txt'):
     dirlist = glob.glob(os.path.join(centroiddir,'NG*'))
     centroidkeys = ['CENTDX_fda_PHASE_RMSE','CENTDY_fda_PHASE_RMSE','RollCorrSNR_X',
     				'RollCorrSNR_Y','CrossCorrSNR_X','CrossCorrSNR_Y','Ttest_X',
@@ -125,24 +125,28 @@ def NGTS_FeatureCombiner():
     centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
     genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/features_v1*.txt')
     orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/orionfeatures_v2_fixformat.txt'
-    synthfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1*')
+    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1_alex.txt'
+    somfix = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_features_v1*.txt')
+    synthsomfix = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_synth_v1features_alex.txt'
     from Features.FeatureData import FeatureData
     fd = FeatureData()
+    for somfixfile in somfix:
+        fd.addData(somfixfile,'real_candidate')
     for featfile in genfeat:
-        fd.addData(featfile,'real_candidate')
-    fd.addData(centroidfeat,'real_candidate',addrows=False)
+        fd.addData(featfile,'real_candidate',addrows=False)
+    fd.addCentroidData(centroidfeat,'real_candidate',addrows=False)
     fd.addData(orionfeat,'real_candidate',addrows=False)
-    for synthfile in synthfeat:
-        fd.addData(synthfile,'synth')
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid/trainset.txt')
+    fd.addData(synthsomfix,'synth')
+    fd.addData(synthfeat,'synth',addrows=False)
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid_somfix/trainset.txt',centroid=True)
     #sim data
-    fd.simFeature('Binom','synth','binom',[0.97])
-    fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
-    fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
-    fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
-    fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
-    fd.joinCentroids()
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin/trainset.txt')
+    #fd.simFeature('Binom','synth','binom',[0.97])
+    #fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    #fd.simFeature('CENTDY_fda_PHASE_RMSE','synth','expon',[0,0.003])
+    #fd.simFeature('CrossCorrSNR_X','synth','truncnorm',[0,10.,0,1.42])
+    #fd.simFeature('CrossCorrSNR_Y','synth','truncnorm',[0,10.,0,1.42])
+    #fd.joinCentroids()
+    #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin_somfix/trainset.txt')
     
 
 def Synth_FeatureCalc():
@@ -167,7 +171,7 @@ def Synth_FeatureCalc():
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}  
             		
-    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_features_alex.txt'
+    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_v1features_alex.txt'
     keystowrite = np.sort(featurestocalc.keys())
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
@@ -292,7 +296,7 @@ def Synth_Iterator():
         for i,obj_id in enumerate(bls_objids):
             
             print 'Preparing '+obj_id
-            if peakmatch[i] > 0:  #orion found injected candidate
+            if (peakmatch[i] > 0) and (obj_id[0]=='F'):  #orion found injected candidate, and it is an injection
               outfile = os.path.join(outdir,fieldname+'_'+obj_id.strip(' ')+'_lc.txt')
               if not os.path.exists(outfile):
                 #look up candidate with correct rank (are there more than these in here?)

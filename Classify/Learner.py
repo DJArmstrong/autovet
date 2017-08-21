@@ -42,7 +42,7 @@ class TrainingSet(CandidateSet):
         #labels = dat['label']
         CandidateSet.__init__(self,features)
         self.known_classes = labels
-
+    
     def rmfield(self, a, *fieldnames_to_remove ):
         return a[ [ name for name in a.dtype.names if name not in fieldnames_to_remove ] ]
 
@@ -74,9 +74,9 @@ class Classifier(object):
         self.classifier = self.classifier.fit(trainingset.features,trainingset.known_classes)
     
     def featImportance(self):
-        print 'Top 10 features:'
+        print 'Top features:'
         featimportance = self.classifier.feature_importances_
-        for i in np.argsort(featimportance)[-10:]:
+        for i in np.argsort(featimportance)[::-1]:
             print self.featurenames[i], featimportance[i]
     
     def classify(self,candidateset):
@@ -87,14 +87,14 @@ class Classifier(object):
         """
         Tests classifier with cross validation. 
 
-        Curently uses KFold validation, with nsamples/100 folds. May take some time.
+        Curently uses KFold validation, with nsamples/500 folds. May take some time.
         """
         from sklearn.model_selection import KFold
         
         if self.classifier_type=='RandomForestClassifier':
             self.classifier.oob_score = False
         shuffleidx = np.random.choice(len(tset.known_classes),len(tset.known_classes),replace=False)
-        cvfeatures = tset.features[shuffleidx,1:]
+        cvfeatures = tset.features[shuffleidx,:]
         cvgroups = tset.known_classes[shuffleidx]
         kf = KFold(n_splits=int(cvfeatures.shape[0]/500))
         probs = []
@@ -115,12 +115,21 @@ class Classifier(object):
                 from sklearn.neural_network import MLPClassifier as classifier_obj
                 self.classifier = self.setUpMLP()        
             self.classifier.fit(cvfeatures[train_index,:],cvgroups[train_index])
+            #self.featImportance()
             probs.append(self.classifier.predict_proba(cvfeatures[test_index,:]))  
         self.cvprobs = np.vstack(probs)
         unshuffleidx = np.argsort(shuffleidx)
         self.cvprobs = self.cvprobs[unshuffleidx]
         return self.cvprobs
 
+    def IsolationOutliers(self):
+        from sklearn.ensemble import IsolationForest as classifier_obj
+        self.classifier_outliers = self.setupForest()
+        
+        self.classifier_outliers.fit(X_data_train)
+
+        predicted_outliers = clf_outliers.predict(X_data)
+    
     def setUpForest(self):
         #set up options and defaults   
         inputs = {}
