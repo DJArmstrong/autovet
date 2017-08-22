@@ -172,6 +172,8 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
         if ngts_version in ('CYCLE1706'):
             if ('FLUX' in keys) and ('SYSREM_FLUX3' not in keys):
                 keys.append('SYSREM_FLUX3')
+            if ('FLUX_ERR' in keys) and ('FLUX3_ERR' not in keys):
+                keys.append('FLUX3_ERR')
 
         #::: objects
         ind_objs, obj_ids = get_obj_inds(fnames, obj_id, obj_row, indexing, fitsreader, obj_sortby = 'obj_ids')
@@ -191,17 +193,24 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
                     
         #::: transfer 'SYSREM_FLUX3' into 'FLUX' for >= CYCLE1706
         if ngts_version in ('CYCLE1706'):
+            #the user key 'FLUX' is referring to the detrended (sysrem) flux with aperture radius 3
             if 'FLUX' in keys:
                 if 'SYSREM_FLUX3' in dic.keys():
                     dic['FLUX'] = dic['SYSREM_FLUX3']
+            #the user key 'FLUX_ERR' is referring to the error on the raw (measured) flux with aperture radius 3
+            if 'FLUX_ERR' in keys:
+                if 'FLUX3_ERR' in dic.keys():
+                    dic['FLUX_ERR'] = dic['FLUX3_ERR']
 
         #::: set flagged values and flux==0 values to nan
         if set_nan == True:
             dic = set_nan_dic(dic)
 
-        #::: remove FLUX and FLAGS if it was only needed for computing things
+        #::: remove entries that were only needed for readout / computing things
         if ('FLUX' in dic.keys()) and ('FLUX' not in keys_0): del dic['FLUX']
         if ('FLAGS' in dic.keys()) and ('FLAGS' not in keys_0): del dic['FLAGS']
+        if ('FLUX3_ERR' in dic.keys()) and ('FLUX3_ERR' not in keys_0): del dic['FLUX3_ERR']
+        if ('SYSREM_FLUX3' in dic.keys()) and ('SYSREM_FLUX3' not in keys_0): del dic['SYSREM_FLUX3']
 
         #::: simplify output if only for 1 object
         if simplify==True: 
@@ -1830,7 +1839,7 @@ if __name__ == '__main__':
 ##    print dic
 ##        print dic['FLUX']        
         
-#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','DATE-OBS','PERIOD','FLUX','FLUX3'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
+#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','DATE-OBS','PERIOD','FLUX','FLUX_ERR','FLUX3'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
 #    for key in dic:
 #        print '------------'
 #        print key
