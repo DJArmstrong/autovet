@@ -441,6 +441,7 @@ class centroid():
             print correls[0].loc[ slice(None), (xkey, ykey) ]
         except:
             print 'correls[0].loc[ slice(None), (xkey, ykey) ] failed'
+        
             
         try:
             print correls[0].loc[ (xkey, ykey) ]
@@ -456,6 +457,12 @@ class centroid():
             print correls[0].loc(axis=0)[ xkey, ykey ]
         except:
             print 'correls[0].loc(axis=0)[ xkey, ykey ] failed'
+            
+            
+        try:
+            print correls[0].loc[ xkey, ykey ]
+        except:
+            print 'correls[0].loc[ xkey, ykey ] failed'
             
         print 'YAAAY'
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
