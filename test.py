@@ -57,6 +57,10 @@ def test(case):
         obj_id = '019164'
         fieldname = 'NG0524-3056'
         ngts_version = 'CYCLE1706'
+
+        obj_id = '022551'
+        fieldname = 'NG0524-3056'
+        ngts_version = 'CYCLE1706'
         
         dic = ngtsio.get(fieldname, ['PERIOD','EPOCH','WIDTH'], obj_id=obj_id, ngts_version=ngts_version, silent=False)
         period = dic['PERIOD'] / 3600. / 24. #in days
