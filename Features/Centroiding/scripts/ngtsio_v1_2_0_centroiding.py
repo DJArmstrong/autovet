@@ -163,17 +163,15 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
             if 'FLUX' not in keys_0: keys.append('FLUX')
             if 'FLAGS' not in keys_0: keys.append('FLAGS')
 
-        #::: transfer 'FLUX' into 'SYSREM_FLUX3' for > TEST16A
+        #::: transfer 'FLUX' into 'SYSREM_FLUX3' for TEST16A and TEST18
         if ngts_version in ('TEST16A','TEST18'):
             if ('SYSREM_FLUX3' in keys) and ('FLUX' not in keys):
                 keys.append('FLUX')
                 
-        #::: transfer 'FLUX' into 'FLUX3' for >= CYCLE1706
+        #::: transfer 'SYSREM_FLUX3' into 'FLUX' for >= CYCLE1706
         if ngts_version in ('CYCLE1706'):
-            if ('FLUX' in keys) and ('FLUX3' not in keys):
-                keys.append('FLUX3')
-            if ('FLUX_ERR' in keys) and ('FLUX3_ERR' not in keys):
-                keys.append('FLUX3_ERR')
+            if ('FLUX' in keys) and ('SYSREM_FLUX3' not in keys):
+                keys.append('SYSREM_FLUX3')
 
         #::: objects
         ind_objs, obj_ids = get_obj_inds(fnames, obj_id, obj_row, indexing, fitsreader, obj_sortby = 'obj_ids')
@@ -185,20 +183,17 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
         #::: get dictionary
         dic, keys = get_data(fnames, obj_ids, ind_objs, keys, bls_rank, ind_time, fitsreader)
         
-        #::: transfer 'FLUX' into 'SYSREM_FLUX3' for > TEST16A
+        #::: transfer 'FLUX' into 'SYSREM_FLUX3' for TEST16A, TEST18
         if ngts_version in ('TEST16A','TEST18'):
             if 'SYSREM_FLUX3' in keys:
                 if 'FLUX' in dic.keys():
                     dic['SYSREM_FLUX3'] = dic['FLUX']
                     
-        #::: transfer 'FLUX3' into 'FLUX' for >= CYCLE1706
+        #::: transfer 'SYSREM_FLUX3' into 'FLUX' for >= CYCLE1706
         if ngts_version in ('CYCLE1706'):
-            if 'FLUX3' in keys:
-                if 'FLUX' in dic.keys():
-                    dic['FLUX'] = dic['FLUX3']
-            if 'FLUX3_ERR' in keys:
-                if 'FLUX_ERR' in dic.keys():
-                    dic['FLUX_ERR'] = dic['FLUX3_ERR']
+            if 'FLUX' in keys:
+                if 'SYSREM_FLUX3' in dic.keys():
+                    dic['FLUX'] = dic['SYSREM_FLUX3']
 
         #::: set flagged values and flux==0 values to nan
         if set_nan == True:
@@ -364,7 +359,7 @@ def standard_fnames(fieldname, ngts_version, root, roots):
     
                 roots = {}
                 roots['nights'] = glob.glob('/ngts/prodstore/*/MergePipe*'+fieldname+'*'+ngts_version+'*')[-1]
-                roots['sysrem'] = ''
+                roots['sysrem'] = glob.glob('/ngts/prodstore/*/SysremPipe*'+fieldname+'*'+ngts_version+'*')[-1]
                 roots['bls'] = glob.glob('/ngts/prodstore/*/BLSPipe*'+fieldname+'*'+ngts_version+'*')[-1]
                 roots['dilution'] = ''
                 roots['canvas'] = ''
@@ -387,6 +382,8 @@ def standard_fnames(fieldname, ngts_version, root, roots):
     
     
         fnames = {}
+        
+        #Nights
         f_nights = os.path.join( roots['nights'], '*'+fieldname+'*.fits' )
         try:
             fnames['nights'] = glob.glob( f_nights ) #this is now a list of all single files (e.g. FLAGS, FLUX3, FLUX3_ERR, CCDX etc.)
@@ -394,15 +391,24 @@ def standard_fnames(fieldname, ngts_version, root, roots):
             fnames['nights'] = None
             warnings.warn( str(fieldname)+': Fits files "nights" do not exist in '+str(f_nights) )
         
+        #BLS
         f_bls = os.path.join( roots['bls'], '*'+fieldname+'*.fits' )
         try:
-            fnames['bls'] = glob.glob( f_bls )[0]
+            fnames['bls'] = glob.glob( f_bls )[-1]
         except:
             fnames['bls'] = None
             warnings.warn( str(fieldname)+': Fits files "bls" do not exist in '+str(f_bls) )
-    
+            
+        #SYSREM
+        f_sysrem = os.path.join( roots['sysrem'], '*'+fieldname+'*SYSREM_FLUX3*.fits' )
+        try:
+            fnames['sysrem'] = glob.glob( f_sysrem )[-1]
+        except:
+            fnames['sysrem'] = None
+            warnings.warn( str(fieldname)+': Fits files "sysrem" do not exist in '+str(f_nights) )
+        
+        
         #TODO:
-        fnames['sysrem'] = None
         fnames['dilution'] = None
         fnames['canvas'] = None
         
@@ -1824,7 +1830,7 @@ if __name__ == '__main__':
 ##    print dic
 ##        print dic['FLUX']        
         
-#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','DATE-OBS','PERIOD','FLUX'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
+#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','DATE-OBS','PERIOD','FLUX','FLUX3'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
 #    for key in dic:
 #        print '------------'
 #        print key
