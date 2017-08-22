@@ -50,14 +50,14 @@ def test(case):
 #        fieldname = 'NG0537-3056'
 #        ngts_version = 'TEST18'
 #
-        obj_id = '006328'
-        fieldname = 'NG1421+0000'
-        ngts_version = 'TEST18'
+#        obj_id = '006328'
+#        fieldname = 'NG1421+0000'
+#        ngts_version = 'TEST18'
 #
-#        obj_id = '019164'
-#        fieldname = 'NG0524-3056'
-#        ngts_version = 'CYCLE1706'
-#
+        obj_id = '019164'
+        fieldname = 'NG0524-3056'
+        ngts_version = 'CYCLE1706'
+
 #        obj_id = '022551'
 #        fieldname = 'NG0524-3056'
 #        ngts_version = 'CYCLE1706'
