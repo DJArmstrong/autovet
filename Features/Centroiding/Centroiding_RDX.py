@@ -35,7 +35,7 @@ except ImportError:
     warnings.warn( "Package 'seaborn' could not be imported. Use standard matplotlib instead.", ImportWarning )
 
 
-from scripts import ngtsio_v1_1_1_centroiding as ngtsio
+from scripts import ngtsio_v1_2_0_centroiding as ngtsio
 from scripts import index_transits, lightcurve_tools, \
                     stacked_images, analyse_neighbours, \
                     detrend_centroid_external_RDX, \

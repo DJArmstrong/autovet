@@ -19,12 +19,13 @@ from matplotlib.colors import LogNorm
 import os, sys, socket
 import glob
 import fitsio
-from ngtsio import ngtsio
 from photutils.background import Background
 from photutils import daofind
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
 
+
+import ngtsio_v1_2_0_centroiding as ngtsio
 
 
 def standard_fnames(fieldname, root=None):

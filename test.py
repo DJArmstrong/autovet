@@ -14,7 +14,7 @@ Email: mg719@cam.ac.uk
 #import numpy as np
 #import matplotlib.pyplot as plt
 
-from Loader import ngtsio_v1_1_1_autovet as ngtsio 
+from Loader import ngtsio_v1_2_0_autovet as ngtsio 
 from Loader.Loader import Candidate
 from Loader.NGTS_MultiLoader import NGTS_MultiLoader
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
@@ -26,39 +26,39 @@ def test(case):
     # a) load candidate for a specific NGTS object
     if case=='single':
 
-        obj_id = '003294'
-        fieldname = 'NG0409-1941'
-        ngts_version = 'TEST18'
-
-        obj_id = '003811'
-        fieldname = 'NG1318-4500'
-        ngts_version = 'TEST18'
-
-        obj_id = '058138'
-        fieldname = 'NG1318-4500'
-        ngts_version = 'TEST18'
-
-        obj_id = '001519'
-        fieldname = 'NG0522-2518'
-        ngts_version = 'TEST18'
-
-        obj_id = '020057'
-        fieldname = 'NG0409-1941'
-        ngts_version = 'TEST18'
-
-	obj_id = '000401'
-        fieldname = 'NG0537-3056'
-        ngts_version = 'TEST18'
-
-	obj_id = '006328'
-        fieldname = 'NG1421+0000'
-        ngts_version = 'TEST18'
-
-        obj_id = '003294'
-        fieldname = 'NG0409-1941'
-        ngts_version = 'TEST18'
+#        obj_id = '003294'
+#        fieldname = 'NG0409-1941'
+#        ngts_version = 'TEST18'
+#
+#        obj_id = '003811'
+#        fieldname = 'NG1318-4500'
+#        ngts_version = 'TEST18'
+#
+#        obj_id = '058138'
+#        fieldname = 'NG1318-4500'
+#        ngts_version = 'TEST18'
+#
+#        obj_id = '001519'
+#        fieldname = 'NG0522-2518'
+#        ngts_version = 'TEST18'
+#
+#        obj_id = '020057'
+#        fieldname = 'NG0409-1941'
+#        ngts_version = 'TEST18'
+#
+#        obj_id = '000401'
+#        fieldname = 'NG0537-3056'
+#        ngts_version = 'TEST18'
+#
+#	   obj_id = '006328'
+#        fieldname = 'NG1421+0000'
+#        ngts_version = 'TEST18'
+#
+        obj_id = '019164'
+        fieldname = 'NG0524-3056'
+        ngts_version = 'CYCLE1706'
         
-        dic = ngtsio.get(fieldname, ['PERIOD','EPOCH','WIDTH'], obj_id=obj_id, silent=True)
+        dic = ngtsio.get(fieldname, ['PERIOD','EPOCH','WIDTH'], obj_id=obj_id, ngts_version=ngts_version, silent=False)
         period = dic['PERIOD'] / 3600. / 24. #in days
         epoch = dic['EPOCH'] / 3600. / 24. #in days
         width = dic['WIDTH'] / 3600. / 24. #in days
