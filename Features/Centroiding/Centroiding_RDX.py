@@ -421,7 +421,21 @@ class centroid():
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
         print correls[0]
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-        print correls[0].loc(axis=0)[ :, xkey, ykey ]
+        try:
+            print correls[0].loc(axis=0)[ :, xkey, ykey ]
+        except:
+            print 'correls[0].loc(axis=0)[ :, xkey, ykey ] failed'
+            
+        try:
+            idx = pd.IndexSlice
+            print correls[0].loc[idx[ :, xkey, ykey ], :]
+        except:
+            print 'correls[0].loc[idx[ :, xkey, ykey ], :] failed'
+            
+        try:
+            print correls[0].loc[ slice(None), xkey, ykey ]
+        except:
+            print 'correls[0].loc[ slice(None), xkey, ykey ] failed'
         print 'YAAAY'
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
         
