@@ -415,61 +415,10 @@ class centroid():
         win = [0.25]
         windows= ( np.array(win) * (1/self.dt) ).astype(int)
 #        correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
-#        
-#        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-#        print correls
-#        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-#        print correls[0]
-#        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-#        try:
-#            print correls[0].loc(axis=0)[ :, xkey, ykey ]
-#        except:
-#            print 'correls[0].loc(axis=0)[ :, xkey, ykey ] failed'
-#            
-#        try:
-#            idx = pd.IndexSlice
-#            print correls[0].loc[idx[ :, xkey, ykey ], :]
-#        except:
-#            print 'correls[0].loc[idx[ :, xkey, ykey ], :] failed'
-#            
-#        try:
-#            print correls[0].loc[ slice(None), xkey, ykey ]
-#        except:
-#            print 'correls[0].loc[ slice(None), xkey, ykey ] failed'
-#            
-#        try:
-#            print correls[0].loc[ slice(None), (xkey, ykey) ]
-#        except:
-#            print 'correls[0].loc[ slice(None), (xkey, ykey) ] failed'
-#        
-#            
-#        try:
-#            print correls[0].loc[ (xkey, ykey) ]
-#        except:
-#            print 'correls[0].loc[ (xkey, ykey) ] failed'
-#            
-#        try:
-#            print correls[0].loc(axis=0)[ (xkey, ykey) ]
-#        except:
-#            print 'correls[0].loc(axis=0)[ (xkey, ykey) ] failed'
-#            
-#        try:
-#            print correls[0].loc(axis=0)[ xkey, ykey ]
-#        except:
-#            print 'correls[0].loc(axis=0)[ xkey, ykey ] failed'
-#            
-#            
-#        try:
-#            print correls[0].loc[ xkey, ykey ]
-#        except:
-#            print 'correls[0].loc[ xkey, ykey ] failed'
-#            
-#        print 'YAAAY'
-#        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
         
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
-#            self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ]
+#            self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ] #leads to indexing errors in pandas version > 0.18 for mysterious reasons...
             self.dic['RollCorr_'+xkey+'_'+ykey] = self.phasedf[xkey].rolling(window=windows[i], center=True, min_periods=1).corr(self.phasedf[ykey])
             if self.do_plot:
                 axes[0].plot( self.phasedf['HJD_PHASE'], self.dic['RollCorr_'+xkey+'_'+ykey], label=str(windows[i] * self.dt) )
