@@ -416,6 +416,15 @@ class centroid():
         windows= ( np.array(win) * (1/self.dt) ).astype(int)
         correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
         
+        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+        print correls
+        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+        print correls[0]
+        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+        print correls[0].loc[ :, xkey, ykey ]
+        print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+        
+        
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
             self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ]
