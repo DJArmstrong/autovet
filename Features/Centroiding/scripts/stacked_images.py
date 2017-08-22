@@ -31,7 +31,7 @@ from astropy.stats import sigma_clipped_stats
 #from photutils import CircularAperture
 
 
-import ngtsio_v1_1_1_centroiding as ngtsio
+import ngtsio_v1_2_0_centroiding as ngtsio
     
 
 def standard_fnames(fieldname, ngts_version, root=None):
