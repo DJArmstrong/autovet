@@ -421,7 +421,8 @@ class centroid():
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
         print correls[0]
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-        print correls[0].loc[ :, xkey, ykey ]
+        print correls[0].loc(axis=0)[ :, xkey, ykey ]
+        print 'YAAAY'
         print ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
         
         
