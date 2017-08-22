@@ -172,6 +172,8 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
         if ngts_version in ('CYCLE1706'):
             if ('FLUX' in keys) and ('FLUX3' not in keys):
                 keys.append('FLUX3')
+            if ('FLUX_ERR' in keys) and ('FLUX3_ERR' not in keys):
+                keys.append('FLUX3_ERR')
 
         #::: objects
         ind_objs, obj_ids = get_obj_inds(fnames, obj_id, obj_row, indexing, fitsreader, obj_sortby = 'obj_ids')
@@ -193,8 +195,10 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
         if ngts_version in ('CYCLE1706'):
             if 'FLUX3' in keys:
                 if 'FLUX' in dic.keys():
-                    dic['FLUX'] = 1.*dic['FLUX3']
-                    del dic['FLUX3']
+                    dic['FLUX'] = dic['FLUX3']
+            if 'FLUX3_ERR' in keys:
+                if 'FLUX_ERR' in dic.keys():
+                    dic['FLUX_ERR'] = dic['FLUX3_ERR']
 
         #::: set flagged values and flux==0 values to nan
         if set_nan == True:
