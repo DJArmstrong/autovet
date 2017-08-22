@@ -212,6 +212,13 @@ def get(fieldname, keys, obj_id=None, obj_row=None, time_index=None, time_date=N
         if ('FLUX3_ERR' in dic.keys()) and ('FLUX3_ERR' not in keys_0): del dic['FLUX3_ERR']
         if ('SYSREM_FLUX3' in dic.keys()) and ('SYSREM_FLUX3' not in keys_0): del dic['SYSREM_FLUX3']
 
+        #::: reconvert RA and DEC into radian if CYCLE1706
+        if ngts_version in ('CYCLE1706'):
+            if 'RA' in keys:
+                dic['RA'] = dic['RA']/180.*np.pi
+            if 'DEC' in keys:
+                dic['DEC'] = dic['DEC']/180.*np.pi
+
         #::: simplify output if only for 1 object
         if simplify==True: 
             dic = simplify_dic(dic)
@@ -1838,8 +1845,8 @@ if __name__ == '__main__':
 ##        print '------------'
 ##    print dic
 ##        print dic['FLUX']        
-        
-#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','DATE-OBS','PERIOD','FLUX','FLUX_ERR','FLUX3'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
+#        
+#    dic = get( 'NG0524-3056', ['OBJ_ID','ACTIONID','HJD','RA','DEC','DATE-OBS','PERIOD','FLUX','FLUX_ERR','FLUX3'], obj_id=['019164', '022551'], ngts_version='CYCLE1706') #, fitsreader='fitsio', time_index=range(100000))
 #    for key in dic:
 #        print '------------'
 #        print key
