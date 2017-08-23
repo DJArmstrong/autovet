@@ -35,7 +35,7 @@ except ImportError:
     warnings.warn( "Package 'seaborn' could not be imported. Use standard matplotlib instead.", ImportWarning )
 
 
-from scripts import ngtsio_v1_1_1_centroiding as ngtsio
+from scripts import ngtsio_v1_2_0_centroiding as ngtsio
 from scripts import index_transits, lightcurve_tools, \
                     stacked_images, analyse_neighbours, \
                     detrend_centroid_external_RDX, \
@@ -414,13 +414,14 @@ class centroid():
 #        win = [0.1, 0.25, 0.33]
         win = [0.25]
         windows= ( np.array(win) * (1/self.dt) ).astype(int)
-        correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
+#        correls = [ self.phasedf.rolling(window=windows[i], center=True, min_periods=1).corr() for i,_ in enumerate(windows) ]
         
 #        color = ['b','g','r']
         for i,_ in enumerate(windows): 
-            self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ]
+#            self.dic['RollCorr_'+xkey+'_'+ykey] = correls[i].loc[ :, xkey, ykey ] #leads to indexing errors in pandas version > 0.18 for mysterious reasons...
+            self.dic['RollCorr_'+xkey+'_'+ykey] = self.phasedf[xkey].rolling(window=windows[i], center=True, min_periods=1).corr(self.phasedf[ykey])
             if self.do_plot:
-                axes[0].plot( self.phasedf['HJD_PHASE'], correls[i].loc[ :, xkey, ykey ], label=str(windows[i] * self.dt) )
+                axes[0].plot( self.phasedf['HJD_PHASE'], self.dic['RollCorr_'+xkey+'_'+ykey], label=str(windows[i] * self.dt) )
                 axes[0].axhline( 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
                 axes[0].axhline( - 2.58/np.sqrt(windows[i]), color='k', linestyle='--')#, color=color[i] )
             axes[0].set( xlim=[-0.25,0.75], ylim=[-1,1], xlabel='phase', ylabel='rolling correlation')

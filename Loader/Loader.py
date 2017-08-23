@@ -4,7 +4,7 @@ import fitsio
 import kepselfflatten
 #import itertools
 
-import ngtsio_v1_1_1_autovet as ngtsio            
+import ngtsio_v1_2_0_autovet as ngtsio            
 
 
 
