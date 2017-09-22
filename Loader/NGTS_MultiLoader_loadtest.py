@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import ngtsio_v1_1_1_autovet as ngtsio
+import ngtsio_v1_2_0_autovet as ngtsio
 from Loader import Candidate
 from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 from Features import Featureset

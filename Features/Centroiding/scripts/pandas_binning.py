@@ -20,5 +20,3 @@ def fct( dic, keys ):
     pandic = pd.Series( [dic[key] for key in keys], index=dates )
     print pandic
     
-
-dic = ngtsio.get('NG0409-1941', ['HJD','FLUX'])

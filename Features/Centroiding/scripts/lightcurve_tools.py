@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import sys, socket
 from astropy.stats import sigma_clip
 
-import ngtsio_v1_1_1_centroiding as ngtsio
+import ngtsio_v1_2_0_centroiding as ngtsio
 from My_Utils import mystr, medsig
 import index_transits, deg2HMS
 from binning import binning1D_per_night
