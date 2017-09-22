@@ -1010,7 +1010,7 @@ class Featureset(object):
         binnedlc,binstd, emptybins = utils.BinPhaseLC(phaselc,nbins,fill_value=-10)
         neartransit = (binnedlc[:,0] > 0.5-5*tdur_phase/2.) & (binnedlc[:,0] < 0.5+5*tdur_phase/2.)
         return float(np.sum(binnedlc[neartransit,1]==-10))/float(np.sum(neartransit))
- 
+
     def pmatch(self,args):
         '''
         Number of other candidates in this field with matching period and epoch

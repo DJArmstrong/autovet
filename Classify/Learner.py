@@ -12,7 +12,7 @@ class CandidateSet(object):
 
 class TrainingSet(CandidateSet):
     
-    def __init__(self,trainingfile,fieldstodrop=[]):
+    def __init__(self,trainingfile,fieldstodrop=[],addrandom=False):
         dat = pd.read_csv(trainingfile,index_col=1)
         fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0','DELTA_CHISQ',
          'Even_Fit_aovrstar', 'Even_Fit_chisq',
@@ -34,6 +34,10 @@ class TrainingSet(CandidateSet):
         labels = np.array(dat.index)
         features = dat.values
         self.featurenames = np.array(dat.columns)
+        if addrandom:
+            randomfeature = np.random.uniform(0,1,features.shape[0])
+            features = np.hstack((features,np.column_stack(randomfeature).T)) #all the column_stack bit is to meet the hstack dimension requirements
+            self.featurenames = np.append(self.featurenames,'Random')      
         #dat = np.genfromtxt(trainingfile,delimiter=',',dtype=None,names=True)
         #features = dat[list(dat.dtype.names[1:])]
         #features = self.rmfield(dat,'label','tdur_phase','Trapfit_t0','Fit_t0')
@@ -129,14 +133,41 @@ class Classifier(object):
         self.classifier_outliers.fit(X_data_train)
 
         predicted_outliers = clf_outliers.predict(X_data)
-    
+
+    def OptimiseForest(self,trainingset):
+        if self.classifier_type != 'RandomForestClassifier':
+            return 0
+        estimators_set = np.array([100,300,500])
+        n_features = len(trainingset.featurenames)
+        maxfeat_set = np.array([2,4,5,6,7,9])
+        #maxfeat_set = np.linspace(1,n_features,8).astype('int')
+        maxdepth_set = np.array([2,5,8,11,n_features])
+        #maxdepth_set = np.linspace(1,n_features,5).astype('int')
+        minsamples_set = np.arange(4)+2
+        output = np.zeros([len(estimators_set),len(maxfeat_set),len(maxdepth_set),len(minsamples_set)])
+        
+        for i,est in enumerate(estimators_set):
+
+            for j,maxfeat in enumerate(maxfeat_set):
+
+                for k,maxdepth in enumerate(maxdepth_set):
+
+                    print est,maxfeat,maxdepth
+                    for l,minsamples in enumerate(minsamples_set):
+                        classifier_args = {'n_estimators':est,'max_features':maxfeat,'max_depth':maxdepth,'min_samples_split':minsamples}
+                        self.classifier_args = classifier_args
+                        self.classifier = self.setUpForest()
+                        self.classifier = self.classifier.fit(trainingset.features,trainingset.known_classes)
+                        output[i,j,k,l] = self.classifier.oob_score_
+        return estimators_set,maxfeat_set,maxdepth_set,minsamples_set,output
+        
     def setUpForest(self):
         #set up options and defaults   
         inputs = {}
         inputs['n_estimators'] = 300 #higher the better (and slower)
         inputs['max_features'] = 'auto'  #will give SQRT(n_features) as a good typical first guess
         inputs['max_depth'] = None #max depth of tree (needs tuning)
-        inputs['min_samples_split'] = 2 #min samples left to split a node (needs tuning)
+        inputs['min_samples_split'] = 3 #min samples left to split a node (needs tuning)
         inputs['n_jobs'] = -1
         inputs['oob_score'] = True #estimate out-of-bag score
         inputs['random_state'] = 0 #random state initialiser

@@ -35,7 +35,7 @@ def NGTS_Setup():
                             cut = True
             if not cut:
                 field = dat[2]['FIELD'].read()[0].strip(' ')
-                version = 'TEST18'
+                version = 'CYCLE1706'
                 label = 'real_candidate'
                 per = cand['PERIOD']/86400.
                 t0 = cand['EPOCH']/86400.
@@ -47,7 +47,7 @@ def NGTS_Setup():
                     f.write(field+' '+version+' '+obj_id+' '+label+' '+str(per)+' '+str(t0)+' '+str(tdur)+' '+str(int(cand['RANK']))+'\n')
     
                 diags = np.array([cand['RANK'],cand['DELTA_CHISQ'],cand['NPTS_TRANSIT'],cand['NUM_TRANSITS'],cand['NBOUND_IN_TRANS'],cand['AMP_ELLIPSE'],cand['SN_ELLIPSE'],cand['GAP_RATIO'],cand['SN_ANTI'],cand['SDE']])
-                save_id = field+'_'+'{:06d}'.format(obj_id)+'_'+str(int(cand['RANK']))
+                save_id = field+'_'+obj_id+'_'+str(int(cand['RANK']))
 
                 with open(orionfeatfile,'a') as f:
                     f.write(save_id+','+label+',')
@@ -57,21 +57,21 @@ def NGTS_Setup():
 
 def NGTS_CentroidRun(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for input in inputs:
         infile = infilelist[int(input)]
-        outdir = '/home/dja/Autovetting/Centroid/Run0/'
+        outdir = '/home/dja/Autovetting/Centroid/CYCLE1706/'
         NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
 def NGTS_LoaderTest():
     from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
-    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt')
+    infilelist = glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*')
     for infile in infilelist:
         NGTS_MultiLoader(infile,dofeatures=False)
         
 def NGTS_FeatureCalc(inputs):
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for input in inputs:
         infile = infilelist[int(input)]
         #infile = '/home/dja/Autovetting/Dataprep/multiloader_input_TEST18_v2_0.txt'
@@ -94,7 +94,7 @@ def NGTS_FeatureCalc(inputs):
 
 def NGTS_SOMPrep():
     from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_v2_*.txt'))
+    infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for infile in infilelist:
         outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile)[1][:-4])
         NGTS_MultiLoader(infile,prepSOM=True,SOMoutfile=outfile)
