@@ -4,7 +4,6 @@ import fitsio
 import kepselfflatten
 #import itertools
 
-import ngtsio_v1_2_0_autovet as ngtsio            
 
 
 
@@ -89,6 +88,7 @@ class Candidate(object):
         filepath = ['fieldname', 'ngts_version']
         obj_id = 1 or '000001' or [1,2,3] or ['000001','000002','000003']
         '''
+        import ngtsio_v1_2_0_autovet as ngtsio            
 
         lc_keys = ['HJD', 'FLUX', 'FLUX_ERR']
         info_keys = ['OBJ_ID','FIELDNAME','NGTS_VERSION','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS','CCDX','CCDY','CENTDX','CENTDY']

@@ -5,8 +5,9 @@
 import fitsio
 import numpy as np
 import sys
+import glob
 
-def Run(outfile, orionfilelist, version, label):
+def Run(outfile, orioncall, version, label):
     """
     Scans a list of ORION output files and produces a file suitable for input into 
     autovetter. Cuts candidates failing pmatch test.
@@ -15,7 +16,8 @@ def Run(outfile, orionfilelist, version, label):
     ----------
     outfile (str)				Filepath for output file
     
-    orionfilelist (iterable)	List of filepaths to ORION outputs
+    orioncall (str)				A call to all ORION files to use (e.g. '.../ORION*').
+    							Can be one file.
     
     version (str)				NGTS run version, e.g. CYCLE1706. Used by ngtsio
     
@@ -23,11 +25,11 @@ def Run(outfile, orionfilelist, version, label):
     
     Usage
     ----------
-    " python avpipe_setup.py outfile orionfilelist version='' label='' "
+    " python avpipe_setup.py outfile orioncall version='' label='' "
     
     """
     fields, pers, diags = [], [], []
-            
+    orionfilelist = glob.glob(orioncall)      
     for infile in orionfilelist:
         dat = fitsio.FITS(infile)
         
@@ -71,7 +73,7 @@ def Run(outfile, orionfilelist, version, label):
     
     #set up headers
     with open(outfile,'w') as f:
-        f.write('#fieldname,ngts_version,obj_id,label,per,t0,tdur,rank,DELTA_CHISQ,NPTS_TRANSIT,NUM_TRANSITS,NBOUND_IN_TRANS,AMP_ELLIPSE,SN_ELLIPSE,GAP_RATIO,SN_ANTI,SDE\n')
+        f.write('#fieldname,ngts_version,obj_id,label,per,t0,tdur,rank,DEPTH,DELTA_CHISQ,NPTS_TRANSIT,NUM_TRANSITS,NBOUND_IN_TRANS,AMP_ELLIPSE,SN_ELLIPSE,GAP_RATIO,SN_ANTI,SDE\n')
 
     #save candidates passing cut, with necessary data
     for s in passing_indices:
@@ -85,14 +87,17 @@ def Run(outfile, orionfilelist, version, label):
 
 if __name__=='__main__':
     if len(sys.argv)<3:
-        print "Usage: python avpipe_setup.py outfile orionfilelist version='' label=''"
+        print "Usage: python avpipe_setup.py outfile orioncall version='' label=''"
     else:
-	    optionalinputs = {}	
-	    # Set up default values
-	    optionalinputs['version'] = 'CYCLE1706'
-	    optionalinputs['label'] = 'real_candidate'
-	    for inputval in sys.argv[3:]:
-	        key,val = inputval.split('=')
-	        optionalinputs[key] = val
-
-        Run(sys.argv[1],sys.argv[2],optionalinputs['version'],optionalinputs['label'])
+        optionalinputs = {}	
+        # Set up default values
+        optionalinputs['version'] = 'CYCLE1706'
+        optionalinputs['label'] = 'real_candidate'
+        try:
+            for inputval in sys.argv[3:]:
+                key,val = inputval.split('=')
+                optionalinputs[key] = val
+            Run(sys.argv[1],sys.argv[2],optionalinputs['version'],optionalinputs['label'])
+        except ValueError:
+            print "Usage: python avpipe_setup.py outfile orioncall version='' label=''"
+        
