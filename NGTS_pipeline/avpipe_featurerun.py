@@ -41,7 +41,7 @@ def Run(infile, outfile, firstrow, lastrow):
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}
             		
-    NGTS_MultiLoader_avpipe(infile, firstrow=firstrow, lastrow=lastrow, dofeatures=outfile, featoutfile=featoutfile, overwrite=True)
+    NGTS_MultiLoader_avpipe(infile, firstrow=firstrow, lastrow=lastrow, dofeatures=featurestocalc, featoutfile=outfile, overwrite=True)
 
 if __name__ == '__main__':
     if len(sys.argv)<5:

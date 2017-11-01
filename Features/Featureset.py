@@ -993,7 +993,7 @@ class Featureset(object):
      
     def missingDataFlag(self,args):
         '''
-        Fraction of tdur/5 width bins within 5 transit durations centred on transit, in phase
+        Fraction of empty tdur/5 width bins within 5 transit durations centred on transit, in phase
         '''
         per = self.target.candidate_data['per']
         t0 = self.target.candidate_data['t0']+per/2.  #transit at phase 0.5

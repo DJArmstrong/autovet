@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import glob
-import ngtsio_v1_1_1_autovet as ngtsio
+import ngtsio_v1_2_0_autovet as ngtsio
 from Loader import Candidate
 #from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 from Features import Featureset
@@ -76,7 +76,7 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
                 processed_ids.append(os.path.basename(os.path.normpath(dir)))
                
     #:::: loop over all fields (each field causes one load operation
-    for field in unique_field_ids:
+    for field_id in unique_field_ids:
 
         ind = np.where( np.array(field_ids) == field_id)[0]
         fieldname = field_id[0:11]

@@ -19,7 +19,7 @@ class TrainingSet(CandidateSet):
        'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
        'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase', 'Fit_aovrstar',
        'Fit_chisq', 'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
-       'Trapfit_depth','Fit_rprstar','Fit_depthSNR',
+       'Trapfit_depth','Fit_rprstar','Fit_depthSNR','NUM_TRANSITS',
        'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
        'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
        'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
