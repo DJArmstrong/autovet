@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import glob
-import ngtsio_v1_2_0_autovet as ngtsio
+from ngtsio import ngtsio
 from Loader import Candidate
 #from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 from Features import Featureset
@@ -87,7 +87,7 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
         target_candidates_in_this_field = indata[ ind ]
         
         #::: load this field into memory with ngtsio
-        field_dic = ngtsio.get(fieldname, ['OBJ_ID','HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS'], obj_id=target_obj_ids_in_this_field, ngts_version=ngts_version)
+        field_dic = ngtsio.get(fieldname, ngts_version, ['OBJ_ID','HJD','SYSREM_FLUX3','FLUX3_ERR','CCDX','CCDY','CENTDX','CENTDY','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS'], obj_id=target_obj_ids_in_this_field)
         
         #get the full list of periods in this field
         field_periods = indata['per'][ ind ]
@@ -105,12 +105,12 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
                         '''
                         now do the main stuff with this candidate...
                         '''
-                        if docentroid:
-                            canoutdir = os.path.join(outdir,save_id,'')
-                            try:
-                                centroid_autovet( can, outdir=canoutdir)
-                            except ValueError: #catching the airmass poly error
-                                pass
+#                        if docentroid:
+#                            canoutdir = os.path.join(outdir,save_id,'')
+#                            try:
+#                                centroid_autovet( can, outdir=canoutdir)
+#                            except ValueError: #catching the airmass poly error
+#                                pass
                     
                         if dofeatures:
                             feat = Featureset(can)
