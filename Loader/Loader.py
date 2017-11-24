@@ -88,9 +88,9 @@ class Candidate(object):
         filepath = ['fieldname', 'ngts_version']
         obj_id = 1 or '000001' or [1,2,3] or ['000001','000002','000003']
         '''
-        import ngtsio_v1_2_0_autovet as ngtsio            
+        from ngtsio import ngtsio
 
-        lc_keys = ['HJD', 'FLUX', 'FLUX_ERR']
+        lc_keys = ['HJD', 'SYSREM_FLUX3', 'FLUX3_ERR']
         info_keys = ['OBJ_ID','FIELDNAME','NGTS_VERSION','FLUX_MEAN','RA','DEC','NIGHT','AIRMASS','CCDX','CCDY','CENTDX','CENTDY']
         passflag = False
         
@@ -98,17 +98,17 @@ class Candidate(object):
         if self.field_dic is None:
             if self.filepath is not None:
                 fieldname, ngts_version = self.filepath
-                dic = ngtsio.get( fieldname, lc_keys + info_keys, obj_id=str(self.id).zfill(6), ngts_version=ngts_version, silent=True, set_nan=True )
+                dic = ngtsio.get( fieldname, ngts_version, lc_keys + info_keys, obj_id=str(self.id).zfill(6), silent=True, set_nan=True )
             else:
                 passflag = True
         #if a field_dic was passed (in memory), then select the specific object and store it into dic
         else:
             ind_obj = np.where( self.field_dic['OBJ_ID'] == self.id )[0]
-            if (len(ind_obj)>0) and ('FLUX_ERR' in self.field_dic.keys()):
+            if (len(ind_obj)>0) and ('FLUX3_ERR' in self.field_dic.keys()):
                 dic = {}
                 for key in ['OBJ_ID','FLUX_MEAN','RA','DEC']:
                     dic[key] = self.field_dic[key][ind_obj][0]
-                for key in ['HJD','FLUX','FLUX_ERR','CCDX','CCDY','CENTDX','CENTDY']:
+                for key in ['HJD','SYSREM_FLUX3','FLUX3_ERR','CCDX','CCDY','CENTDX','CENTDY']:
                     dic[key] = self.field_dic[key][ind_obj].flatten()
                 for key in ['FIELDNAME','NGTS_VERSION','NIGHT','AIRMASS']:
                     dic[key] = self.field_dic[key]
@@ -122,12 +122,12 @@ class Candidate(object):
             info = 0
             return lc, info
                 
-        nancut = np.isnan(dic['HJD']) | np.isnan(dic['FLUX']) | np.isnan(dic['FLUX_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['FLUX']) | np.isinf(dic['FLUX_ERR']) | (dic['FLUX']==0)
-        norm = np.median(dic['FLUX'][~nancut])
+        nancut = np.isnan(dic['HJD']) | np.isnan(dic['SYSREM_FLUX3']) | np.isnan(dic['FLUX3_ERR']) | np.isinf(dic['HJD']) | np.isinf(dic['SYSREM_FLUX3']) | np.isinf(dic['FLUX3_ERR']) | (dic['SYSREM_FLUX3']==0)
+        norm = np.median(dic['SYSREM_FLUX3'][~nancut])
         lc = {}
         lc['time'] = dic['HJD'][~nancut]/86400.
-        lc['flux'] = 1.*dic['FLUX'][~nancut]/norm
-        lc['error'] = 1.*dic['FLUX_ERR'][~nancut]/norm
+        lc['flux'] = 1.*dic['SYSREM_FLUX3'][~nancut]/norm
+        lc['error'] = 1.*dic['FLUX3_ERR'][~nancut]/norm
         
         info = {}
         for info_key in info_keys: 
