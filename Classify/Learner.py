@@ -5,7 +5,12 @@ import pandas as pd
 class CandidateSet(object):
 
     def __init__(self,features):  
+        """
+        Set of candidates
         
+        Arguments:
+        features   -- np array of feature data
+        """        
         self.class_probs = None
         self.features = features
 
@@ -13,16 +18,37 @@ class CandidateSet(object):
 class TrainingSet(CandidateSet):
     
     def __init__(self,trainingfile,fieldstodrop=[],addrandom=False):
-        dat = pd.read_csv(trainingfile,index_col=1)
-        fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0','DELTA_CHISQ',
+        """
+        Set of candidates for training
+        
+        Arguments:
+        trainingfile   -- txt file of training data
+        fieldstodrop   -- features to remove before training
+        addrandom      -- if True, adds a random feature for calibration
+        """        
+        ###TEMP, EXPERIMENTING###
+        #fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0','DELTA_CHISQ',
+        # 'Even_Fit_aovrstar', 'Even_Fit_chisq',
+       #'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
+       #'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase', 'Fit_aovrstar',
+       #'Fit_chisq', 'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
+       #'Trapfit_depth','Fit_rprstar','Fit_depthSNR','NUM_TRANSITS',
+       #'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
+       #'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
+       #'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
+        ###
+        ###TEMP, EXPERIMENTING###
+        fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0',
          'Even_Fit_aovrstar', 'Even_Fit_chisq',
        'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
-       'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase', 'Fit_aovrstar',
-       'Fit_chisq', 'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
-       'Trapfit_depth','Fit_rprstar','Fit_depthSNR','NUM_TRANSITS',
+       'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase',
+       'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
+       'Fit_rprstar','NUM_TRANSITS','Trapfit_t23phase',
        'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
        'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
        'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
+        ###
+        dat = pd.read_csv(trainingfile,index_col=1)
         for field in fieldstodrop:
             #if field in dat.columns:
                 dat = dat.drop(field,1)
@@ -53,7 +79,14 @@ class TrainingSet(CandidateSet):
 class Classifier(object):
 
     def __init__(self,classifier='RandomForestClassifier',classifier_args={}):  #list of Featureset instances, each with features calculated
-
+        """
+        Classifier wrapper for several sklearn classifiers
+        
+        Arguments:
+        classifier		-- classifier to use in {RandomForestClassifier, 
+        					ExtraTreesClassifier, AdaBoostClassifier, MLPClassifier}
+        classifier_args	-- dict of arguments for classifier {arg:value}
+        """    
         #self.classifier_obj = classifier_obj
         self.classifier_args = classifier_args
         self.classifier_type = classifier
@@ -125,14 +158,6 @@ class Classifier(object):
         unshuffleidx = np.argsort(shuffleidx)
         self.cvprobs = self.cvprobs[unshuffleidx]
         return self.cvprobs
-
-    def IsolationOutliers(self):
-        from sklearn.ensemble import IsolationForest as classifier_obj
-        self.classifier_outliers = self.setupForest()
-        
-        self.classifier_outliers.fit(X_data_train)
-
-        predicted_outliers = clf_outliers.predict(X_data)
 
     def OptimiseForest(self,trainingset):
         if self.classifier_type != 'RandomForestClassifier':
@@ -208,3 +233,83 @@ class Classifier(object):
                 
         clf = classifier_obj(hidden_layer_sizes=inputs['hidden_layer_sizes'],random_state=inputs['random_state'],alpha=inputs['alpha'])
         return clf
+
+class RFValidation(object):
+
+    def __init__(self, RFClassifier):
+        """
+        Validation metrics and plots for a Random Forest Classifier
+        
+        Arguments:
+        RFClassifier	-- instance of Classifier class using RandomForestClassifier
+        """
+        self.classifier = RFClassifier
+        
+    #def MLP_plot():
+    
+    #def IsolationOutliers(self):
+    #    from sklearn.ensemble import IsolationForest as classifier_obj
+    #    self.classifier_outliers = self.classifier
+        
+    #    self.classifier_outliers.fit(X_data_train)
+
+    #    predicted_outliers = clf_outliers.predict(X_data)    
+    
+    
+    def TrainingSetResponse(self, cvprobs, tset, axis1, axis2, xmin, xmax, ymin, ymax, nbinsx=20, nbinsy=20, threshold=0.5):
+        
+        if type(axis1)==str:
+            if (axis1 in tset.featurenames):
+                x = tset.features[:,np.where(tset.featurenames==axis1)[0]]
+            else:
+                print 'Axis 1 not in trainingset featurenames'
+                return 0
+        else:
+            x = axis1
+        if type(axis2)==str:
+            if (axis2 in tset.featurenames):
+                y = tset.features[:,np.where(tset.featurenames==axis2)[0]]
+            else:
+                print 'Axis 2 not in trainingset featurenames'
+                return 0
+        else:
+            y = axis2
+
+        xedges,yedges = np.linspace(xmin,xmax,nbinsx), np.linspace(ymin,ymax,nbinsy)
+
+        hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))  #gives total in bins
+
+        #assume cvprobs aligned with training set
+        recovered = cvprobs>=threshold
+        x_rec = x[recovered]
+        y_rec = y[recovered]
+
+        histrec, xedges, yedges = np.histogram2d(x_rec, y_rec, (xedges, yedges))  #gives recovered total in bins
+
+        fraction = histrec/hist
+        #fraction[hist<30]=np.nan
+
+        palette = copy(p.cm.viridis)
+        #palette.set_over('r', 1.0)
+        #palette.set_under('g', 1.0)
+        palette.set_bad('grey', 1.0)
+ 
+        p.figure()
+        p.clf()
+        p.imshow(fraction,origin='lower',extent=[ymin,ymax,xmin,xmax],aspect='auto',cmap=palette,vmin=0,vmax=1)
+        if type(axis1)==str:
+            p.xlabel(axis1)
+        if type(axis2)==str:
+            p.ylabel(axis2)
+        cbar = p.colorbar()
+        cbar.set_label('Fraction Recovered', rotation=270, labelpad=10)
+
+        #p.savefig(str(xidx)+'.pdf')
+    
+    
+    
+    
+    #def FieldResponse():
+    
+    
+    
