@@ -103,7 +103,7 @@ class centroid():
         self.min_time = min_time #(in s) minimum coverage of innermost and out-of-transit required for including a night
         self.dt = dt
         self.secondary_eclipse = secondary_eclipse
-	self.do_plot = do_plot
+        self.do_plot = do_plot
         self.show_plot = show_plot
         self.flagfile = flagfile
         self.dic = dic
