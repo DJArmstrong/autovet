@@ -1,6 +1,7 @@
 #classifier pipeline - takes in featurerunner output, same for synth, runs classification, saves cvprobs and features in meta fits file
 import fitsio
 import numpy as np
+import sys
 
 def Run(featfile, outfile, synthfile):
     """
@@ -21,8 +22,9 @@ def Run(featfile, outfile, synthfile):
     " python avpipe_classify.py featfile outfile synthfile "
     
     """
-    from Classify import Learner
-    from Features.FeatureData import FeatureData
+
+    from autovet.Classify import Learner
+    from autovet.Features.FeatureData import FeatureData
 
     #merge candidate and synthetic features into training set
     fd = FeatureData()
@@ -50,16 +52,16 @@ def Run(featfile, outfile, synthfile):
     real_featuredata = [tset.features[ridx,i] for i in range(len(tset.featurenames))]
     featurenames = list(tset.featurenames)
     
-    fitsout = FITS(outfile,'rw')
-    fits.write(real_data, names=names)
-    fits.write(real_featuredata, names=featurenames)
+    fitsout = fitsio.FITS(outfile,'rw')
+    fitsout.write(real_data, names=names)
+    fitsout.write(real_featuredata, names=featurenames)
 
     synth_data = [tset.ids[sidx],cvprobs_md8[sidx,1]]
     synth_featuredata = [tset.features[sidx,i] for i in range(len(tset.featurenames))]
     
-    fitsout = FITS(outfile[:-4]+'_synth.fits','rw')
-    fits.write(synth_data, names=names)
-    fits.write(synth_featuredata, names=featurenames)
+    fitsout = fitsio.FITS(outfile[:-4]+'_synth.fits','rw')
+    fitsout.write(synth_data, names=names)
+    fitsout.write(synth_featuredata, names=featurenames)
 
 
 if __name__=='__main__':

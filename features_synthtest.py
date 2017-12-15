@@ -2,10 +2,10 @@
 
 import numpy as np
 import batman
-import Features.TransitSOM as TSOM
-import Features.utils as utils
+import autovet.Features.TransitSOM as TSOM
+import autovet.Features.utils as utils
 import os
-from Loader import Candidate
+from autovet.Loader import Candidate
 import Features
 
 def batman_model(t0,per,rprstar,aovrstar,exp_time):

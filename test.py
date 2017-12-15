@@ -15,9 +15,9 @@ Email: mg719@cam.ac.uk
 #import matplotlib.pyplot as plt
 
 from ngtsio import ngtsio
-from Loader.Loader import Candidate
-from Loader.NGTS_MultiLoader import NGTS_MultiLoader
-#from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
+from autovet.Loader.Loader import Candidate
+from autovet.Loader.NGTS_MultiLoader import NGTS_MultiLoader
+#from autovet.Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
 
 
 

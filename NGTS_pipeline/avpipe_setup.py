@@ -73,7 +73,7 @@ def Run(outfile, orioncall, version, label):
     
     #set up headers
     with open(outfile,'w') as f:
-        f.write('#fieldname,ngts_version,obj_id,label,per,t0,tdur,rank,DEPTH,DELTA_CHISQ,NPTS_TRANSIT,NUM_TRANSITS,NBOUND_IN_TRANS,AMP_ELLIPSE,SN_ELLIPSE,GAP_RATIO,SN_ANTI,SDE\n')
+        f.write('#fieldname,ngts_version,obj_id,label,per,t0,tdur,RANK,DEPTH,DELTA_CHISQ,NPTS_TRANSIT,NUM_TRANSITS,NBOUND_IN_TRANS,AMP_ELLIPSE,SN_ELLIPSE,GAP_RATIO,SN_ANTI,SDE\n')
 
     #save candidates passing cut, with necessary data
     for s in passing_indices:
