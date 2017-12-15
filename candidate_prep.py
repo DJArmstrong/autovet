@@ -56,7 +56,7 @@ def NGTS_Setup():
                     f.write(str(diags[-1])+'\n')
 
 def NGTS_CentroidRun(inputs):
-    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    from autovet.Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for input in inputs:
         infile = infilelist[int(input)]
@@ -64,13 +64,13 @@ def NGTS_CentroidRun(inputs):
         NGTS_MultiLoader(infile, outdir=outdir, docentroid=True)  #to just run the centroids
 
 def NGTS_LoaderTest():
-    from Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
+    from autovet.Loader.NGTS_MultiLoader_loadtest import NGTS_MultiLoader
     infilelist = glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*')
     for infile in infilelist:
         NGTS_MultiLoader(infile,dofeatures=False)
         
 def NGTS_FeatureCalc(inputs):
-    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    from autovet.Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for input in inputs:
         infile = infilelist[int(input)]
@@ -93,7 +93,7 @@ def NGTS_FeatureCalc(inputs):
         NGTS_MultiLoader(infile, dofeatures=featurestocalc, featoutfile=featoutfile, overwrite=False)
 
 def NGTS_SOMPrep():
-    from Loader.NGTS_MultiLoader import NGTS_MultiLoader
+    from autovet.Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))
     for infile in infilelist:
         outfile = os.path.join('/home/dja/SOM/nbins20/',os.path.split(infile)[1][:-4])
@@ -122,23 +122,23 @@ def Scan_Centroids(centroiddir='/home/dja/Autovetting/Centroid/CYCLE1706/',outfi
                 f.write('\n')
 
 def NGTS_FeatureCombiner():
-    centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
-    genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/features_v1*.txt')
-    orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/orionfeatures_v2_fixformat.txt'
-    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/synth_featuresv1_alex.txt'
-    somfix = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_features_v1*.txt')
-    synthsomfix = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_synth_v1features_alex.txt'
-    from Features.FeatureData import FeatureData
+    #centroidfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v0/centroid_features_run0.txt'
+    genfeat = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/CYCLE1706/Featurerun/features_*')
+    orionfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/CYCLE1706/Featurerun/orionfeatures_CYCLE1706.txt'
+    synthfeat = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/CYCLE1706/Featurerun_synth/synth_features_CYCLE1706.txt'  #contains orion keys
+    #somfix = glob.glob('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_features_v1*.txt')
+    #synthsomfix = '/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/somfix_synth_v1features_alex.txt'
+    from autovet.Features.FeatureData import FeatureData
     fd = FeatureData()
-    for somfixfile in somfix:
-        fd.addData(somfixfile,'real_candidate')
+    #for somfixfile in somfix:
+    #    fd.addData(somfixfile,'real_candidate')
     for featfile in genfeat:
-        fd.addData(featfile,'real_candidate',addrows=False)
-    fd.addCentroidData(centroidfeat,'real_candidate',addrows=False)
+        fd.addData(featfile,'real_candidate')
+    #fd.addCentroidData(centroidfeat,'real_candidate',addrows=False)
     fd.addData(orionfeat,'real_candidate',addrows=False)
-    fd.addData(synthsomfix,'synth')
-    fd.addData(synthfeat,'synth',addrows=False)
-    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_noCentroid_somfix/trainset.txt',centroid=True)
+    #fd.addData(synthsomfix,'synth')
+    fd.addData(synthfeat,'synth')
+    fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/CYCLE1706/TrainingSets_noCentroid_somfix/trainset.txt',centroid=False)
     #sim data
     #fd.simFeature('Binom','synth','binom',[0.97])
     #fd.simFeature('CENTDX_fda_PHASE_RMSE','synth','expon',[0,0.003])
@@ -149,13 +149,13 @@ def NGTS_FeatureCombiner():
     #fd.outputTrainingSet('/Users/davidarmstrong/Software/Python/NGTS/Autovetting/Featurerun_v1/TrainingSets_withCentroidsimjoin_somfix/trainset.txt')
     
 
-def Synth_FeatureCalc():
-    from Loader import Candidate
-    from Features import Featureset
+def Synth_FeatureCalc(startline,endline):
+    from autovet.Loader import Candidate
+    from autovet.Features import Featureset
  
-    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
-    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
-    lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
+    loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/CYCLE1706_synth/SynthLCs/synth_input_CYCLE1706.txt',names=True,dtype=None)
+    featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/CYCLE1706_synth/SynthLCs/synthorionfeatures_CYCLE1706.txt',names=True,delimiter=',',dtype=None)
+    lcdir = '/home/dja/Autovetting/Dataprep/CYCLE1706_synth/SynthLCs/'
 
     featurestocalc = {'tdur_phase':[],'ntransits':[],'missingDataFlag':[],'SOM_Theta1':[],'SOM_Distance':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],
@@ -171,7 +171,7 @@ def Synth_FeatureCalc():
             		'Even_Odd_trapdurratio':[],'Even_Odd_trapdepthratio':[],'Full_partial_tdurratio':[],
             		'Even_Full_partial_tdurratio':[],'Odd_Full_partial_tdurratio':[]}  
             		
-    outfile = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_v1features_alex.txt'
+    outfile = '/home/dja/Autovetting/Features/CYCLE1706/synth_CYCLE1706/synth_features_CYCLE1706'+str(startline)+'_'+str(endline)+'.txt'
     keystowrite = np.sort(featurestocalc.keys())
     orionkeys = ['RANK', 'DELTA_CHISQ', 'NPTS_TRANSIT', 'NUM_TRANSITS', 'NBOUND_IN_TRANS', 'AMP_ELLIPSE', 'SN_ELLIPSE', 'GAP_RATIO', 'SN_ANTI', 'SDE']
     with open(outfile,'w') as f:
@@ -183,7 +183,7 @@ def Synth_FeatureCalc():
             f.write(str(key)+',')
         f.write('\n')
     
-    for candidate in loaderdat:
+    for candidate in loaderdat[startline:endline]:
         print candidate['fieldname']+'_'+candidate['obj_id']
       #if candidate['fieldname']+'_'+candidate['obj_id'] == 'NG0304-1115_F00177':
         filepath = os.path.join(lcdir,candidate['fieldname']+'_'+candidate['obj_id']+'_lc.txt')
@@ -210,9 +210,9 @@ def Synth_FeatureCalc():
             f.write('\n')
 
 def Synth_SOMPrep():
-    from Loader import Candidate
-    from Features import Featureset
-    from Features.TransitSOM import TransitSOM_release as TSOM
+    from autovet.Loader import Candidate
+    from autovet.Features import Featureset
+    from autovet.Features.TransitSOM import TransitSOM_release as TSOM
     loaderdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synth_input_TEST18_alex.txt',names=True,dtype=None)
     featdat = np.genfromtxt('/home/dja/Autovetting/Dataprep/SynthLCs_alex/synthorionfeatures_alex.txt',names=True,delimiter=',',dtype=None)
     lcdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
@@ -260,12 +260,13 @@ def Synth_Iterator():
         
     outdir = '/home/dja/Autovetting/Dataprep/SynthLCs_alex/'
     mloader = 'synth_input_TEST18_alex.txt'
+    version = 'CYCLE1706'
     orionfeatfile = 'synthorionfeatures_alex.txt'
 
-    with open(os.path.join(outdir,mloader),'w') as f:
+    with open(os.path.join(outdir,mloader),'a') as f:
         f.write('#fieldname ngts_version obj_id label per t0 tdur rank\n')
 
-    with open(os.path.join(outdir,orionfeatfile),'w') as f:
+    with open(os.path.join(outdir,orionfeatfile),'a') as f:
         f.write('#OBJ_ID, FIELD, VERSION, LABEL, RANK, DELTA_CHISQ, NPTS_TRANSIT, NUM_TRANSITS, NBOUND_IN_TRANS, AMP_ELLIPSE, SN_ELLIPSE, GAP_RATIO, SN_ANTI, SDE\n')
 
     
@@ -290,7 +291,7 @@ def Synth_Iterator():
         t0s = blscatalogue['EPOCH']
         
         fieldname = os.path.split(synthfile)[1][17:28]
-        version = os.path.split(synthfile)[1][-11:-5]
+        #version = os.path.split(synthfile)[1][-11:-5]
         label = 'synth'
         
         for i,obj_id in enumerate(bls_objids):
@@ -309,7 +310,7 @@ def Synth_Iterator():
     
                 #fieldname ngts_version obj_id label per t0 tdur
                 with open(os.path.join(outdir,mloader),'a') as f:
-                    f.write(fieldname+' '+version+' '+obj_id+' '+label+' '+str(per)+' '+str(t0)+' '+str(tdur)+' '+str(int(cand['RANK']))+'\n')
+                    f.write(fieldname+' '+version+' '+obj_id.strip(' ')+' '+label+' '+str(per)+' '+str(t0)+' '+str(tdur)+' '+str(int(cand['RANK']))+'\n')
     
                 diags = np.array([cand['RANK'],cand['DELTA_CHISQ'],cand['NPTS_TRANSIT'],cand['NUM_TRANSITS'],cand['NBOUND_IN_TRANS'],cand['AMP_ELLIPSE'],cand['SN_ELLIPSE'],cand['GAP_RATIO'],cand['SN_ANTI'],cand['SDE']])
 
@@ -333,7 +334,9 @@ def Synth_Iterator():
 
 if __name__=='__main__':
     #Synth_Iterator()
-    #Synth_FeatureCalc()
+    #startline = int(sys.argv[1])
+    #endline = int(sys.argv[2])
+    #Synth_FeatureCalc(startline,endline)
     #NGTS_CentroidRun()
     #Scan_Centroids()
     #inputs = sys.argv[1:]

@@ -2,9 +2,9 @@ import numpy as np
 import os
 import glob
 from ngtsio import ngtsio
-from Loader import Candidate
-#from Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
-from Features import Featureset
+from autovet.Loader import Candidate
+#from autovet.Features.Centroiding.Centroiding_autovet_wrapper import centroid_autovet
+from autovet.Features import Featureset
 
 def FeatFile_Setup(featoutfile, dofeatures, externalfeatures):
     keystowrite = np.sort(dofeatures.keys())
@@ -45,11 +45,11 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
     #::: read list of all fields
     indata = np.genfromtxt(infile, names=True, dtype=None, delimiter=',')[firstrow:lastrow]
     
-    externalfeatures= ['rank','DELTA_CHISQ','NPTS_TRANSIT','NUM_TRANSITS','NBOUND_IN_TRANS','AMP_ELLIPSE','SN_ELLIPSE','GAP_RATIO','SN_ANTI','SDE']
+    externalfeatures= ['RANK','DELTA_CHISQ','NPTS_TRANSIT','NUM_TRANSITS','NBOUND_IN_TRANS','AMP_ELLIPSE','SN_ELLIPSE','GAP_RATIO','SN_ANTI','SDE']
     
     field_ids = [ x+'_'+y for (x,y) in zip(indata['fieldname'], indata['ngts_version']) ]
     
-    unique_field_ids = np.unique(indata['fieldname'])
+    unique_field_ids = np.unique(field_ids)
     
     output_per = []
     output_pmatch = []
@@ -95,7 +95,7 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
         
         #::: loop over all candidates in this field
         for candidate in target_candidates_in_this_field:
-            save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['rank'])
+            save_id = fieldname+'_'+'{:06d}'.format(candidate['obj_id'])+'_'+str(candidate['RANK'])
             if save_id not in processed_ids:
                 #apply pmatch cut. This is being put in early to reduce the numbers we have to deal with
                 candidate_data = {'per':candidate['per'], 't0':candidate['t0'], 'tdur':candidate['tdur']}
@@ -122,7 +122,7 @@ def NGTS_MultiLoader_avpipe(infile, firstrow, lastrow, outdir=None, docentroid=F
                                 for fe in features[2]:
                                     f.write(str(fe)+',')
                                 for fe in externalfeatures[:-1]:
-                                    f.write(str(cand[fe])+',')
-                                f.write(str(cand[externalfeatures[-1]]))
+                                    f.write(str(candidate[fe])+',')
+                                f.write(str(candidate[externalfeatures[-1]]))
                                 f.write('\n')
                                     

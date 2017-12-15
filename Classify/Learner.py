@@ -54,7 +54,10 @@ class TrainingSet(CandidateSet):
                 dat = dat.drop(field,1)
         dat = dat.replace([np.inf, -np.inf], np.nan) #replace infs with nan
         dat = dat.replace([-10], np.nan) #replace -10 (the standard fill value) with nan
+        for col in dat.columns[1:]:  #[1:] is to ignore the #ID column
+            dat[col] = dat[col].where(dat[col] < 1e8, np.nan)#blocks stupidly large values that can arise for some bad lightcurves
         dat = dat.dropna()
+        
         self.ids = np.array(dat['#ID'])
         dat = dat.drop('#ID',1)
         labels = np.array(dat.index)
@@ -133,7 +136,12 @@ class Classifier(object):
         shuffleidx = np.random.choice(len(tset.known_classes),len(tset.known_classes),replace=False)
         cvfeatures = tset.features[shuffleidx,:]
         cvgroups = tset.known_classes[shuffleidx]
-        kf = KFold(n_splits=int(cvfeatures.shape[0]/500))
+        split = 500
+        #test to make sure all splits contain all classes
+        for group in np.unique(tset.known_classes):
+            if np.sum(tset.known_classes==group)/2. < split:
+                split = np.sum(tset.known_classes==group)/2.
+        kf = KFold(n_splits=int(cvfeatures.shape[0]/split))
         probs = []
         for train_index,test_index in kf.split(cvfeatures,cvgroups):
             print test_index

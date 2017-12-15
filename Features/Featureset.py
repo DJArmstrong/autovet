@@ -27,7 +27,8 @@ class Featureset(object):
         self.tsfresh = None
         self.som = None
         self.SOMarray = None
-        self.__somlocation__ = os.path.join(os.getcwd(),'Features/TransitSOM/')
+        self.__somlocation__ = os.path.join(os.path.dirname(__file__), 'TransitSOM/')
+        #self.__somlocation__ = os.path.join(os.getcwd(),'Features/TransitSOM/')
         self.secondary = None
         self.transitfit = None
         self.trapfit = None

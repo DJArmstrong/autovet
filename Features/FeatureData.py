@@ -43,7 +43,7 @@ class FeatureData():
             dat = pd.read_csv(filepath,index_col=0)
             dat.columns = dat.columns.str.strip()
             if label in self.data.keys():
-                joinarray = self.scanForNewInfo(self.data[label],dat)
+                joinarray = self.scanForNewInfo(self.data[label],dat,addrows)
                 self.data[label] = joinarray
             else:
                 self.data[label] = dat
@@ -84,7 +84,7 @@ class FeatureData():
             print e
             print 'Loading Error, nothing happened. Error copied above.'
 
-    def scanForNewInfo(self,base,new):
+    def scanForNewInfo(self,base,new,addrows):
         """
         Compares new to base and creates an array of base plus any new ids or columns
         found in new. Missing cells will be NaNs. Much faster if only adding new ids
@@ -178,7 +178,7 @@ class FeatureData():
         				To include centroid data in the training set, add it using
         				self.addData() instead of self.addCentroidData().
         '''
-        if not os.path.exists(os.path.split(outfile)[0]):
+        if len(os.path.split(outfile)[0])>0 and not os.path.exists(os.path.split(outfile)[0]):
             os.makedirs(os.path.split(outfile)[0])
             
         if len(self.data.keys())>0:
@@ -202,7 +202,9 @@ class FeatureData():
                         for item in row[:-1]:
                             f.write(str(item)+',')
                         f.write(str(row[-1])+'\n')
-        if centroid:
+            print 'Output file written'
+            
+        if centroid and len(self.centroiddata.keys())>0:
             #use any info provided in this case
             all_cols = self.findCentroidCols()
         

@@ -25,7 +25,7 @@ def Run(infile, outfile, firstrow, lastrow):
     "python avpipe_featurerun.py infile outfile firstrow lastrow"
     
     """
-    from Loader.NGTS_MultiLoader_avpipe import NGTS_MultiLoader_avpipe
+    from autovet.Loader.NGTS_MultiLoader_avpipe import NGTS_MultiLoader_avpipe
 
     featurestocalc = {'tdur_phase':[],'pmatch':[],'ntransits':[],'missingDataFlag':[],'SOM_Theta1':[],'SOM_Distance':[],
             		'Skew':[],'Kurtosis':[],'NZeroCross':[],'P2P_mean':[],'P2P_98perc':[],

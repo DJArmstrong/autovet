@@ -1,6 +1,6 @@
 
 import Loader
-from Classify import Learner
+from autovet.Classify import Learner
 import numpy as np
 import pandas as pd
 import pylab as p
