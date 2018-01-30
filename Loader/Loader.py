@@ -13,7 +13,7 @@ class Candidate(object):
     """ Obtain meta and lightcurve information for a specific candidate. """
     
 
-    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data={'per':0.,'t0':0.,'tdur':0.},stellar_radius=1., field_periods=None, field_epochs=None):
+    def __init__(self,id,filepath,observatory='NGTS',field_dic=None,label=-10,candidate_data=None,stellar_radius=1., field_periods=None, field_epochs=None):
         """
         Take candidate and load lightcurve, dependent on observatory.
         
@@ -29,6 +29,7 @@ class Candidate(object):
         field_periods    -- array of all candidate periods from that field.
         field_epochs    -- array of all candidate epochs from that field.
         """
+        if candidate_data = None : candidate_data = {'per':0.,'t0':0.,'tdur':0.}
         self.id = id
         self.filepath = filepath
         self.obs = observatory 

@@ -45,7 +45,7 @@ class Featureset(object):
             import pylab as p
             p.ion()
         
-    def CalcFeatures(self,featuredict={}):
+    def CalcFeatures(self,featuredict=None):
         """
         User facing function to calculate features and populate features dict.
         
@@ -54,6 +54,7 @@ class Featureset(object):
 
         Results go in self.features -- a dict containing all calculated features
         """
+        if featuredict is None: featuredict = {}
         if len(featuredict.keys())==0:
             if self.target.obs == 'NGTS':
                 self.featuredict = {} #should be default for NGTS

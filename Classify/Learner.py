@@ -9,7 +9,7 @@ class CandidateSet(object):
         Set of candidates
         
         Arguments:
-        features   -- np array of feature data
+        features   -- np array of feature data, [n_candidates,n_features]
         """        
         self.class_probs = None
         self.features = features
@@ -17,7 +17,7 @@ class CandidateSet(object):
 
 class TrainingSet(CandidateSet):
     
-    def __init__(self,trainingfile,fieldstodrop=[],addrandom=False):
+    def __init__(self,trainingfile,fieldstodrop=None,addrandom=False,dropnoise=False,dropdepth=False,dropdefault=False):
         """
         Set of candidates for training
         
@@ -25,32 +25,37 @@ class TrainingSet(CandidateSet):
         trainingfile   -- txt file of training data
         fieldstodrop   -- features to remove before training
         addrandom      -- if True, adds a random feature for calibration
-        """        
-        ###TEMP, EXPERIMENTING###
-        #fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0','DELTA_CHISQ',
-        # 'Even_Fit_aovrstar', 'Even_Fit_chisq',
-       #'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
-       #'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase', 'Fit_aovrstar',
-       #'Fit_chisq', 'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
-       #'Trapfit_depth','Fit_rprstar','Fit_depthSNR','NUM_TRANSITS',
-       #'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
-       #'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
-       #'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
-        ###
-        ###TEMP, EXPERIMENTING###
-        fieldstodrop = ['tdur_phase','Trapfit_t0','Fit_t0',
-         'Even_Fit_aovrstar', 'Even_Fit_chisq',
-       'Even_Fit_depthSNR', 'Even_Fit_rprstar','Even_Trapfit_depth',
-       'Even_Trapfit_t14phase', 'Even_Trapfit_t23phase',
-       'Kurtosis', 'MAD','NZeroCross', 'Fit_period',
-       'Fit_rprstar','NUM_TRANSITS','Trapfit_t23phase',
-       'Odd_Fit_aovrstar', 'Odd_Fit_chisq', 'Odd_Fit_depthSNR','Odd_Fit_rprstar', 
-       'Odd_Trapfit_depth', 'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase',
-       'P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 'RMS_TDur', 'Skew','std_ov_error']
-        ###
+        dropnoise      -- if True, drops default fields from training set file
+        dropdepth      -- if True, drops transit depth related fields
+        dropdefault    -- if True, drops lightcurve noise related fields
+        """
+        if fieldstodrop is None: fieldstodrop = []
+        if len(fieldstodrop)==0:
+            if dropdefault:
+                defaultfields = ['tdur_phase','Trapfit_t0','Fit_t0','Even_Fit_aovrstar', 
+                				'Even_Fit_chisq','Even_Trapfit_t14phase', 
+                				'Even_Trapfit_t23phase','Fit_period','NUM_TRANSITS',
+                				'Trapfit_t23phase','Odd_Fit_aovrstar', 'Odd_Fit_chisq', 
+                				'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase','MaxSecPhase']
+                for field in defaultfields:
+                    fieldstodrop.append(field)
+            if dropnoise:
+                noisefields = ['P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 
+                    			'RMS_TDur', 'Skew','std_ov_error','Kurtosis', 'MAD',
+                    			'NZeroCross']
+                for field in noisefields:
+                    fieldstodrop.append(field)
+            if dropdepth:
+                depthfields = ['Odd_Fit_depthSNR','Odd_Fit_rprstar', 
+                    			'Odd_Trapfit_depth','Fit_rprstar','Even_Fit_depthSNR', 
+                    			'Even_Fit_rprstar','Even_Trapfit_depth','Fit_depthSNR',
+                    			'Trapfit_depth']
+                for field in depthfields:
+                    fieldstodrop.append(field)
+                                    
         dat = pd.read_csv(trainingfile,index_col=1)
         for field in fieldstodrop:
-            #if field in dat.columns:
+            if field in np.array(dat.columns):
                 dat = dat.drop(field,1)
         dat = dat.replace([np.inf, -np.inf], np.nan) #replace infs with nan
         dat = dat.replace([-10], np.nan) #replace -10 (the standard fill value) with nan
@@ -73,6 +78,8 @@ class TrainingSet(CandidateSet):
         #self.featurenames = features.dtype.names
         #features = features.view(np.float64).reshape(features.shape + (-1,))
         #labels = dat['label']
+        
+        
         CandidateSet.__init__(self,features)
         self.known_classes = labels
     
@@ -81,7 +88,7 @@ class TrainingSet(CandidateSet):
 
 class Classifier(object):
 
-    def __init__(self,classifier='RandomForestClassifier',classifier_args={}):  #list of Featureset instances, each with features calculated
+    def __init__(self,classifier='RandomForestClassifier',classifier_args=None):  #list of Featureset instances, each with features calculated
         """
         Classifier wrapper for several sklearn classifiers
         
@@ -90,9 +97,11 @@ class Classifier(object):
         					ExtraTreesClassifier, AdaBoostClassifier, MLPClassifier}
         classifier_args	-- dict of arguments for classifier {arg:value}
         """    
+        if classifier_args is None: classifier_args={}
         #self.classifier_obj = classifier_obj
         self.classifier_args = classifier_args
         self.classifier_type = classifier
+        self.cvprobs = None
         
         global classifier_obj
         if classifier=='RandomForestClassifier':
@@ -143,8 +152,8 @@ class Classifier(object):
                 split = np.sum(tset.known_classes==group)/2.
         kf = KFold(n_splits=int(cvfeatures.shape[0]/split))
         probs = []
+        print 'Generating cross-validated probabilities, may take some time...'
         for train_index,test_index in kf.split(cvfeatures,cvgroups):
-            print test_index
             #attempting to avert a memory error
             del self.classifier
             if self.classifier_type=='RandomForestClassifier':
@@ -160,14 +169,13 @@ class Classifier(object):
                 from sklearn.neural_network import MLPClassifier as classifier_obj
                 self.classifier = self.setUpMLP()        
             self.classifier.fit(cvfeatures[train_index,:],cvgroups[train_index])
-            #self.featImportance()
             probs.append(self.classifier.predict_proba(cvfeatures[test_index,:]))  
         self.cvprobs = np.vstack(probs)
         unshuffleidx = np.argsort(shuffleidx)
         self.cvprobs = self.cvprobs[unshuffleidx]
         return self.cvprobs
 
-    def OptimiseForest(self,trainingset):
+    def optimiseForest(self,trainingset):
         if self.classifier_type != 'RandomForestClassifier':
             return 0
         estimators_set = np.array([100,300,500])
@@ -242,82 +250,3 @@ class Classifier(object):
         clf = classifier_obj(hidden_layer_sizes=inputs['hidden_layer_sizes'],random_state=inputs['random_state'],alpha=inputs['alpha'])
         return clf
 
-class RFValidation(object):
-
-    def __init__(self, RFClassifier):
-        """
-        Validation metrics and plots for a Random Forest Classifier
-        
-        Arguments:
-        RFClassifier	-- instance of Classifier class using RandomForestClassifier
-        """
-        self.classifier = RFClassifier
-        
-    #def MLP_plot():
-    
-    #def IsolationOutliers(self):
-    #    from sklearn.ensemble import IsolationForest as classifier_obj
-    #    self.classifier_outliers = self.classifier
-        
-    #    self.classifier_outliers.fit(X_data_train)
-
-    #    predicted_outliers = clf_outliers.predict(X_data)    
-    
-    
-    def TrainingSetResponse(self, cvprobs, tset, axis1, axis2, xmin, xmax, ymin, ymax, nbinsx=20, nbinsy=20, threshold=0.5):
-        
-        if type(axis1)==str:
-            if (axis1 in tset.featurenames):
-                x = tset.features[:,np.where(tset.featurenames==axis1)[0]]
-            else:
-                print 'Axis 1 not in trainingset featurenames'
-                return 0
-        else:
-            x = axis1
-        if type(axis2)==str:
-            if (axis2 in tset.featurenames):
-                y = tset.features[:,np.where(tset.featurenames==axis2)[0]]
-            else:
-                print 'Axis 2 not in trainingset featurenames'
-                return 0
-        else:
-            y = axis2
-
-        xedges,yedges = np.linspace(xmin,xmax,nbinsx), np.linspace(ymin,ymax,nbinsy)
-
-        hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))  #gives total in bins
-
-        #assume cvprobs aligned with training set
-        recovered = cvprobs>=threshold
-        x_rec = x[recovered]
-        y_rec = y[recovered]
-
-        histrec, xedges, yedges = np.histogram2d(x_rec, y_rec, (xedges, yedges))  #gives recovered total in bins
-
-        fraction = histrec/hist
-        #fraction[hist<30]=np.nan
-
-        palette = copy(p.cm.viridis)
-        #palette.set_over('r', 1.0)
-        #palette.set_under('g', 1.0)
-        palette.set_bad('grey', 1.0)
- 
-        p.figure()
-        p.clf()
-        p.imshow(fraction,origin='lower',extent=[ymin,ymax,xmin,xmax],aspect='auto',cmap=palette,vmin=0,vmax=1)
-        if type(axis1)==str:
-            p.xlabel(axis1)
-        if type(axis2)==str:
-            p.ylabel(axis2)
-        cbar = p.colorbar()
-        cbar.set_label('Fraction Recovered', rotation=270, labelpad=10)
-
-        #p.savefig(str(xidx)+'.pdf')
-    
-    
-    
-    
-    #def FieldResponse():
-    
-    
-    
