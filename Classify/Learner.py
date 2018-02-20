@@ -117,7 +117,6 @@ class Classifier(object):
             from sklearn.neural_network import MLPClassifier as classifier_obj
             self.classifier = self.setUpMLP()        
             
-              
     def train(self,trainingset):
         self.featurenames = trainingset.featurenames
         self.classifier = self.classifier.fit(trainingset.features,trainingset.known_classes)

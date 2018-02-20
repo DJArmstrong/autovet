@@ -51,7 +51,7 @@ class PeriodLS():
             def cutthrusterfreqs(fx,fy):
                 thrusterfreq = 0.2448
                 for i in range(4):
-                    thrustercut = (fx > 1./((i+1)*thrusterfreq)*(1-0.01)) & (fx < 1./((i+1)*thrusterfreq)*(1+0.01)) #just in case...   
+                    thrustercut = (fx > 1./((i+1)*thrusterfreq)*(1-0.01)) & (fx < 1./((i+1)*thrusterfreq)*(1+0.01)) 
                     fx = fx[~thrustercut]
                     fy = fy[~thrustercut]
                 return fx,fy
@@ -59,7 +59,7 @@ class PeriodLS():
             def cutcadencefreqs(fx,fy):
                 cadencefreq = 0.020431698
                 for i in range(4):  #cuts 4 harmonics of frequency
-                    cadencecut = (fx > 1./((i+1)*cadencefreq)*(1-0.01)) & (fx < 1./((i+1)*cadencefreq)*(1+0.01)) #just in case...   
+                    cadencecut = (fx > 1./((i+1)*cadencefreq)*(1-0.01)) & (fx < 1./((i+1)*cadencefreq)*(1+0.01))  
                     fx = fx[~cadencecut]
                     fy = fy[~cadencecut]
                 return fx,fy
@@ -67,7 +67,7 @@ class PeriodLS():
             def cutTESSfocusfreqs(fx,fy):
                 focusfreq = 13.49/4.  #so cuts the main one and higher frequencies
                 for i in range(4):  #cuts 4 harmonics of frequency, within +-3% of given frequency
-                    focuscut = (fx > 1./((i+1)*focusfreq)*(1-0.03)) & (fx < 1./((i+1)*focusfreq)*(1+0.03)) #just in case...   
+                    focuscut = (fx > 1./((i+1)*focusfreq)*(1-0.03)) & (fx < 1./((i+1)*focusfreq)*(1+0.03))
                     fx = fx[~focuscut]
                     fy = fy[~focuscut]
                 return fx,fy        
@@ -76,7 +76,6 @@ class PeriodLS():
                 thrusterfreqs = 1./np.array([0.23995485,0.24058965,0.24122445,0.24185925,0.24249405,0.24312886,0.24376366,0.24439846,0.24503326,0.24566806,0.24630286,0.24693766,0.24757246,0.24820727,0.24884207,0.24947687])
                 #thrusterfreqs = (fx > 0.2448*(1-0.05)) & (fx < 0.2448*(1+0.05))
                 #thrusterfreqs = np.array([0.23297204,0.23360684,0.23424164,0.23487644,0.23551124,0.23614604,0.23678084,0.23741564,0.23805045,0.23868525,0.23932005,0.23995485,0.24058965,0.24122445,0.24185925,0.24249405,0.24312886,0.24376366,0.24439846,0.24503326,0.24566806,0.24630286,0.24693766,0.24757246,0.24820727,0.24884207,0.24947687,0.25011167,0.25074647,0.25138127,0.25201607,0.25265087,0.25328567,0.25392048,0.25455528,0.25519008,0.25582488,0.25645968])
-                #print fx[thrusterfreqs]
                 for fundamental_Freq in thrusterfreqs:
                     flux = removeharmonics(time,flux,fundamental_Freq)
                 
@@ -85,7 +84,6 @@ class PeriodLS():
                 cadencefreqs = 1./np.array([0.020431698,0.049032325])
                #thrusterfreqs = (fx > 0.020431698*(1-0.05)) & (fx < 0.020431698*(1+0.05))
                 #thrusterfreqs = np.array([0.23297204,0.23360684,0.23424164,0.23487644,0.23551124,0.23614604,0.23678084,0.23741564,0.23805045,0.23868525,0.23932005,0.23995485,0.24058965,0.24122445,0.24185925,0.24249405,0.24312886,0.24376366,0.24439846,0.24503326,0.24566806,0.24630286,0.24693766,0.24757246,0.24820727,0.24884207,0.24947687,0.25011167,0.25074647,0.25138127,0.25201607,0.25265087,0.25328567,0.25392048,0.25455528,0.25519008,0.25582488,0.25645968])
-                #print fx[thrusterfreqs]
                 for fundamental_Freq in cadencefreqs:
      
                     for j in [0.5,1]: #only half and the exact cadence frequency fit and removed
@@ -130,9 +128,7 @@ class PeriodLS():
                 #p.plot(np.mod(time,fx[np.argmax(fy)])/fx[np.argmax(fy)],flux,'r.')
                 #print fx[np.argmax(fy)]
                 #raw_input()
-            #max_y = np.max(fy)
         
-            #period = fx[jmax]
             freqs = [fx[np.argmax(fy)]]
             popt, pcov = curve_fit(yfunc(freqs[-1]), time, flux)
             ampmax = np.sqrt(popt[0]**2+popt[1]**2)
@@ -168,15 +164,8 @@ class PeriodLS():
                
                 freqs.append(freq)
                 ampratios.append(amp/ampmax)
-                        
-            #print freqs
-            #print ampratios
-            #for freq in freqs[:3]:
-            #    p.plot([freq,freq],[0,max_y],'r--')
-            #raw_input()
         
             T = 1.0 / np.array(freqs)
-            #new_time = np.mod(time, 2 * T) / (2 * T)
             self.periods = T
             self.ampratios = np.array(ampratios)
             
