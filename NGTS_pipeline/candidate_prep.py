@@ -250,7 +250,7 @@ def SOM_arrayjoiner():
 
 #repeat for synthetic transits
 def Synth_Iterator():
-    synthdir = '/wasp/scratch/alexsmith/synthetics/'
+    synthdir = '/wasp/scratch/alexsmith/synthetics/CYCLE1706/'
     synthruns = ['NG0522-2518-802-TEST18_4','NG0304-1115-809-TEST18_shallow','NG2047-0248-810-TEST18_shallow']
     synthorionlist = []
     synthpostsysremlist = []

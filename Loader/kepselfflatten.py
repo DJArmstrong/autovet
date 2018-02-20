@@ -1,30 +1,39 @@
 import numpy as np
-
 try:
     import pyfits
 except ImportError:
     import astropy.io.fits as pyfits
-    
 import sys
-#import pylab as p
-#p.ion()
 
 
 def dopolyfit(win,d,ni,sigclip):
+    '''
+    Iterative polynomial fit. Each iteration, discrepant points are cut from the next fit.
+    
+    Arguments:
+    win		--	np array (npoints,3). Format [time, flux, error]
+    			Lightcurve segment to fit.
+    d		--	int
+    			Polynomial degree
+    ni		--	int
+    			Number of iterations
+    sigclip	--	float
+    			Sigma clipping threshold.
+    
+    Returns:
+    base 	--	np polynomial object
+    			Final fitted polynomial parameters
+    '''
     base = np.polyfit(win[:,0],win[:,1],w=1.0/win[:,2],deg=d)
     #for n iterations, clip sigma, redo polyfit
-
     for iter in range(ni):
-        #winsigma = np.std(win[:,1]-np.polyval(base,win[:,0]))
-        offset = np.abs(win[:,1]-np.polyval(base,win[:,0]))/win[:,2]
-        
+        offset = np.abs(win[:,1]-np.polyval(base,win[:,0]))/win[:,2]  
         if (offset<sigclip).sum()>int(0.8*len(win[:,0])):
             clippedregion = win[offset<sigclip,:]
         else:
-            clippedregion = win[offset<np.average(offset)]
-            
-        base = np.polyfit(clippedregion[:,0],clippedregion[:,1],w=1.0/np.power(clippedregion[:,2],2),deg=d)
-  
+            clippedregion = win[offset<np.average(offset)]   
+        base = np.polyfit(	clippedregion[:,0],clippedregion[:,1],
+        					w=1.0/np.power(clippedregion[:,2],2),deg=d)
     return base
 
 def CheckForGaps(dat,centidx,winlowbound,winhighbound,gapthresh):
@@ -197,9 +206,6 @@ def CutTransits(time,flux,err,qual,transitt0,transitper,transitdur):
 
 
 def Run(infile,outfile,inputcol='PDCSAP_FLUX',inputcol_err='PDCSAP_FLUX_ERR',winsize=10.,stepsize=0.3,polydegree=3,niter=10,sigmaclip=8.,gapthreshold=0.8,plot=0,transitcut=False,tc_period=0,tc_t0=0,tc_tdur=0):
-    #read in data
-    #infile = sys.argv[1]
-    #outfile = sys.argv[2]
     
     if infile[-5:] == '.fits':
 	    time, flux, err, t0, quality = ReadLCFITS(infile,inputcol,inputcol_err) #standard kepler fits files
@@ -208,7 +214,6 @@ def Run(infile,outfile,inputcol='PDCSAP_FLUX',inputcol_err='PDCSAP_FLUX_ERR',win
     
     #parse user inputs
     optionalinputs = {}
-    
     optionalinputs['inputcol'] = inputcol
     optionalinputs['inputcol_err'] = inputcol_err
     optionalinputs['winsize'] = winsize   #days, size of polynomial fitting region
