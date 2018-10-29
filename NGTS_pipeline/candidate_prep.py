@@ -55,6 +55,33 @@ def NGTS_Setup():
                         f.write(str(entry)+',')
                     f.write(str(diags[-1])+'\n')
 
+def NGTS_Setup_allSYSREM():
+    mloader = 'multiloader_input_CYCLE1706_sysremall.txt'
+    #orionfeatfile = 'orionfeatures_CYCLE1706.txt'
+    SRdirs = glob.glob('/ngts/prodstore/02/SysremPipe*CYCLE1706')
+   
+    with open(mloader,'w') as f:
+        f.write('#fieldname ngts_version obj_id\n')
+
+    #with open(orionfeatfile,'w') as f:
+    #    f.write('ID, label, RANK, DELTA_CHISQ, NPTS_TRANSIT, NUM_TRANSITS, NBOUND_IN_TRANS, AMP_ELLIPSE, SN_ELLIPSE, GAP_RATIO, SN_ANTI, SDE\n')
+
+    for indir in SRdirs:
+        print indir
+        infile = glob.glob(os.path.join(indir,'*CATALOGUE.fits'))[0]
+        dat = fitsio.FITS(infile)
+        field = os.path.split(infile)[1][12:23]
+        
+        for cand in dat[1]:
+        
+            obj_id = cand['OBJ_ID'].strip(' ')
+            version = 'CYCLE1706'
+        
+            #fieldname ngts_version obj_id label per t0 tdur
+            with open(mloader,'a') as f:
+                f.write(field+' '+version+' '+obj_id+'\n')
+
+
 def NGTS_CentroidRun(inputs):
     from autovet.Loader.NGTS_MultiLoader import NGTS_MultiLoader
     infilelist = np.sort(glob.glob('/home/dja/Autovetting/Dataprep/CYCLE1706/multiloader_input_CYCLE1706_*'))

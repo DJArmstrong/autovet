@@ -136,31 +136,68 @@ def TrainingSetResponse_average(cvprobs, tset, axis1, axis2, xmin, xmax, ymin, y
     #p.savefig(str(xidx)+'.pdf')
 
 def FieldDependence(cvprobs,tset,ridx,sidx):
+    prop_cycle = p.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
     fields = []
     for id in tset.ids[ridx]:    
         fields.append(id[:11])
         
     fields = np.array(fields)
     
-    unique_fields = list(set(fields))
-    
+    unique_fields = np.array(list(set(fields)))
+
     avg_cvprobs = []
-    for testfield in unique_fields:
+    for fidx,testfield in enumerate(unique_fields):
         field_idx = np.where(fields==testfield)[0]
         avg_cvprobs.append(np.median(cvprobs[ridx,1][field_idx]))
-    
     avg_cvprobs = np.array(avg_cvprobs)
-    p.figure()
-    p.plot(np.arange(len(unique_fields)),avg_cvprobs,'.-')
+    idx = np.argsort(avg_cvprobs)
+    unique_fields = unique_fields[idx]
+    avg_cvprobs = avg_cvprobs[idx]
     
     synth_fields = []
     for id in tset.ids[sidx]:
         synth_fields.append(id[:11])
     
     unique_synth_fields = set(synth_fields)
-    for t,testfield in enumerate(unique_fields):
+    
+    nbins = 50
+    bins = np.arange(nbins)/float(nbins)
+    #f, ax = p.subplots(1,len(unique_fields),sharey=True)
+    p.figure()
+    
+    for fidx,testfield in enumerate(unique_fields):
+        field_idx = np.where(fields==testfield)[0]
+        #weights = np.ones_like(cvprobs[ridx,1][field_idx])/float(len(cvprobs[ridx,1][field_idx]))
+        #h = np.histogram(cvprobs[ridx,1][field_idx], weights=weights, bins=50)
+        h = np.histogram(cvprobs[ridx,1][field_idx], bins=nbins)
+        #print h[0]
+        vals = h[0].astype('float')
+        vals = vals / np.max(h[0])
+        #print vals
+        #bins=(h[1][:-1]+h[1][1:])/2.
+        #bins = h[1][:-1]
         if testfield in unique_synth_fields:
-            p.plot(t,avg_cvprobs[t],'rx')
+            p.plot(vals+fidx,bins,'-',color=colors[1])
+            p.fill_betweenx(bins,fidx,vals+fidx,facecolor=colors[1],alpha=0.7)
+        else:
+            p.plot(vals+fidx,bins,'-',color=colors[0])
+            p.fill_betweenx(bins,fidx,vals+fidx,facecolor=colors[0],alpha=0.7)
+
+        #ax[fidx].hist(cvprobs[ridx,1][field_idx], weights=weights, bins=50)
+    #ax[0].set_xlim(0,0.3)
+    p.ylim(0,0.3)
+    p.ylabel('Planet Probability')
+    p.xlabel('Field Index')
+    p.pause(1)
+    
+    #p.figure()
+    #p.plot(np.arange(len(unique_fields)),avg_cvprobs,'.-')
+    
+    #for t,testfield in enumerate(unique_fields):
+    #    if testfield in unique_synth_fields:
+    #        p.plot(t,avg_cvprobs[t],'rx')
    
 def TrainingSetResponse_1d(cvprobs, tset, axis1, xmin, xmax, nbinsx=20, target='synth'):
     from scipy import stats

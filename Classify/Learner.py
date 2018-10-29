@@ -1,6 +1,7 @@
 #should act largely independently of loader/feature classes for simplicity. Hence will load in saved file of feature values
 import numpy as np
 import pandas as pd
+import gpflow
 
 class CandidateSet(object):
 
@@ -54,6 +55,12 @@ class TrainingSet(CandidateSet):
                     fieldstodrop.append(field)
                                     
         dat = pd.read_csv(trainingfile,index_col=1)
+        
+        #remove remnant bad columns
+        for col in dat.columns:
+            if col[:7]=='Unnamed':
+                fieldstodrop.append(col)
+                
         for field in fieldstodrop:
             if field in np.array(dat.columns):
                 dat = dat.drop(field,1)
@@ -122,14 +129,15 @@ class Classifier(object):
         self.classifier = self.classifier.fit(trainingset.features,trainingset.known_classes)
     
     def featImportance(self):
-        print 'Top features:'
+        print('Top features:')
         featimportance = self.classifier.feature_importances_
         for i in np.argsort(featimportance)[::-1]:
-            print self.featurenames[i], featimportance[i]
+            print(self.featurenames[i], featimportance[i])
     
     def classify(self,candidateset):
         class_probs = self.classifier.predict_proba(candidateset.features)
         candidateset.class_probs = class_probs
+        return class_probs
         
     def crossValidate(self,tset):
         """
@@ -151,7 +159,7 @@ class Classifier(object):
                 split = np.sum(tset.known_classes==group)/2.
         kf = KFold(n_splits=int(cvfeatures.shape[0]/split))
         probs = []
-        print 'Generating cross-validated probabilities, may take some time...'
+        print('Generating cross-validated probabilities, may take some time...')
         for train_index,test_index in kf.split(cvfeatures,cvgroups):
             #attempting to avert a memory error
             del self.classifier
@@ -192,7 +200,7 @@ class Classifier(object):
 
                 for k,maxdepth in enumerate(maxdepth_set):
 
-                    print est,maxfeat,maxdepth
+                    print(est,maxfeat,maxdepth)
                     for l,minsamples in enumerate(minsamples_set):
                         classifier_args = {'n_estimators':est,'max_features':maxfeat,'max_depth':maxdepth,'min_samples_split':minsamples}
                         self.classifier_args = classifier_args
@@ -249,3 +257,55 @@ class Classifier(object):
         clf = classifier_obj(hidden_layer_sizes=inputs['hidden_layer_sizes'],random_state=inputs['random_state'],alpha=inputs['alpha'])
         return clf
 
+class GPFlowClassifier(object):
+    
+    def __init__(self, Xtrain, Ytrain, num_inducing=16, kernel=None, likelihood=None,
+    			num_latent=None):
+        '''
+        Xtrain is ndarray num_data * input dimension? so each row is lc, col is cadence
+        num_inducing is per class
+        '''
+        import gpflow
+    
+        if kernel is None:
+            self.kernel = gpflow.kernels.RBF(2)
+        else:
+            self.kernel = kernel
+        if likelihood is None:
+            self.likelihood = gpflow.likelihoods.Bernoulli()
+        else:
+            self.likelihood = likelihood
+        self.num_inducing = num_inducing
+        self.num_latent = num_latent
+        
+        if self.num_inducing == 0:
+            self.model = gpflow.models.VGP(Xtrain, Ytrain,
+                      kern=self.kernel,likelihood=self.likelihood)
+        else:
+            from scipy.cluster.vq import kmeans
+            Z = np.zeros([num_inducing*len(set(Ytrain)),Xtrain.shape[1]])
+            for c,cl in enumerate(set(Ytrain)):
+                Z[c*num_inducing:(c+1)*num_inducing,:] = kmeans(Xtrain[Ytrain==cl],num_inducing)[0]
+            
+            np.random.shuffle(Z)   
+            self.model = gpflow.models.SVGP(Xtrain, Ytrain, kern=self.kernel,
+        								likelihood=self.likelihood, Z=Z, num_latent=self.num_latent)
+
+    
+    def train(self, method=None):
+        if method=='Adam':
+            gpflow.training.AdamOptimizer(0.01).minimize(self.model, maxiter=2000)  
+        else:
+            if self.num_inducing > 0:
+                # Initially fix the hyperparameters.
+                self.model.feature.set_trainable(False)
+                gpflow.train.ScipyOptimizer().minimize(self.model, maxiter=20)
+
+                # Unfix the hyperparameters.
+                self.model.feature.set_trainable(True)
+            
+            gpflow.train.ScipyOptimizer(options=dict(maxiter=10000)).minimize(self.model)
+
+    def predict(self,X):
+        return self.model.predict_y(X)[0]
+        
