@@ -1,1 +1,1 @@
-from .Learner import CandidateSet,TrainingSet,Classifier,GPFlowClassifier
+from .Learner import Classifier,GPClassifier
