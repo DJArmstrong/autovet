@@ -36,7 +36,7 @@ class TrainingSet_LC(CandidateSet):
         self.X_base = np.vstack((self.X_base, newX))
         self.Y_base = np.vstack((self.Y_base, newY))
     
-    def split_train_test(self, test_size=0.33, random_state=np.uniform(0,100))
+    def split_train_test(self, test_size=0.33, random_state=np.random.uniform(0,100)):
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.X_base, self.Y_base, test_size=test_size, random_state=random_state)
 
     def X(self):
@@ -51,7 +51,7 @@ class TrainingSet_LC(CandidateSet):
         else:
             return self.Y_base
 
-    def scale(self)
+    def scale(self):
         offset = self.X_base.mean()
         offstd = self.X_base.std()
         self.X_base = ( self.X_base - offset ) / offstd
