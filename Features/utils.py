@@ -149,19 +149,75 @@ def BinPhaseLC(phaselc,nbins,fill_value=None):
     binnedlc = np.zeros([nbins,2])
     binnedlc[:,0] = 1./nbins * 0.5 +bin_edges  #fixes phase of all bins - means ignoring locations of points in bin, but necessary for SOM mapping
     binnedstds = np.zeros(nbins)
-    emptybins = 0
+    emptybins = []
     for bin in range(nbins):
         if np.sum(bin_indices==bin) > 0:
             binnedlc[bin,1] = np.mean(phaselc[bin_indices==bin,1])  #doesn't make use of sorted phase array, could probably be faster?
             binnedstds[bin] = np.std(phaselc[bin_indices==bin,1])
         else:
-            emptybins += 1
-            if fill_value is not None:
-                binnedlc[bin,1] = fill_value
-            else:
-                binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
+            emptybins.append(bin)
+            binnedlc[bin,1] = -1000
             binnedstds[bin] = np.std(phaselc[:,1])
-    return binnedlc, binnedstds, emptybins
+    
+    for bin in emptybins:
+        if fill_value is not None:
+            if str(fill_value)=='interp':
+                prebins = binnedlc[:bin,1]>-999
+                postbins = binnedlc[bin:,1]>-999
+                if np.sum(prebins)==0:
+                    postbin = np.min(np.where(postbins)[0])
+                    binnedlc[bin,1] = (binnedlc[postbin,1]+np.mean(phaselc[:,1]))/2.
+                elif np.sum(postbins)==0:
+                    prebin = np.max(np.where(prebins)[0])
+                    binnedlc[bin,1] = (np.mean(phaselc[:,1])+binnedlc[prebin,1])/2.
+                else:
+                    prebin = np.max(np.where(prebins)[0])
+                    postbin = np.min(np.where(postbins)[0])+bin
+                    binnedlc[bin,1] = (binnedlc[postbin,1]+binnedlc[prebin,1])/2.
+            else:
+                binnedlc[bin,1] = fill_value
+        else:
+            binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
+    
+    return binnedlc, binnedstds, len(emptybins)
+
+def BinPhaseLCSegment(phaselc,nbins,fill_value=None):
+    bin_edges = np.linspace(np.min(phaselc[:,0]),np.max(phaselc[:,0]),nbins)
+    bin_indices = np.digitize(phaselc[:,0],bin_edges) - 1
+    binnedlc = np.zeros([nbins,2])
+    binnedlc[:,0] = 1./nbins * 0.5 +bin_edges  #fixes phase of all bins - means ignoring locations of points in bin, but necessary for SOM mapping
+    binnedstds = np.zeros(nbins)
+    emptybins = []
+    for bin in range(nbins):
+        if np.sum(bin_indices==bin) > 0:
+            binnedlc[bin,1] = np.mean(phaselc[bin_indices==bin,1])  #doesn't make use of sorted phase array, could probably be faster?
+            binnedstds[bin] = np.std(phaselc[bin_indices==bin,1])
+        else:
+            emptybins.append(bin)
+            binnedlc[bin,1] = -1000
+            binnedstds[bin] = np.std(phaselc[:,1])
+    
+    for bin in emptybins:
+        if fill_value is not None:
+            if str(fill_value)=='interp':
+                prebins = binnedlc[:bin,1]>-999
+                postbins = binnedlc[bin:,1]>-999
+                if np.sum(prebins)==0:
+                    postbin = np.min(np.where(postbins)[0])
+                    binnedlc[bin,1] = (binnedlc[postbin,1]+np.mean(phaselc[:,1]))/2.
+                elif np.sum(postbins)==0:
+                    prebin = np.max(np.where(prebins)[0])
+                    binnedlc[bin,1] = (np.mean(phaselc[:,1])+binnedlc[prebin,1])/2.
+                else:
+                    prebin = np.max(np.where(prebins)[0])
+                    postbin = np.min(np.where(postbins)[0])+bin
+                    binnedlc[bin,1] = (binnedlc[postbin,1]+binnedlc[prebin,1])/2.
+            else:
+                binnedlc[bin,1] = fill_value
+        else:
+            binnedlc[bin,1] = np.mean(phaselc[:,1])  #bit awkward this, but only alternative is to interpolate?
+    
+    return binnedlc, binnedstds, len(emptybins)
     
 def FindSecondary(lc,per,t0,tdur):
     """

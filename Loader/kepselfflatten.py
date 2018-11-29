@@ -140,16 +140,27 @@ def Kepflatten(time,flux,err,quality,winsize,stepsize,polydegree,niter,sigmaclip
     cadence = np.median(np.diff(lc[:,0]))
     
     expectedpoints = winsize/2./cadence
-
-    if transitcut and tc_per>0:
-        timecut, fluxcut, errcut, qualitycut = CutTransits(lc[:,0]+t0,lc[:,1],lc[:,2],lc[:,3],tc_t0,tc_per,tc_tdur)
-        lc_tofit = np.zeros([len(timecut),4])
-        lc_tofit[:,0] = timecut-t0
-        lc_tofit[:,1] = fluxcut
-        lc_tofit[:,2] = errcut
-        lc_tofit[:,3] = qualitycut
-    else:
-        lc_tofit = lc
+    
+    try:
+        print('Cutting ' +str(len(tc_per)) +' periodic inputs')
+        lc_tofit = lc.copy()
+        for cut in range(len(tc_per)):
+            timecut, fluxcut, errcut, qualitycut = CutTransits(lc_tofit[:,0]+t0,lc_tofit[:,1],lc_tofit[:,2],lc_tofit[:,3],tc_t0[cut],tc_per[cut],tc_tdur[cut])
+            lc_tofit = np.zeros([len(timecut),4])
+            lc_tofit[:,0] = timecut-t0
+            lc_tofit[:,1] = fluxcut
+            lc_tofit[:,2] = errcut
+            lc_tofit[:,3] = qualitycut            
+    except TypeError:
+        if transitcut and tc_per>0:
+            timecut, fluxcut, errcut, qualitycut = CutTransits(lc[:,0]+t0,lc[:,1],lc[:,2],lc[:,3],tc_t0,tc_per,tc_tdur)
+            lc_tofit = np.zeros([len(timecut),4])
+            lc_tofit[:,0] = timecut-t0
+            lc_tofit[:,1] = fluxcut
+            lc_tofit[:,2] = errcut
+            lc_tofit[:,3] = qualitycut
+        else:
+            lc_tofit = lc
 
 
     #for each step centre:
@@ -161,6 +172,8 @@ def Kepflatten(time,flux,err,quality,winsize,stepsize,polydegree,niter,sigmaclip
         if not flag:
             baseline = dopolyfit(winregion,polydegree,niter,sigmaclip)
             lcdetrend[boxlowbound:boxhighbound] = lc[boxlowbound:boxhighbound,1] / np.polyval(baseline,lc[boxlowbound:boxhighbound,0])
+            if np.abs(np.mean(lcdetrend[boxlowbound:boxhighbound]) - np.mean(lc[boxlowbound:boxhighbound,1])) > 0.2:
+                lcdetrend[boxlowbound:boxhighbound] = lc[boxlowbound:boxhighbound,1]
         else:
             lcdetrend[boxlowbound:boxhighbound] = np.ones(boxhighbound-boxlowbound)
         #if winregion[0,0]+2454833> 0:

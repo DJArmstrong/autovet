@@ -23,7 +23,7 @@ def Run(featfile, outfile, synthfile):
     
     """
 
-    from autovet.Classify import Learner
+    from autovet.Classify import Learner, TrainingSet
     from autovet.Features.FeatureData import FeatureData
 
     #merge candidate and synthetic features into training set
@@ -33,7 +33,7 @@ def Run(featfile, outfile, synthfile):
     fd.outputTrainingSet('temp_trainset.txt')
 
     #set up training set and classifier
-    tset = Learner.TrainingSet('temp_trainset.txt')
+    tset = TrainingSet.TrainingSet_NGTS('temp_trainset.txt')
     cl = Learner.Classifier(classifier_args={'n_estimators':300,'max_depth':8})
 
     #perform initial training 
