@@ -1,97 +1,7 @@
 #should act largely independently of loader/feature classes for simplicity. Hence will load in saved file of feature values
 import numpy as np
 import pandas as pd
-import gpflow
 
-class CandidateSet(object):
-
-    def __init__(self,features):  
-        """
-        Set of candidates
-        
-        Arguments:
-        features   -- np array of feature data, [n_candidates,n_features]
-        """        
-        self.class_probs = None
-        self.features = features
-
-
-class TrainingSet(CandidateSet):
-    
-    def __init__(self,trainingfile,fieldstodrop=None,addrandom=False,dropnoise=False,dropdepth=False,dropdefault=False):
-        """
-        Set of candidates for training
-        
-        Arguments:
-        trainingfile   -- txt file of training data
-        fieldstodrop   -- features to remove before training
-        addrandom      -- if True, adds a random feature for calibration
-        dropnoise      -- if True, drops default fields from training set file
-        dropdepth      -- if True, drops transit depth related fields
-        dropdefault    -- if True, drops lightcurve noise related fields
-        """
-        if fieldstodrop is None: fieldstodrop = []
-        if len(fieldstodrop)==0:
-            if dropdefault:
-                defaultfields = ['tdur_phase','Trapfit_t0','Fit_t0','Even_Fit_aovrstar', 
-                				'Even_Fit_chisq','Even_Trapfit_t14phase', 
-                				'Even_Trapfit_t23phase','Fit_period','NUM_TRANSITS',
-                				'Trapfit_t23phase','Odd_Fit_aovrstar', 'Odd_Fit_chisq', 
-                				'Odd_Trapfit_t14phase', 'Odd_Trapfit_t23phase','MaxSecPhase']
-                for field in defaultfields:
-                    fieldstodrop.append(field)
-            if dropnoise:
-                noisefields = ['P2P_98perc', 'P2P_mean', 'Peak_to_peak', 'RMS', 
-                    			'RMS_TDur', 'Skew','std_ov_error','Kurtosis', 'MAD',
-                    			'NZeroCross']
-                for field in noisefields:
-                    fieldstodrop.append(field)
-            if dropdepth:
-                depthfields = ['Odd_Fit_depthSNR','Odd_Fit_rprstar', 
-                    			'Odd_Trapfit_depth','Fit_rprstar','Even_Fit_depthSNR', 
-                    			'Even_Fit_rprstar','Even_Trapfit_depth','Fit_depthSNR',
-                    			'Trapfit_depth']
-                for field in depthfields:
-                    fieldstodrop.append(field)
-                                    
-        dat = pd.read_csv(trainingfile,index_col=1)
-        
-        #remove remnant bad columns
-        for col in dat.columns:
-            if col[:7]=='Unnamed':
-                fieldstodrop.append(col)
-                
-        for field in fieldstodrop:
-            if field in np.array(dat.columns):
-                dat = dat.drop(field,1)
-        dat = dat.replace([np.inf, -np.inf], np.nan) #replace infs with nan
-        dat = dat.replace([-10], np.nan) #replace -10 (the standard fill value) with nan
-        for col in dat.columns[1:]:  #[1:] is to ignore the #ID column
-            dat[col] = dat[col].where(dat[col] < 1e8, np.nan)#blocks stupidly large values that can arise for some bad lightcurves
-        dat = dat.dropna()
-        
-        self.ids = np.array(dat['#ID'])
-        dat = dat.drop('#ID',1)
-        labels = np.array(dat.index)
-        features = dat.values
-        self.featurenames = np.array(dat.columns)
-        if addrandom:
-            randomfeature = np.random.uniform(0,1,features.shape[0])
-            features = np.hstack((features,np.column_stack(randomfeature).T)) #all the column_stack bit is to meet the hstack dimension requirements
-            self.featurenames = np.append(self.featurenames,'Random')      
-        #dat = np.genfromtxt(trainingfile,delimiter=',',dtype=None,names=True)
-        #features = dat[list(dat.dtype.names[1:])]
-        #features = self.rmfield(dat,'label','tdur_phase','Trapfit_t0','Fit_t0')
-        #self.featurenames = features.dtype.names
-        #features = features.view(np.float64).reshape(features.shape + (-1,))
-        #labels = dat['label']
-        
-        
-        CandidateSet.__init__(self,features)
-        self.known_classes = labels
-    
-    def rmfield(self, a, *fieldnames_to_remove ):
-        return a[ [ name for name in a.dtype.names if name not in fieldnames_to_remove ] ]
 
 class Classifier(object):
 
@@ -120,9 +30,6 @@ class Classifier(object):
         elif classifier=='AdaBoostClassifier':
             from sklearn.ensemble import AdaBoostClassifier as classifier_obj
             self.classifier = self.setUpAdaBoost()            
-        elif classifier=='MLPClassifier':
-            from sklearn.neural_network import MLPClassifier as classifier_obj
-            self.classifier = self.setUpMLP()        
             
     def train(self,trainingset):
         self.featurenames = trainingset.featurenames
@@ -172,9 +79,6 @@ class Classifier(object):
             elif self.classifier_type=='AdaBoostClassifier':
                 from sklearn.ensemble import AdaBoostClassifier as classifier_obj
                 self.classifier = self.setUpAdaBoost()            
-            elif self.classifier_type=='MLPClassifier':
-                from sklearn.neural_network import MLPClassifier as classifier_obj
-                self.classifier = self.setUpMLP()        
             self.classifier.fit(cvfeatures[train_index,:],cvgroups[train_index])
             probs.append(self.classifier.predict_proba(cvfeatures[test_index,:]))  
         self.cvprobs = np.vstack(probs)
@@ -243,21 +147,8 @@ class Classifier(object):
         clf = classifier_obj(n_estimators=inputs['n_estimators'],random_state=inputs['random_state'],learning_rate=inputs['learning_rate'])
         return clf
     
-    def setUpMLP(self,obj):      
-        #set up options and defaults   
-        inputs = {}
-        inputs['hidden_layer_sizes'] = (100,) #tuple, each entry represents a hidden layer, value is the number of neurons in it
-        inputs['alpha'] = 0.0001 #smaller tends to work better. Should be optimised
-        inputs['random_state'] = 0 #random state initialiser
-        #Parse actual user inputs
-        for key in self.classifier_args.keys(): 
-            if key in inputs.keys():  #ignores unrecognised options
-                inputs[key] = self.classifier_args[key]
-                
-        clf = classifier_obj(hidden_layer_sizes=inputs['hidden_layer_sizes'],random_state=inputs['random_state'],alpha=inputs['alpha'])
-        return clf
 
-class GPFlowClassifier(object):
+class GPClassifier(object):
     
     def __init__(self, Xtrain, Ytrain, num_inducing=16, kernel=None, likelihood=None,
     			num_latent=None):
@@ -283,9 +174,9 @@ class GPFlowClassifier(object):
                       kern=self.kernel,likelihood=self.likelihood)
         else:
             from scipy.cluster.vq import kmeans
-            Z = np.zeros([num_inducing*len(set(Ytrain)),Xtrain.shape[1]])
-            for c,cl in enumerate(set(Ytrain)):
-                Z[c*num_inducing:(c+1)*num_inducing,:] = kmeans(Xtrain[Ytrain==cl],num_inducing)[0]
+            Z = np.zeros([num_inducing*len(set(Ytrain[:,0])),Xtrain.shape[1]])
+            for c,cl in enumerate(set(Ytrain[:,0])):
+                Z[c*num_inducing:(c+1)*num_inducing,:] = kmeans(Xtrain[Ytrain[:,0]==cl],num_inducing)[0]
             
             np.random.shuffle(Z)   
             self.model = gpflow.models.SVGP(Xtrain, Ytrain, kern=self.kernel,

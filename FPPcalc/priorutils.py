@@ -19,6 +19,7 @@ REARTH = const.R_earth.cgs.value
 MSUN = const.M_sun.cgs.value
 DAY = 86400 #seconds
 G = const.G.cgs.value
+import logging
 
 
     
@@ -137,7 +138,7 @@ def trilegal_density(ra,dec,kind='target',maglim=21.75,area=1.0,mapfile=None):
                 get_trilegal(basefilename,ra,dec,maglim=maglim,area=area)
                 stars = pd.read_hdf(h5filename,'df')
             
-            stars = stars[stars['TESS_mag'] < maglc.gim]  #in case reading from file
+            stars = stars[stars['TESS_mag'] < maglim]  #in case reading from file
         
             #c = SkyCoord(trilegal_args['l'],trilegal_args['b'],
              #               unit='deg',frame='galactic')
@@ -223,7 +224,8 @@ def get_trilegal(filename,ra,dec,folder='.', galactic=False,
 
     AV = get_AV_infinity(l,b,frame='galactic')
     print(AV)
-    if AV<=10:
+    if AV is not None:
+      if AV<=1.5:
         trilegal_webcall(trilegal_version,l,b,area,binaries,AV,sigma_AV,filterset,maglim,outfile)
         #cmd = './get_trilegal %s %f %f %f %i %.3f %.2f %s 1 %.1f %s' % (trilegal_version,l,b,
         #                                                          area,binaries,AV,sigma_AV,
@@ -251,7 +253,7 @@ def get_trilegal(filename,ra,dec,folder='.', galactic=False,
                                    'binaries':binaries}
             os.remove(outfile)
     else:
-        print('Skipping, AV > 10')
+        print('Skipping, AV > 10 or not found')
 
 def trilegal_webcall(trilegal_version,l,b,area,binaries,AV,sigma_AV,filterset,maglim,
 					 outfile):
@@ -380,16 +382,14 @@ def get_AV_infinity(ra,dec,frame='icrs'):
     cmd = 'curl -s \'%s\' -o %s' % (url,tmpfile)
     sp.Popen(cmd,shell=True).wait()
     AV = None
-    with open(tmpfile, 'r') as f:
-        for line in f:
-            m = re.search('V \(0.54\)\s+(\S+)',line)
-            if m:
-                AV = float(m.group(1))
-    if AV is None:
-        logging.warning('Error accessing NED, url={}'.format(url))
-        with open(tmpfile) as f:
+    try:
+        with open(tmpfile, 'r') as f:
             for line in f:
-                logging.warning(line)
+                m = re.search('V \(0.54\)\s+(\S+)',line)
+                if m:
+                    AV = float(m.group(1))
+        os.remove(tmpfile)
+    except:
+        logging.warning('Error accessing NED, url={}'.format(url))
 
-    os.remove(tmpfile)
     return AV

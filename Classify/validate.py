@@ -231,7 +231,6 @@ def TrainingSetResponse_1d(cvprobs, tset, axis1, xmin, xmax, nbinsx=20, target='
     
 
 
-#def MLP_plot():
     
 #def IsolationOutliers(self):
 #    from sklearn.ensemble import IsolationForest as classifier_obj
