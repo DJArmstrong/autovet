@@ -7,6 +7,7 @@ import pylab as p
 p.ion()
 import numpy as np
 from gpflow.kernels import Matern32,Matern52
+import os
 
 #load data
 data_dir = os.path.join(os.getcwd(),'../../Data/Kepinjectv0_run2norm/')

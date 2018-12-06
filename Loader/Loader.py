@@ -1,5 +1,5 @@
 import numpy as np
-import fitsio #for super-big NGTS field files
+#import fitsio #for super-big NGTS field files
 import math
 import os
 from . import kepselfflatten
@@ -264,7 +264,7 @@ class Candidate(object):
             flux = dat[:,1]
             err = dat[:,2]
         else:
-            dat = fitsio.FITS(self.filepath)
+            dat = fits.open(self.filepath)
             time = dat[1]['TIME'][:]
             flux = dat[1][inputcol][:]
             err = dat[1][inputerr][:]
