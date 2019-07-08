@@ -433,9 +433,9 @@ class Candidate(object):
                     if int(source['ID']) == self.id:
                         self.targetmatched = True
                     gaiasources.remove_row(closest)
-                    
-        for row,source in enumerate(gaiasources):
-            if not self.targetmatched:
+             
+        if not self.targetmatched:            
+            for row,source in enumerate(gaiasources):
                 separation = (np.power(source['ra']-ticsources[target]['ra'],2) + np.power(source['dec']-ticsources[target]['dec'],2))**(1/2.)
                 magdiff = source['phot_g_mean_mag']-0.5 - ticsources[target]['Tmag']
                 if separation < 0.003 and np.abs(magdiff) < 0.5:
@@ -443,16 +443,27 @@ class Candidate(object):
                     print('WARNING - GAIA Matched to TIC with separation '+str(separation))
                     self.targetmatched = True
                     
+        for row,source in enumerate(gaiasources):            
             #stopgap: T = G-0.5
             #could improve by looking up other catalogues but gets time consuming and awkward
             #TIC will replace this GAIA search anyway, likely before first data release
-            mags = [['GAIA',source['phot_g_mean_mag']],['T',source['phot_g_mean_mag']-0.5]]
+            mags = [['G',(source['phot_g_mean_mag'],0.01)],['TESS',(source['phot_g_mean_mag']-0.5,0.5)]] #guessed errors..
             s = Source(source['ra'],source['dec'],mags=mags,star_rad=source['radius_val'],star_mass=1.0)
             nearsources.append(s)
         
         if not self.targetmatched:
             print('PROBLEM - Could not match GAIA with TIC target')
         self.nearby_sources = nearsources
+
+    def tabulate_nearby(self):
+        """
+        """
+        if len(self.nearby_sources) == 0:
+            self.find_nearby()
+        
+        for source in self.nearby_sources:
+            separation = (np.power(self.target_source.coords[0]-source.coords[0],2) + np.power(self.target_source.coords[1]-source.coords[1],2))**(1/2.)
+            print(source.mags['TESS'],separation)
     
     def plot_nearby(self):
         """
@@ -464,16 +475,16 @@ class Candidate(object):
         from matplotlib.patches import Rectangle
         fig,ax = p.subplots(1,1)
         for source in self.nearby_sources:
-            if source.mags['T'] - self.target_source.mags['T'] <=7.5:
+            if source.mags['TESS'][0] - self.target_source.mags['TESS'][0] <=7.5:
                 if source.intic:
-                    ax.scatter(source.coords[0],source.coords[1],c=source.mags['T'],cmap=cm.viridis,marker='D',vmin=self.target_source.mags['T'],vmax=self.target_source.mags['T']+7.5)
-                    ax.text(source.coords[0],source.coords[1],str(source.mags['T'])[:4])
+                    ax.scatter(source.coords[0],source.coords[1],c=source.mags['TESS'][0],cmap=cm.viridis,marker='D',vmin=self.target_source.mags['TESS'][0],vmax=self.target_source.mags['TESS'][0]+7.5)
+                    ax.text(source.coords[0],source.coords[1],str(source.mags['TESS'][0])[:4])
                 else:
-                    ax.scatter(source.coords[0],source.coords[1],c=source.mags['T'],cmap=cm.viridis,vmin=self.target_source.mags['T'],vmax=self.target_source.mags['T']+7.5)
-                    ax.text(source.coords[0],source.coords[1],str(source.mags['T'])[:4])
+                    ax.scatter(source.coords[0],source.coords[1],c=source.mags['TESS'][0],cmap=cm.viridis,vmin=self.target_source.mags['TESS'][0],vmax=self.target_source.mags['TESS'][0]+7.5)
+                    ax.text(source.coords[0],source.coords[1],str(source.mags['TESS'][0])[:4])
 
         ax.plot(self.target_source.coords[0],self.target_source.coords[1],'mD')
-        ax.text(self.target_source.coords[0],self.target_source.coords[1],str(self.target_source.mags['T'])[:4])
+        ax.text(self.target_source.coords[0],self.target_source.coords[1],str(self.target_source.mags['TESS'][0])[:4])
         
         #TESS pixel
         pix = 20*u.arcsec.to('deg')
