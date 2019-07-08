@@ -28,13 +28,13 @@ class TrainingSet_LC(CandidateSet):
         self.X_train = None
         self.Y_train = None
 
-    def addview(self, newview):
+    def add_view(self, newview):
         self.X_base = np.hstack((self.X_base,newview))
         self.view_index = np.hstack((self.view_index,np.ones(newview.shape[1])+max(self.view_index)))
     
-    def addmembers(self, newX, newY):
+    def add_members(self, newX, newY):
         self.X_base = np.vstack((self.X_base, newX))
-        self.Y_base = np.vstack((self.Y_base, newY))
+        self.Y_base = np.concatenate((self.Y_base, newY))
     
     def split_train_test(self, test_size=0.33, random_state=np.random.uniform(0,100)):
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.X_base, self.Y_base, test_size=test_size, random_state=random_state)

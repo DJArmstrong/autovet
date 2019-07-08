@@ -142,7 +142,7 @@ def PrepareOneLightcurve(lc,per,t0,tdur,nbins=50,clip_outliers=5):
         
   
 
-def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=0,case=1,map_all=np.zeros([5,5,5])-1,flocation=''):
+def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=0,case=1,map_all=np.zeros([5,5,5])-1,flocation='',SOMarray_forprop=None):
     """
         Produces Theta1 or Theta2 statistic to classify transit shapes using a SOM.
         Either uses the trained SOM from Armstrong et al (2016), or a user-provided SOM object.
@@ -174,14 +174,14 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=
         assert (missionflag==0) or (missionflag==1) or (missionflag==2) or (som!=None), 'If no user-defined SOM, missionflag must be 0 (Kepler) or 1 (K2) or 2 (NGTS).'
         if case ==1:
             if som!=None:
-                assert groups!=None, 'For Case = 1 and user-defined SOM, groups array must be provided.'
+                assert groups is not None, 'For Case = 1 and user-defined SOM, groups array must be provided.'
         assert case==1 or case==2, 'Case must be 1 or 2.'
     except AssertionError as error:
         print error
         print 'Inputs do not meet requirements. See help.'
         
     #if no SOM, load our SOM (kepler or k2 depending on keplerflag)
-    if not som:
+    if som is None:
         selfflag = 1
         if missionflag == 0:    
             som = LoadSOM(os.path.join(flocation,'snrcut_30_lr01_300_20_20_bin50.txt'),20,20,50,0.1)      
@@ -206,7 +206,7 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=
 
     #map_all results
     if (map_all<0).all():
-        map_all = somtools.MapErrors_MC(som,SOMarray,SOMerrors,n_mc)
+        map_all = somtools.MapErrors_MC(som,SOMarray,SOMerrors,n_mc).astype('int')
     print 'Transit(s) mapped'
 
     #classify (depending on case)
@@ -223,7 +223,10 @@ def ClassifyPlanet(SOMarray,SOMerrors,n_mc=100,som=None,groups=None,missionflag=
                 prop = somtools.KohonenLoad(os.path.join(flocation,'prop_ngts_run1_fix.txt'))
                 prop_weights = np.genfromtxt(os.path.join(flocation,'prop_weights_ngts_run1_fix.txt'))                
         else:  #create new proportions
-            prop ,prop_weights= somtools.Proportions(som.K,mapped,groups,2,som.K.shape[0],som.K.shape[1])
+            if SOMarray_forprop is not None:
+                prop ,prop_weights= somtools.Proportions(som.K,som(SOMarray_forprop),groups,2,som.K.shape[0],som.K.shape[1])
+            else:
+                prop ,prop_weights= somtools.Proportions(som.K,mapped,groups,2,som.K.shape[0],som.K.shape[1])
         
         print 'Case 1: Beginning classification'
         class_probs = somtools.Classify(map_all,prop,2,prop_weights) 
