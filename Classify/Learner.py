@@ -1,11 +1,22 @@
 #should act largely independently of loader/feature classes for simplicity. Hence will load in saved file of feature values
 import numpy as np
 import pandas as pd
-
+from sklearn.model_selection import GridSearchCV, LeaveOneOut, train_test_split, KFold, cross_val_score, PredefinedSplit
+from sklearn.externals import joblib
+from sklearn.metrics import confusion_matrix as confMat
+# import classifiers
+from sklearn.svm import SVC, LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, ExtraTreesClassifier
+from sklearn.linear_model import RidgeClassifierCV, LogisticRegressionCV, RidgeClassifier, LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 class Classifier(object):
 
-    def __init__(self,classifier='RandomForestClassifier',classifier_args=None):  #list of Featureset instances, each with features calculated
+    def __init__(self,classifier='RFC',classifier_args=None):  #list of Featureset instances, each with features calculated
         """
         Classifier wrapper for several sklearn classifiers
         
@@ -14,32 +25,40 @@ class Classifier(object):
         					ExtraTreesClassifier, AdaBoostClassifier, MLPClassifier}
         classifier_args	-- dict of arguments for classifier {arg:value}
         """    
+        
+        models = {'QDA': QuadraticDiscriminantAnalysis(),
+            	'DecisionTree': DecisionTreeClassifier(),
+            	'RFC':RandomForestClassifier(),
+            	'ExtraTrees':ExtraTreesClassifier(),
+            	'AdaBoost':AdaBoostClassifier()}
+
+        
         if classifier_args is None: classifier_args={}
         #self.classifier_obj = classifier_obj
         self.classifier_args = classifier_args
         self.classifier_type = classifier
         self.cvprobs = None
         
-        global classifier_obj
-        if classifier=='RandomForestClassifier':
-            from sklearn.ensemble import RandomForestClassifier as classifier_obj
-            self.classifier = self.setUpForest()
-        elif classifier=='ExtraTreesClassifier':
-            from sklearn.ensemble import ExtraTreesClassifier as classifier_obj
-            self.classifier = self.setUpForest()        
-        elif classifier=='AdaBoostClassifier':
-            from sklearn.ensemble import AdaBoostClassifier as classifier_obj
-            self.classifier = self.setUpAdaBoost()            
+        #global classifier_obj
+        self.classifier = models[classifier]                
+        self.classifier.set_params(**classifier_args)
+                
             
-    def train(self,trainingset):
-        self.featurenames = trainingset.featurenames
-        self.classifier = self.classifier.fit(trainingset.features,trainingset.known_classes)
+    def train(self,trainingset=None,X=None,Y=None):
+        if trainingset is not None:
+            X = trainingset.features
+            Y = trainingset.known_classes
+            self.featurenames = trainingset.featurenames
+        self.classifier = self.classifier.fit(X,Y)
     
     def featImportance(self):
-        print('Top features:')
-        featimportance = self.classifier.feature_importances_
-        for i in np.argsort(featimportance)[::-1]:
-            print(self.featurenames[i], featimportance[i])
+        if hasattr(self.classifier, 'feature_importances_'):
+            print('Top features:')
+            featimportance = self.classifier.feature_importances_
+            for i in np.argsort(featimportance)[::-1]:
+                print(self.featurenames[i], featimportance[i])
+        else:
+            print('Feature importances not supported for this classifier')
     
     def classify(self,candidateset):
         class_probs = self.classifier.predict_proba(candidateset.features)
@@ -113,40 +132,58 @@ class Classifier(object):
                         output[i,j,k,l] = self.classifier.oob_score_
         return estimators_set,maxfeat_set,maxdepth_set,minsamples_set,output
         
-    def setUpForest(self):
-        #set up options and defaults   
-        inputs = {}
-        inputs['n_estimators'] = 300 #higher the better (and slower)
-        inputs['max_features'] = 'auto'  #will give SQRT(n_features) as a good typical first guess
-        inputs['max_depth'] = None #max depth of tree (needs tuning)
-        inputs['min_samples_split'] = 3 #min samples left to split a node (needs tuning)
-        inputs['n_jobs'] = -1
-        inputs['oob_score'] = True #estimate out-of-bag score
-        inputs['random_state'] = 0 #random state initialiser
-        inputs['class_weight'] = 'balanced' #uses inverse frequency of classes in training set
-        inputs['warm_start'] = False
-        #Parse actual user inputs
-        for key in self.classifier_args.keys(): 
-            if key in inputs.keys():  #ignores unrecognised options
-                inputs[key] = self.classifier_args[key]
-                
-        clf = classifier_obj(n_estimators=inputs['n_estimators'],max_features=inputs['max_features'],max_depth=inputs['max_depth'],min_samples_split=inputs['min_samples_split'],n_jobs=inputs['n_jobs'],oob_score=inputs['oob_score'],random_state=inputs['random_state'],class_weight=inputs['class_weight'])
-        return clf
+#     def setUpForest(self):
+#         #set up options and defaults   
+#         inputs = {}
+#         inputs['n_estimators'] = 300 #higher the better (and slower)
+#         inputs['max_features'] = 'auto'  #will give SQRT(n_features) as a good typical first guess
+#         inputs['max_depth'] = None #max depth of tree (needs tuning)
+#         inputs['min_samples_split'] = 3 #min samples left to split a node (needs tuning)
+#         inputs['n_jobs'] = -1
+#         inputs['oob_score'] = True #estimate out-of-bag score
+#         inputs['random_state'] = 0 #random state initialiser
+#         inputs['class_weight'] = 'balanced' #uses inverse frequency of classes in training set
+#         inputs['warm_start'] = False
+#         #Parse actual user inputs
+#         for key in self.classifier_args.keys(): 
+#             if key in inputs.keys():  #ignores unrecognised options
+#                 inputs[key] = self.classifier_args[key]
+#                 
+#         clf = classifier_obj(n_estimators=inputs['n_estimators'],max_features=inputs['max_features'],max_depth=inputs['max_depth'],min_samples_split=inputs['min_samples_split'],n_jobs=inputs['n_jobs'],oob_score=inputs['oob_score'],random_state=inputs['random_state'],class_weight=inputs['class_weight'])
+#         return clf
     
-    def setUpAdaBoost(self,obj):  #uses decision tree as base estimator, with default values. Could be worked on.
-        #set up options and defaults   
-        inputs = {}
-        inputs['n_estimators'] = 50 #higher the better (and slower)
-        inputs['learning_rate'] = 1
-        inputs['random_state'] = 0 #random state initialiser
-        #Parse actual user inputs
-        for key in self.classifier_args.keys(): 
-            if key in inputs.keys():  #ignores unrecognised options
-                inputs[key] = self.classifier_args[key]
-                
-        clf = classifier_obj(n_estimators=inputs['n_estimators'],random_state=inputs['random_state'],learning_rate=inputs['learning_rate'])
-        return clf
-    
+    def Optimise(self, X, Y, params, valtype='CV', val_idx = None, n_jobs=1, verbose=True, scoring='accuracy', refit=True):
+        """
+        Performs grid (or random?) search CV for each of the models and saves the GridSearchCV trained object
+        into a dictionary self.grid_search_objects.
+            Inputs:
+            	X
+            	Y		Should Include Valset
+                n_jobs          - # to paralelize
+                verbose         - how much to print out into terminal, should be zero if run on cluster
+                scoring         - scoring function to use
+                refit           - should the best model be fit to a whole training set
+        """
+        if valtype == 'CV':
+            cvsplit = KFold(n_splits=10)        
+        elif valtype == 'valset' and val_idx is not None:
+            cvsplit = PredefinedSplit(test_fold=val_idx)
+        else:
+            print('Validation type must be "CV" (cross-validation) or "valset" (separate validation set)')
+            
+
+        # Perform grid search cross-validation
+        grid_search_object = GridSearchCV(self.classifier, params, cv=cvsplit, n_jobs=n_jobs, verbose = verbose,
+                                                 scoring=scoring, refit=refit)
+        grid_search_object.fit(X, Y)
+        
+        #set best parameters for classifier
+        self.classifer = grid_search_object.best_estimator_
+        
+        return grid_search_object
+        
+
+
 
 class GPClassifier(object):
     
