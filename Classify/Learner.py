@@ -12,7 +12,7 @@ from sklearn.linear_model import RidgeClassifierCV, LogisticRegressionCV, RidgeC
 from sklearn.neural_network import MLPClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 
 class Classifier(object):
 
@@ -26,13 +26,19 @@ class Classifier(object):
         classifier_args	-- dict of arguments for classifier {arg:value}
         """    
         
-        models = {'QDA': QuadraticDiscriminantAnalysis(),
-            	'DecisionTree': DecisionTreeClassifier(),
-            	'RFC':RandomForestClassifier(),
-            	'ExtraTrees':ExtraTreesClassifier(),
-            	'AdaBoost':AdaBoostClassifier()}
-
-        
+        models = {'AdaBoostOther': AdaBoostClassifier(),
+            'SVM': SVC(),
+            'RFC': RandomForestClassifier(),
+            'Decision Tree': DecisionTreeClassifier(),
+            'Logistic Reg': LogisticRegressionCV(),
+            'Extra Trees': ExtraTreesClassifier(),
+            'K-NN': KNeighborsClassifier(),
+            'MLPClassifier': MLPClassifier(),
+            'QDA': QuadraticDiscriminantAnalysis(),
+            'Ridge Classifier': RidgeClassifierCV(),
+            'LDA': LinearDiscriminantAnalysis()
+            }
+            
         if classifier_args is None: classifier_args={}
         #self.classifier_obj = classifier_obj
         self.classifier_args = classifier_args
@@ -181,6 +187,7 @@ class Classifier(object):
         self.classifer = grid_search_object.best_estimator_
         
         return grid_search_object
+        
         
 
 
